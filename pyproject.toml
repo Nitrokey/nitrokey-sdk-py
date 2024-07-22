@@ -24,7 +24,7 @@ python = "^3.9"
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-black = "^22.1"
+black = "^24.3"
 flake8 = "^7.1"
 isort = "^5.13.2"
 mypy = "^1.4"
