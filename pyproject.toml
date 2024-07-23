@@ -18,7 +18,18 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
+fido2 = "^1.1.2"
 python = "^3.9"
+requests = "^2"
+semver = "^3"
+tlv8 = "^0.10"
+
+# lpc55
+spsdk = ">=2,<2.2"
+
+# nrf52
+ecdsa = "^0.19"
+protobuf = "^3.17.3"
 
 [tool.poetry.group.dev]
 optional = true
@@ -28,6 +39,7 @@ black = "^24.3"
 flake8 = "^7.1"
 isort = "^5.13.2"
 mypy = "^1.4"
+types-requests = "^2.32"
 
 [tool.black]
 target-version = ["py39"]
@@ -40,3 +52,21 @@ profile = "black"
 show_error_codes = true
 python_version = "3.9"
 strict = true
+
+# nrf52_upload is only temporary in this package
+[[tool.mypy.overrides]]
+module = "nitrokey.trussed.bootloader.nrf52_upload.*"
+ignore_errors = true
+
+# nrf52 has to use the untyped nrf52_upload module
+[[tool.mypy.overrides]]
+module = "nitrokey.trussed.bootloader.nrf52"
+disallow_untyped_calls = false
+
+# libraries without annotations
+[[tool.mypy.overrides]]
+module = [
+    "ecdsa.*",
+    "tlv8.*",
+]
+ignore_missing_imports = true

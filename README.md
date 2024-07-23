@@ -2,6 +2,20 @@
 
 The Nitrokey Python SDK can be used to use and configure Nitrokey devices.
 
+## Features
+
+The SDK supports these devices and features:
+
+- Nitrokey 3
+  - device and bootloader management (`nitrokey.nk3`)
+  - admin app (`nitrokey.trussed.admin_app`)
+  - provisioner app (`nitrokey.trussed.provisioner_app`)
+  - secrets app (`nitrokey.nk3.secrets_app`)
+- Nitrokey Passkey
+  - device and bootloader management (`nitrokey.nkpk`)
+  - admin app (`nitrokey.trussed.admin_app`)
+  - provisioner app (`nitrokey.trussed.provisioner_app`)
+
 ## Installation
 
 The Nitrokey Python SDK has not been released yet.
