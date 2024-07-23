@@ -373,26 +373,3 @@ class Updater:
             except Exception as e:
                 raise self.ui.error("Failed to perform firmware update", e)
         logger.debug("Firmware update finished successfully")
-
-
-def test_update_path_default() -> None:
-    assert (
-        UpdatePath.create(Variant.NRF52, Version(1, 0, 0), Version(1, 1, 0))
-        == UpdatePath.default
-    )
-    assert UpdatePath.create(None, None, Version(1, 1, 0)) == UpdatePath.default
-
-
-def test_update_path_match() -> None:
-    assert (
-        UpdatePath.create(Variant.NRF52, Version(1, 2, 2), Version(1, 3, 0))
-        == UpdatePath.nRF_IFS_Migration_v1_3
-    )
-    assert (
-        UpdatePath.create(Variant.NRF52, Version(1, 0, 0), Version(1, 3, 0))
-        == UpdatePath.nRF_IFS_Migration_v1_3
-    )
-    assert (
-        UpdatePath.create(Variant.NRF52, None, Version(1, 3, 0))
-        == UpdatePath.nRF_IFS_Migration_v1_3
-    )
