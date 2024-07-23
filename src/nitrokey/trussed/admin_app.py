@@ -1,13 +1,10 @@
 import enum
-import sys
 from dataclasses import dataclass
 from enum import Enum, IntFlag
 from typing import Optional
 
 from fido2 import cbor
 from fido2.ctap import CtapError
-
-from nitrokey.helpers import local_critical, local_print
 
 from .device import App, NitrokeyTrussedDevice
 from .exceptions import TimeoutException
@@ -121,7 +118,7 @@ class FactoryResetStatus(Enum):
                 error = "The application does not support factory reset through nitropy"
             elif status == FactoryResetStatus.APP_FAILED_PARSE:
                 error = "The application name must be utf-8"
-            local_critical(f"{msg}: {error}", support_hint=False)
+            raise Exception(f"{msg}: {error}")
 
 
 @enum.unique
@@ -269,37 +266,27 @@ class AdminApp:
         assert reply
         ConfigStatus.check(reply[0], "Failed to set config value")
 
-    def factory_reset(self) -> None:
+    def factory_reset(self) -> bool:
         try:
-            local_print(
-                "Please touch the device to confirm the operation", file=sys.stderr
-            )
             reply = self._call(AdminCommand.FACTORY_RESET, response_len=1)
-            if reply is None:
-                local_critical(
-                    "Factory reset is not supported by the firmware version on the device",
-                    support_hint=False,
-                )
-                return
         except OSError as e:
             if e.errno == 5:
                 self.device.logger.debug("ignoring OSError after reboot", exc_info=e)
-                return
+                return True
             else:
                 raise e
-        FactoryResetStatus.check(reply[0], "Failed to factory reset the device")
+        if reply:
+            FactoryResetStatus.check(reply[0], "Failed to factory reset the device")
+        return reply is not None
 
-    def factory_reset_app(self, application: str) -> None:
-        local_print("Please touch the device to confirm the operation", file=sys.stderr)
+    def factory_reset_app(self, application: str) -> bool:
         reply = self._call(
             AdminCommand.FACTORY_RESET_APP,
             data=application.encode("ascii"),
             response_len=1,
         )
-        if reply is None:
-            local_critical(
-                "Application Factory reset is not supported by the firmware version on the device",
-                support_hint=False,
+        if reply:
+            FactoryResetStatus.check(
+                reply[0], "Failed to factory reset the application"
             )
-            return
-        FactoryResetStatus.check(reply[0], "Failed to factory reset the device")
+        return reply is not None

@@ -1,19 +1,4 @@
-import sys
 import time
-from typing import Any
-
-
-def local_print(*messages: Any, **kwargs: Any) -> None:
-    for item in messages:
-        print(item, **kwargs)
-
-
-def local_critical(
-    *messages: Any, support_hint: bool = True, ret_code: int = 1, **kwargs: Any
-) -> None:
-    messages = ("Critical error:",) + tuple(messages)
-    local_print(*messages, **kwargs)
-    sys.exit(ret_code)
 
 
 class Try:
