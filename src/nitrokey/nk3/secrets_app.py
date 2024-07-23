@@ -348,7 +348,7 @@ class SecretsApp:
     ) -> bytes:
         encoded_structure = self._custom_encode(structure)
         ins_b, p1, p2 = self._encode_command(ins)
-        bytes_data = iso7816_compose(ins_b, p1, p2, data=encoded_structure)
+        bytes_data = _iso7816_compose(ins_b, p1, p2, data=encoded_structure)
         if self.write_corpus_fn:
             self.write_corpus_fn(ins, bytes_data)
         return self._send_receive_inner(bytes_data, log_info=f"{ins}")
@@ -373,7 +373,7 @@ class SecretsApp:
                 self.logfn(f"Got RemainingData status: [{status_bytes.hex()}]")
             log_multipacket = True
             ins_b, p1, p2 = self._encode_command(Instruction.SendRemaining)
-            bytes_data = iso7816_compose(ins_b, p1, p2)
+            bytes_data = _iso7816_compose(ins_b, p1, p2)
             try:
                 result = self.dev._call_app(App.SECRETS, data=bytes_data)
             except Exception as e:
@@ -863,7 +863,7 @@ class SecretsApp:
         return current >= semver_req_version
 
 
-def iso7816_compose(
+def _iso7816_compose(
     ins: int,
     p1: int,
     p2: int,

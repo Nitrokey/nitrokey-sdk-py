@@ -40,7 +40,7 @@ class NitrokeyTrussedDevice(NitrokeyTrussedBase):
 
         self.device = device
         self.fido2_certs = fido2_certs
-        self._path = device_path_to_str(device.descriptor.path)
+        self._path = _device_path_to_str(device.descriptor.path)
         self.logger = logger.getChild(self._path)
 
         from .admin_app import AdminApp
@@ -121,7 +121,7 @@ class NitrokeyTrussedDevice(NitrokeyTrussedBase):
         return devices
 
 
-def device_path_to_str(path: Union[bytes, str]) -> str:
+def _device_path_to_str(path: Union[bytes, str]) -> str:
     """
     Converts a device path as returned by the fido2 library to a string.
 

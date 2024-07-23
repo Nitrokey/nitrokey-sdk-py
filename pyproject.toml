@@ -55,7 +55,7 @@ strict = true
 
 # nrf52_upload is only temporary in this package
 [[tool.mypy.overrides]]
-module = "nitrokey.trussed.bootloader.nrf52_upload.*"
+module = "nitrokey.trussed.bootloader._nrf52_upload.*"
 ignore_errors = true
 
 # nrf52 has to use the untyped nrf52_upload module

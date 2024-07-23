@@ -16,7 +16,7 @@ from typing import Any, Callable, Iterator, List, Optional
 
 from spsdk.mboot.exceptions import McuBootConnectionError
 
-from nitrokey.helpers import Retries
+from nitrokey._helpers import Retries
 from nitrokey.nk3 import NK3_DATA
 from nitrokey.nk3.bootloader import Nitrokey3Bootloader
 from nitrokey.nk3.device import Nitrokey3Device
