@@ -15,11 +15,11 @@ check: check-format check-import-sorting check-poetry check-style check-typing
 
 .PHONY: check-format
 check-format:
-	poetry run black --check src
+	poetry run black --check src stubs
 
 .PHONY: check-import-sorting
 check-import-sorting:
-	poetry run isort --check-only src
+	poetry run isort --check-only src stubs
 
 .PHONY: check-poetry
 check-poetry:
@@ -35,8 +35,8 @@ check-typing:
 
 .PHONY: fix
 fix:
-	poetry run black src
-	poetry run isort src
+	poetry run black src stubs
+	poetry run isort src stubs
 
 .PHONY: test
 test:

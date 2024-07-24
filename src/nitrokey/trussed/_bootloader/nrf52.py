@@ -16,7 +16,6 @@ from typing import Optional, Sequence, TypeVar
 from zipfile import ZipFile
 
 import ecdsa
-import ecdsa.curves
 from ecdsa.keys import BadSignatureError
 
 from nitrokey.trussed import Uuid, Version

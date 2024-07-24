@@ -49,6 +49,7 @@ py_version = "39"
 profile = "black"
 
 [tool.mypy]
+mypy_path = "stubs"
 show_error_codes = true
 python_version = "3.9"
 strict = true
@@ -62,11 +63,3 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = "nitrokey.trussed._bootloader.nrf52"
 disallow_untyped_calls = false
-
-# libraries without annotations
-[[tool.mypy.overrides]]
-module = [
-    "ecdsa.*",
-    "tlv8.*",
-]
-ignore_missing_imports = true

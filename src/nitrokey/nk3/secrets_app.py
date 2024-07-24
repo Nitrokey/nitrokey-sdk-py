@@ -98,8 +98,7 @@ class PasswordSafeEntry:
             ),
         ]
         # Filter out empty entries
-        entries = [r for r in entries if r is not None]
-        return entries
+        return [r for r in entries if r is not None]
 
 
 @dataclasses.dataclass
@@ -607,7 +606,7 @@ class SecretsApp:
             f"Setting new credential: {credid!r}, {kind}, {algo}, counter: {initial_counter_value}, {touch_button_required=}, {pin_based_encryption=}"
         )
 
-        structure = [
+        structure: list[Optional[Union[tlv8.Entry, RawBytes]]] = [
             tlv8.Entry(Tag.CredentialId.value, credid),
             # header (2) + secret (N)
             tlv8.Entry(
@@ -625,8 +624,8 @@ class SecretsApp:
                 name=credid, login=login, password=password, metadata=metadata
             ).tlv_encode(),
         ]
-        structure = list(filter(lambda x: x is not None, structure))
-        self._send_receive(Instruction.Put, structure)
+        entries = [x for x in structure if x is not None]
+        self._send_receive(Instruction.Put, entries)
 
     @classmethod
     def encode_properties_to_send(
@@ -769,7 +768,7 @@ class SecretsApp:
         ]
         raw_res = self._send_receive(Instruction.Validate, structure=structure)
         resd: tlv8.EntryList = tlv8.decode(raw_res)
-        return resd.data  # type: ignore[no-any-return]
+        return resd.data  # type: ignore[return-value]
 
     def select(self) -> SelectResponse:
         """
