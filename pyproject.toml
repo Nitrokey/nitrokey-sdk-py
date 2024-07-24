@@ -25,7 +25,7 @@ semver = "^3"
 tlv8 = "^0.10"
 
 # lpc55
-spsdk = ">=2,<2.2"
+spsdk = ">=2,<2.3"
 
 # nrf52
 ecdsa = "^0.19"
