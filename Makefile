@@ -41,3 +41,11 @@ fix:
 .PHONY: test
 test:
 	poetry run python -m unittest -v
+
+.PHONY: generate-api-docs
+generate-api-docs:
+	poetry run sphinx-apidoc --separate --maxdepth 1 --tocfile index --output-dir docs/api src/nitrokey
+
+.PHONY: build-docs
+build-docs:
+	poetry run sphinx-build docs _build
