@@ -7,8 +7,7 @@
 
 from fido2.hid import CtapHidDevice
 
-from nitrokey.trussed.device import NitrokeyTrussedDevice
-from nitrokey.trussed.utils import Fido2Certs, Version
+from nitrokey.trussed import Fido2Certs, NitrokeyTrussedDevice, Version
 
 FIDO2_CERTS = [
     Fido2Certs(
@@ -36,9 +35,9 @@ class Nitrokey3Device(NitrokeyTrussedDevice):
 
     @property
     def pid(self) -> int:
-        from . import PID_NITROKEY3_DEVICE
+        from . import _PID_NITROKEY3_DEVICE
 
-        return PID_NITROKEY3_DEVICE
+        return _PID_NITROKEY3_DEVICE
 
     @property
     def name(self) -> str:

@@ -18,7 +18,7 @@ from spsdk.sbfile.sb2.images import BootImageV21
 from spsdk.utils.interfaces.device.usb_device import UsbDevice
 from spsdk.utils.usbfilter import USBDeviceFilter
 
-from nitrokey.trussed.utils import Uuid, Version
+from nitrokey.trussed import Uuid, Version
 
 from . import FirmwareMetadata, NitrokeyTrussedBootloader, ProgressCallback, Variant
 
@@ -114,7 +114,7 @@ class NitrokeyTrussedBootloaderLpc55(NitrokeyTrussedBootloader):
         return devices
 
     @classmethod
-    def open(cls: type[T], path: str) -> Optional[T]:
+    def _open(cls: type[T], path: str) -> Optional[T]:
         device_filter = USBDeviceFilter(path)
         devices = UsbDevice.enumerate(device_filter)
         if len(devices) == 0:

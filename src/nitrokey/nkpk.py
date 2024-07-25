@@ -9,19 +9,23 @@ from typing import List, Optional, Sequence
 
 from fido2.hid import CtapHidDevice
 
-from nitrokey.trussed import VID_NITROKEY, DeviceData
-from nitrokey.trussed.base import NitrokeyTrussedBase
-from nitrokey.trussed.bootloader.nrf52 import (
+from nitrokey import _VID_NITROKEY
+from nitrokey.trussed import (
+    DeviceData,
+    Fido2Certs,
+    NitrokeyTrussedBase,
+    NitrokeyTrussedDevice,
+    Version,
+)
+from nitrokey.trussed._bootloader.nrf52 import (
     NitrokeyTrussedBootloaderNrf52,
     SignatureKey,
 )
-from nitrokey.trussed.device import NitrokeyTrussedDevice
-from nitrokey.trussed.utils import Fido2Certs, Version
 
-PID_NITROKEY_PASSKEY_DEVICE = 0x42F3
-PID_NITROKEY_PASSKEY_BOOTLOADER = 0x42F4
+_PID_NITROKEY_PASSKEY_DEVICE = 0x42F3
+_PID_NITROKEY_PASSKEY_BOOTLOADER = 0x42F4
 
-FIDO2_CERTS = [
+_FIDO2_CERTS = [
     Fido2Certs(
         start=Version(0, 1, 0),
         hashes=[
@@ -51,11 +55,11 @@ NKPK_DATA = DeviceData(
 
 class NitrokeyPasskeyDevice(NitrokeyTrussedDevice):
     def __init__(self, device: CtapHidDevice) -> None:
-        super().__init__(device, FIDO2_CERTS)
+        super().__init__(device, _FIDO2_CERTS)
 
     @property
     def pid(self) -> int:
-        return PID_NITROKEY_PASSKEY_DEVICE
+        return _PID_NITROKEY_PASSKEY_DEVICE
 
     @property
     def name(self) -> str:
@@ -73,15 +77,15 @@ class NitrokeyPasskeyBootloader(NitrokeyTrussedBootloaderNrf52):
 
     @property
     def pid(self) -> int:
-        return PID_NITROKEY_PASSKEY_BOOTLOADER
+        return _PID_NITROKEY_PASSKEY_BOOTLOADER
 
     @classmethod
     def list(cls) -> List["NitrokeyPasskeyBootloader"]:
-        return cls.list_vid_pid(VID_NITROKEY, PID_NITROKEY_PASSKEY_BOOTLOADER)
+        return cls.list_vid_pid(_VID_NITROKEY, _PID_NITROKEY_PASSKEY_BOOTLOADER)
 
     @classmethod
     def open(cls, path: str) -> Optional["NitrokeyPasskeyBootloader"]:
-        return cls.open_vid_pid(VID_NITROKEY, PID_NITROKEY_PASSKEY_BOOTLOADER, path)
+        return cls.open_vid_pid(_VID_NITROKEY, _PID_NITROKEY_PASSKEY_BOOTLOADER, path)
 
     @property
     def signature_keys(self) -> Sequence[SignatureKey]:

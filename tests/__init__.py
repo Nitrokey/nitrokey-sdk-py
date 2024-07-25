@@ -26,8 +26,7 @@ class TestBasic(unittest.TestCase):
 class TestNk3Updates(unittest.TestCase):
     def test_update_path_default(self):
         from nitrokey.nk3.updates import UpdatePath
-        from nitrokey.trussed.bootloader import Variant
-        from nitrokey.trussed.utils import Version
+        from nitrokey.trussed import Variant, Version
 
         self.assertEquals(
             UpdatePath.create(Variant.NRF52, Version(1, 0, 0), Version(1, 1, 0)),
@@ -36,8 +35,7 @@ class TestNk3Updates(unittest.TestCase):
 
     def test_update_path_match(self):
         from nitrokey.nk3.updates import UpdatePath
-        from nitrokey.trussed.bootloader import Variant
-        from nitrokey.trussed.utils import Version
+        from nitrokey.trussed import Variant, Version
 
         self.assertEquals(
             UpdatePath.create(Variant.NRF52, Version(1, 2, 2), Version(1, 3, 0)),

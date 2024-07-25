@@ -15,8 +15,8 @@ from typing import Optional, Sequence, TypeVar, Union
 
 from fido2.hid import CtapHidDevice, open_device
 
-from .base import NitrokeyTrussedBase
-from .utils import Fido2Certs, Uuid
+from ._base import NitrokeyTrussedBase
+from ._utils import Fido2Certs, Uuid
 
 T = TypeVar("T", bound="NitrokeyTrussedDevice")
 

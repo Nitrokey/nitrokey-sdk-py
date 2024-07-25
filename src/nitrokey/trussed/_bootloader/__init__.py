@@ -14,12 +14,14 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from io import BytesIO
 from re import Pattern
-from typing import Callable, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple, Union
 from zipfile import ZipFile
 
-from .. import DeviceData
-from ..base import NitrokeyTrussedBase
-from ..utils import Version
+from .._base import NitrokeyTrussedBase
+from .._utils import Version
+
+if TYPE_CHECKING:
+    from .. import DeviceData
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +148,7 @@ def validate_firmware_image(
     variant: Variant,
     data: bytes,
     version: Optional[Version],
-    device: DeviceData,
+    device: "DeviceData",
 ) -> FirmwareMetadata:
     try:
         metadata = parse_firmware_image(variant, data, device)
@@ -173,7 +175,7 @@ def validate_firmware_image(
 
 
 def parse_firmware_image(
-    variant: Variant, data: bytes, device: DeviceData
+    variant: Variant, data: bytes, device: "DeviceData"
 ) -> FirmwareMetadata:
     from .lpc55 import parse_firmware_image as parse_firmware_image_lpc55
     from .nrf52 import parse_firmware_image as parse_firmware_image_nrf52

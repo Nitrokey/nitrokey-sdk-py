@@ -17,19 +17,15 @@ from typing import Any, Callable, Iterator, List, Optional
 from spsdk.mboot.exceptions import McuBootConnectionError
 
 from nitrokey._helpers import Retries
-from nitrokey.nk3 import NK3_DATA
-from nitrokey.nk3.bootloader import Nitrokey3Bootloader
-from nitrokey.nk3.device import Nitrokey3Device
-from nitrokey.trussed.admin_app import BootMode
-from nitrokey.trussed.base import NitrokeyTrussedBase
-from nitrokey.trussed.bootloader import (
+from nitrokey.nk3 import NK3_DATA, Nitrokey3Bootloader, Nitrokey3Device
+from nitrokey.trussed import NitrokeyTrussedBase, TimeoutException, Version
+from nitrokey.trussed._bootloader import (
     Device,
     FirmwareContainer,
     Variant,
     validate_firmware_image,
 )
-from nitrokey.trussed.exceptions import TimeoutException
-from nitrokey.trussed.utils import Version
+from nitrokey.trussed.admin_app import BootMode
 from nitrokey.updates import Asset, Release
 
 logger = logging.getLogger(__name__)

@@ -2,7 +2,7 @@ import enum
 from enum import Enum
 from typing import Optional
 
-from nitrokey.trussed.device import App, NitrokeyTrussedDevice
+from nitrokey.trussed import App, NitrokeyTrussedDevice
 
 
 @enum.unique

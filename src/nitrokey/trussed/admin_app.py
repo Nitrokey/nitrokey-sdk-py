@@ -6,9 +6,7 @@ from typing import Optional
 from fido2 import cbor
 from fido2.ctap import CtapError
 
-from .device import App, NitrokeyTrussedDevice
-from .exceptions import TimeoutException
-from .utils import Uuid, Version
+from . import App, NitrokeyTrussedDevice, TimeoutException, Uuid, Version
 
 RNG_LEN = 57
 UUID_LEN = 16

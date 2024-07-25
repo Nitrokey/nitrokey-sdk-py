@@ -18,8 +18,8 @@ from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 import tlv8
 from semver.version import Version
 
-from nitrokey.nk3.device import Nitrokey3Device
-from nitrokey.trussed.device import App
+from nitrokey.nk3 import Nitrokey3Device
+from nitrokey.trussed import App
 
 LogFn = Callable[[str], Any]
 WriteCorpusFn = Callable[[typing.Union["Instruction", "CCIDInstruction"], bytes], Any]

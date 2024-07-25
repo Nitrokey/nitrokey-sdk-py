@@ -8,8 +8,9 @@
 from abc import ABC, abstractmethod
 from typing import Optional, TypeVar
 
-from . import VID_NITROKEY
-from .utils import Uuid
+from nitrokey import _VID_NITROKEY
+
+from ._utils import Uuid
 
 T = TypeVar("T", bound="NitrokeyTrussedBase")
 
@@ -35,7 +36,7 @@ class NitrokeyTrussedBase(ABC):
 
     @property
     def vid(self) -> int:
-        return VID_NITROKEY
+        return _VID_NITROKEY
 
     @property
     @abstractmethod

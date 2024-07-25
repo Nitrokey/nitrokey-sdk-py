@@ -19,15 +19,15 @@ import ecdsa
 import ecdsa.curves
 from ecdsa.keys import BadSignatureError
 
-from nitrokey.trussed.utils import Uuid, Version
+from nitrokey.trussed import Uuid, Version
 
 from . import FirmwareMetadata, NitrokeyTrussedBootloader, ProgressCallback, Variant
-from ._nrf52_upload.dfu.dfu_transport import DfuEvent
-from ._nrf52_upload.dfu.dfu_transport_serial import DfuTransportSerial
-from ._nrf52_upload.dfu.init_packet_pb import InitPacketPB
-from ._nrf52_upload.dfu.manifest import Manifest
-from ._nrf52_upload.dfu.package import Package
-from ._nrf52_upload.lister.device_lister import DeviceLister
+from .nrf52_upload.dfu.dfu_transport import DfuEvent
+from .nrf52_upload.dfu.dfu_transport_serial import DfuTransportSerial
+from .nrf52_upload.dfu.init_packet_pb import InitPacketPB
+from .nrf52_upload.dfu.manifest import Manifest
+from .nrf52_upload.dfu.package import Package
+from .nrf52_upload.lister.device_lister import DeviceLister
 
 logger = logging.getLogger(__name__)
 
