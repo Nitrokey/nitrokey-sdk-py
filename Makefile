@@ -14,7 +14,7 @@ update:
 	poetry update --with dev
 
 .PHONY: check
-check: check-format check-import-sorting check-poetry check-style check-typing
+check: check-format check-import-sorting check-poetry check-style check-typing check-docs
 
 .PHONY: check-format
 check-format:
@@ -36,6 +36,10 @@ check-style:
 check-typing:
 	poetry run mypy $(LINT_DIRS)
 
+.PHONY: check-docs
+check-docs:
+	poetry run rstcheck --recursive docs
+
 .PHONY: fix
 fix:
 	poetry run black $(FORMAT_DIRS)
@@ -48,3 +52,11 @@ test:
 .PHONY: generate-protobuf
 generate-protobuf:
 	protoc src/nitrokey/trussed/_bootloader/nrf52_upload/dfu/dfu-cc.proto --python_out=. --pyi_out=.
+
+.PHONY: generate-api-docs
+generate-api-docs:
+	poetry run sphinx-apidoc --separate --maxdepth 1 --tocfile index --output-dir docs/api src/nitrokey
+
+.PHONY: build-docs
+build-docs:
+	poetry run sphinx-build --fail-on-warning docs _build

@@ -43,6 +43,8 @@ fake-winreg = "^1.6"
 flake8 = "^7.1"
 isort = "^5.13.2"
 mypy = "^1.4"
+rstcheck = { version = "^6", extras = ["sphinx"] }
+sphinx = "^7"
 types-protobuf = "^5.26"
 types-requests = "^2.32"
 typing-extensions = "^4"
@@ -59,3 +61,6 @@ mypy_path = "stubs"
 show_error_codes = true
 python_version = "3.9"
 strict = true
+
+[tool.rstcheck]
+ignore_directives = ["autoclass", "autofunction", "automodule"]

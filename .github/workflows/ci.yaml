@@ -80,6 +80,36 @@ jobs:
         run: make install
       - name: Check poetry configuration
         run: make check-poetry
+  lint-docs:
+    name: Check documentation
+    runs-on: ubuntu-latest
+    container: python:3.9-slim
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install required packages
+        run: apt update && apt install -y ${REQUIRED_PACKAGES}
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Create virtual environment
+        run: make install
+      - name: Check docs
+        run: make check-docs
+  build-docs:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    container: python:3.9-slim
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install required packages
+        run: apt update && apt install -y ${REQUIRED_PACKAGES}
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Create virtual environment
+        run: make install
+      - name: Build docs
+        run: make build-docs
   test:
     name: Run test suite
     runs-on: ubuntu-latest

@@ -649,6 +649,7 @@ class SecretsApp:
     def calculate(self, cred_id: bytes, challenge: Optional[int] = None) -> bytes:
         """
         Calculate the OTP code for the credential named `cred_id`, and with challenge `challenge`.
+
         :param cred_id: The name of the credential
         :param challenge: Challenge for the calculations (TOTP only).
             Should be equal to: timestamp/period. The commonly used period value is 30.
