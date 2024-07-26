@@ -7,7 +7,7 @@
 
 from fido2.hid import CtapHidDevice
 
-from nitrokey.trussed import Fido2Certs, NitrokeyTrussedDevice, Version
+from nitrokey.trussed import Fido2Certs, TrussedDevice, Version
 
 FIDO2_CERTS = [
     Fido2Certs(
@@ -27,7 +27,7 @@ FIDO2_CERTS = [
 ]
 
 
-class Nitrokey3Device(NitrokeyTrussedDevice):
+class NK3(TrussedDevice):
     """A Nitrokey 3 device running the firmware."""
 
     def __init__(self, device: CtapHidDevice) -> None:
@@ -35,14 +35,14 @@ class Nitrokey3Device(NitrokeyTrussedDevice):
 
     @property
     def pid(self) -> int:
-        from . import _PID_NITROKEY3_DEVICE
+        from . import _PID_NK3_DEVICE
 
-        return _PID_NITROKEY3_DEVICE
+        return _PID_NK3_DEVICE
 
     @property
     def name(self) -> str:
         return "Nitrokey 3"
 
     @classmethod
-    def from_device(cls, device: CtapHidDevice) -> "Nitrokey3Device":
+    def from_device(cls, device: CtapHidDevice) -> "NK3":
         return cls(device)

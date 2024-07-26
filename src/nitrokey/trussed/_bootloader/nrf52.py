@@ -21,7 +21,7 @@ from ecdsa.keys import BadSignatureError
 
 from nitrokey.trussed import Uuid, Version
 
-from . import FirmwareMetadata, NitrokeyTrussedBootloader, ProgressCallback, Variant
+from . import FirmwareMetadata, ProgressCallback, TrussedBootloader, Variant
 from .nrf52_upload.dfu.dfu_transport import DfuEvent
 from .nrf52_upload.dfu.dfu_transport_serial import DfuTransportSerial
 from .nrf52_upload.dfu.init_packet_pb import InitPacketPB
@@ -35,7 +35,7 @@ FILENAME_PATTERN = re.compile(
     "(firmware|alpha)-(nk3..|nkpk)-nrf52-(?P<version>.*)\\.zip$"
 )
 
-T = TypeVar("T", bound="NitrokeyTrussedBootloaderNrf52")
+T = TypeVar("T", bound="TrussedBootloaderNrf52")
 
 
 @dataclass
@@ -119,7 +119,7 @@ class Image:
         return image
 
 
-class NitrokeyTrussedBootloaderNrf52(NitrokeyTrussedBootloader):
+class TrussedBootloaderNrf52(TrussedBootloader):
     def __init__(self, path: str, uuid: int) -> None:
         self._path = path
         self._uuid = uuid

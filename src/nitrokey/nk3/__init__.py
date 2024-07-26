@@ -7,15 +7,15 @@
 
 from typing import List, Optional
 
-from nitrokey.trussed import DeviceData, NitrokeyTrussedBase
+from nitrokey.trussed import DeviceData, TrussedBase
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey
 
-from ._bootloader import Nitrokey3Bootloader as Nitrokey3Bootloader  # noqa: F401
-from ._device import Nitrokey3Device as Nitrokey3Device  # noqa: F401
+from ._bootloader import NK3Bootloader as NK3Bootloader  # noqa: F401
+from ._device import NK3 as NK3  # noqa: F401
 
-_PID_NITROKEY3_DEVICE = 0x42B2
-_PID_NITROKEY3_LPC55_BOOTLOADER = 0x42DD
-_PID_NITROKEY3_NRF52_BOOTLOADER = 0x42E8
+_PID_NK3_DEVICE = 0x42B2
+_PID_NK3_LPC55_BOOTLOADER = 0x42DD
+_PID_NK3_NRF52_BOOTLOADER = 0x42E8
 
 NK3_DATA = DeviceData(
     name="Nitrokey 3",
@@ -36,16 +36,16 @@ NK3_DATA = DeviceData(
 )
 
 
-def list() -> List[NitrokeyTrussedBase]:
-    devices: List[NitrokeyTrussedBase] = []
-    devices.extend(Nitrokey3Bootloader.list())
-    devices.extend(Nitrokey3Device.list())
+def list() -> List[TrussedBase]:
+    devices: List[TrussedBase] = []
+    devices.extend(NK3Bootloader.list())
+    devices.extend(NK3.list())
     return devices
 
 
-def open(path: str) -> Optional[NitrokeyTrussedBase]:
-    device = Nitrokey3Device.open(path)
-    bootloader_device = Nitrokey3Bootloader.open(path)
+def open(path: str) -> Optional[TrussedBase]:
+    device = NK3.open(path)
+    bootloader_device = NK3Bootloader.open(path)
     if device and bootloader_device:
         raise Exception(f"Found multiple devices at path {path}")
     if device:

@@ -20,19 +20,19 @@ from spsdk.utils.usbfilter import USBDeviceFilter
 
 from nitrokey.trussed import Uuid, Version
 
-from . import FirmwareMetadata, NitrokeyTrussedBootloader, ProgressCallback, Variant
+from . import FirmwareMetadata, ProgressCallback, TrussedBootloader, Variant
 
 RKTH = bytes.fromhex("050aad3e77791a81e59c5b2ba5a158937e9460ee325d8ccba09734b8fdebb171")
 KEK = bytes([0xAA] * 32)
 UUID_LEN = 4
 FILENAME_PATTERN = re.compile("(firmware|alpha)-nk3..-lpc55-(?P<version>.*)\\.sb2$")
 
-T = TypeVar("T", bound="NitrokeyTrussedBootloaderLpc55")
+T = TypeVar("T", bound="TrussedBootloaderLpc55")
 
 logger = logging.getLogger(__name__)
 
 
-class NitrokeyTrussedBootloaderLpc55(NitrokeyTrussedBootloader):
+class TrussedBootloaderLpc55(TrussedBootloader):
     """A Nitrokey 3 device running the LPC55 bootloader."""
 
     def __init__(self, device: UsbDevice):

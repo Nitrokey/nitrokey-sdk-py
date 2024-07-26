@@ -6,10 +6,10 @@
 # copied, modified, or distributed except according to those terms.
 
 
-class NitrokeyTrussedException(Exception):
+class TrussedException(Exception):
     pass
 
 
-class TimeoutException(NitrokeyTrussedException):
+class TimeoutException(TrussedException):
     def __init__(self) -> None:
         super().__init__("The user confirmation request timed out")

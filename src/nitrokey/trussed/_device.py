@@ -15,10 +15,10 @@ from typing import Optional, Sequence, TypeVar, Union
 
 from fido2.hid import CtapHidDevice, open_device
 
-from ._base import NitrokeyTrussedBase
+from ._base import TrussedBase
 from ._utils import Fido2Certs, Uuid
 
-T = TypeVar("T", bound="NitrokeyTrussedDevice")
+T = TypeVar("T", bound="TrussedDevice")
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class App(Enum):
     ADMIN = 0x72
 
 
-class NitrokeyTrussedDevice(NitrokeyTrussedBase):
+class TrussedDevice(TrussedBase):
     def __init__(
         self, device: CtapHidDevice, fido2_certs: Sequence[Fido2Certs]
     ) -> None:

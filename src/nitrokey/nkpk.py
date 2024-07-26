@@ -10,20 +10,11 @@ from typing import List, Optional, Sequence
 from fido2.hid import CtapHidDevice
 
 from nitrokey import _VID_NITROKEY
-from nitrokey.trussed import (
-    DeviceData,
-    Fido2Certs,
-    NitrokeyTrussedBase,
-    NitrokeyTrussedDevice,
-    Version,
-)
-from nitrokey.trussed._bootloader.nrf52 import (
-    NitrokeyTrussedBootloaderNrf52,
-    SignatureKey,
-)
+from nitrokey.trussed import DeviceData, Fido2Certs, TrussedBase, TrussedDevice, Version
+from nitrokey.trussed._bootloader.nrf52 import SignatureKey, TrussedBootloaderNrf52
 
-_PID_NITROKEY_PASSKEY_DEVICE = 0x42F3
-_PID_NITROKEY_PASSKEY_BOOTLOADER = 0x42F4
+_PID_NKPK_DEVICE = 0x42F3
+_PID_NKPK_BOOTLOADER = 0x42F4
 
 _FIDO2_CERTS = [
     Fido2Certs(
@@ -53,55 +44,55 @@ NKPK_DATA = DeviceData(
 )
 
 
-class NitrokeyPasskeyDevice(NitrokeyTrussedDevice):
+class NKPK(TrussedDevice):
     def __init__(self, device: CtapHidDevice) -> None:
         super().__init__(device, _FIDO2_CERTS)
 
     @property
     def pid(self) -> int:
-        return _PID_NITROKEY_PASSKEY_DEVICE
+        return _PID_NKPK_DEVICE
 
     @property
     def name(self) -> str:
         return "Nitrokey Passkey"
 
     @classmethod
-    def from_device(cls, device: CtapHidDevice) -> "NitrokeyPasskeyDevice":
+    def from_device(cls, device: CtapHidDevice) -> "NKPK":
         return cls(device)
 
 
-class NitrokeyPasskeyBootloader(NitrokeyTrussedBootloaderNrf52):
+class NKPKBootloader(TrussedBootloaderNrf52):
     @property
     def name(self) -> str:
         return "Nitrokey Passkey Bootloader"
 
     @property
     def pid(self) -> int:
-        return _PID_NITROKEY_PASSKEY_BOOTLOADER
+        return _PID_NKPK_BOOTLOADER
 
     @classmethod
-    def list(cls) -> List["NitrokeyPasskeyBootloader"]:
-        return cls.list_vid_pid(_VID_NITROKEY, _PID_NITROKEY_PASSKEY_BOOTLOADER)
+    def list(cls) -> List["NKPKBootloader"]:
+        return cls.list_vid_pid(_VID_NITROKEY, _PID_NKPK_BOOTLOADER)
 
     @classmethod
-    def open(cls, path: str) -> Optional["NitrokeyPasskeyBootloader"]:
-        return cls.open_vid_pid(_VID_NITROKEY, _PID_NITROKEY_PASSKEY_BOOTLOADER, path)
+    def open(cls, path: str) -> Optional["NKPKBootloader"]:
+        return cls.open_vid_pid(_VID_NITROKEY, _PID_NKPK_BOOTLOADER, path)
 
     @property
     def signature_keys(self) -> Sequence[SignatureKey]:
         return NKPK_DATA.nrf52_signature_keys
 
 
-def list() -> List[NitrokeyTrussedBase]:
-    devices: List[NitrokeyTrussedBase] = []
-    devices.extend(NitrokeyPasskeyBootloader.list())
-    devices.extend(NitrokeyPasskeyDevice.list())
+def list() -> List[TrussedBase]:
+    devices: List[TrussedBase] = []
+    devices.extend(NKPKBootloader.list())
+    devices.extend(NKPK.list())
     return devices
 
 
-def open(path: str) -> Optional[NitrokeyTrussedBase]:
-    device = NitrokeyPasskeyDevice.open(path)
-    bootloader_device = NitrokeyPasskeyBootloader.open(path)
+def open(path: str) -> Optional[TrussedBase]:
+    device = NKPK.open(path)
+    bootloader_device = NKPKBootloader.open(path)
     if device and bootloader_device:
         raise Exception(f"Found multiple devices at path {path}")
     if device:

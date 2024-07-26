@@ -17,8 +17,8 @@ from typing import Any, Callable, Iterator, List, Optional
 from spsdk.mboot.exceptions import McuBootConnectionError
 
 from nitrokey._helpers import Retries
-from nitrokey.nk3 import NK3_DATA, Nitrokey3Bootloader, Nitrokey3Device
-from nitrokey.trussed import NitrokeyTrussedBase, TimeoutException, Version
+from nitrokey.nk3 import NK3, NK3_DATA, NK3Bootloader
+from nitrokey.trussed import TimeoutException, TrussedBase, Version
 from nitrokey.trussed._bootloader import (
     Device,
     FirmwareContainer,
@@ -150,9 +150,9 @@ class Updater:
     def __init__(
         self,
         ui: UpdateUi,
-        await_bootloader: Callable[[], Nitrokey3Bootloader],
+        await_bootloader: Callable[[], NK3Bootloader],
         await_device: Callable[
-            [Optional[int], Optional[Callable[[int, int], None]]], Nitrokey3Device
+            [Optional[int], Optional[Callable[[int, int], None]]], NK3
         ],
     ) -> None:
         self.ui = ui
@@ -161,14 +161,12 @@ class Updater:
 
     def update(
         self,
-        device: NitrokeyTrussedBase,
+        device: TrussedBase,
         image: Optional[str],
         update_version: Optional[str],
         ignore_pynitrokey_version: bool = False,
     ) -> Version:
-        current_version = (
-            device.admin.version() if isinstance(device, Nitrokey3Device) else None
-        )
+        current_version = device.admin.version() if isinstance(device, NK3) else None
         logger.info(f"Firmware version before update: {current_version or ''}")
         container = self._prepare_update(image, update_version, current_version)
 
@@ -312,10 +310,8 @@ class Updater:
                 self.ui.confirm_update_same_version(same_version)
 
     @contextmanager
-    def _get_bootloader(
-        self, device: NitrokeyTrussedBase
-    ) -> Iterator[Nitrokey3Bootloader]:
-        if isinstance(device, Nitrokey3Device):
+    def _get_bootloader(self, device: TrussedBase) -> Iterator[NK3Bootloader]:
+        if isinstance(device, NK3):
             self.ui.request_bootloader_confirmation()
             try:
                 device.admin.reboot(BootMode.BOOTROM)
@@ -353,13 +349,13 @@ class Updater:
                 if platform.system() == "Linux":
                     msgs += ["Are the Nitrokey udev rules installed and active?"]
                 raise self.ui.error(*msgs, exc)
-        elif isinstance(device, Nitrokey3Bootloader):
+        elif isinstance(device, NK3Bootloader):
             yield device
         else:
             raise self.ui.error(f"Unexpected Nitrokey 3 device: {device}")
 
     def _perform_update(
-        self, device: Nitrokey3Bootloader, container: FirmwareContainer
+        self, device: NK3Bootloader, container: FirmwareContainer
     ) -> None:
         logger.debug("Starting firmware update")
         image = container.images[device.variant]

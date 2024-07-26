@@ -12,10 +12,10 @@ from nitrokey import _VID_NITROKEY
 
 from ._utils import Uuid
 
-T = TypeVar("T", bound="NitrokeyTrussedBase")
+T = TypeVar("T", bound="TrussedBase")
 
 
-class NitrokeyTrussedBase(ABC):
+class TrussedBase(ABC):
     """
     Base class for Nitrokey devices using the Trussed framework and running
     the firmware or the bootloader.

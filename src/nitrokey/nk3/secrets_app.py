@@ -18,7 +18,7 @@ from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 import tlv8
 from semver.version import Version
 
-from nitrokey.nk3 import Nitrokey3Device
+from nitrokey.nk3 import NK3
 from nitrokey.trussed import App
 
 LogFn = Callable[[str], Any]
@@ -303,12 +303,12 @@ class SecretsApp:
 
     log: logging.Logger
     logfn: LogFn
-    dev: Nitrokey3Device
+    dev: NK3
     write_corpus_fn: Optional[WriteCorpusFn]
     _cache_status: Optional[SelectResponse]
     _metadata: dict[Any, Any]
 
-    def __init__(self, dev: Nitrokey3Device, logfn: Optional[LogFn] = None):
+    def __init__(self, dev: NK3, logfn: Optional[LogFn] = None):
         self._cache_status = None
         self.write_corpus_fn = None
         self.log = logging.getLogger("otpapp")

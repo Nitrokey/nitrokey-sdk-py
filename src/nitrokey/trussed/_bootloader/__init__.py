@@ -17,7 +17,7 @@ from re import Pattern
 from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple, Union
 from zipfile import ZipFile
 
-from .._base import NitrokeyTrussedBase
+from .._base import TrussedBase
 from .._utils import Version
 
 if TYPE_CHECKING:
@@ -109,7 +109,7 @@ class FirmwareMetadata:
     signed_by_nitrokey: bool = False
 
 
-class NitrokeyTrussedBootloader(NitrokeyTrussedBase):
+class TrussedBootloader(TrussedBase):
     @abstractmethod
     def update(
         self,

@@ -6,7 +6,7 @@ from typing import Optional
 from fido2 import cbor
 from fido2.ctap import CtapError
 
-from . import App, NitrokeyTrussedDevice, TimeoutException, Uuid, Version
+from . import App, TimeoutException, TrussedDevice, Uuid, Version
 
 RNG_LEN = 57
 UUID_LEN = 16
@@ -149,7 +149,7 @@ class ConfigStatus(Enum):
 
 
 class AdminApp:
-    def __init__(self, device: NitrokeyTrussedDevice) -> None:
+    def __init__(self, device: TrussedDevice) -> None:
         self.device = device
 
     def _call(
