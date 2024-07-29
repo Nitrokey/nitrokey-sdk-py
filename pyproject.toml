@@ -30,6 +30,7 @@ spsdk = ">=2,<2.3"
 # nrf52
 ecdsa = "^0.19"
 protobuf = "^3.17.3"
+pyserial = "^3.5"
 
 [tool.poetry.group.dev]
 optional = true
