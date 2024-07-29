@@ -112,3 +112,18 @@ jobs:
         run: make update
       - name: Run test suite
         run: make test
+  test-pip:
+    name: Run test suite with pip installation
+    runs-on: ubuntu-latest
+    container: python:3.9-slim
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install required packages
+        run: apt update && apt install -y ${REQUIRED_PACKAGES}
+      - name: Create virtual environment
+        run: python3 -m venv venv
+      - name: Install SDK
+        run: ./venv/bin/pip install .
+      - name: Run test suite
+        run: ./venv/bin/python -m unittest -v
