@@ -5,9 +5,8 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
-from nitrokey.trussed import TrussedBase
 from nitrokey.trussed._bootloader import ModelData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey
 
@@ -36,14 +35,14 @@ _NK3_DATA = ModelData(
 )
 
 
-def list() -> List[TrussedBase]:
-    devices: List[TrussedBase] = []
+def list() -> List[Union[NK3, NK3Bootloader]]:
+    devices: List[Union[NK3, NK3Bootloader]] = []
     devices.extend(NK3Bootloader.list())
     devices.extend(NK3.list())
     return devices
 
 
-def open(path: str) -> Optional[TrussedBase]:
+def open(path: str) -> Optional[Union[NK3, NK3Bootloader]]:
     device = NK3.open(path)
     bootloader_device = NK3Bootloader.open(path)
     if device and bootloader_device:

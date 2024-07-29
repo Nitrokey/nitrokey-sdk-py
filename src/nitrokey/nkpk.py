@@ -5,12 +5,12 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Union
 
 from fido2.hid import CtapHidDevice
 
 from nitrokey import _VID_NITROKEY
-from nitrokey.trussed import Fido2Certs, TrussedBase, TrussedDevice, Version
+from nitrokey.trussed import Fido2Certs, TrussedDevice, Version
 from nitrokey.trussed._bootloader import ModelData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey, TrussedBootloaderNrf52
 
@@ -83,14 +83,14 @@ class NKPKBootloader(TrussedBootloaderNrf52):
         return _NKPK_DATA.nrf52_signature_keys
 
 
-def list() -> List[TrussedBase]:
-    devices: List[TrussedBase] = []
+def list() -> List[Union[NKPK, NKPKBootloader]]:
+    devices: List[Union[NKPK, NKPKBootloader]] = []
     devices.extend(NKPKBootloader.list())
     devices.extend(NKPK.list())
     return devices
 
 
-def open(path: str) -> Optional[TrussedBase]:
+def open(path: str) -> Optional[Union[NKPK, NKPKBootloader]]:
     device = NKPK.open(path)
     bootloader_device = NKPKBootloader.open(path)
     if device and bootloader_device:
