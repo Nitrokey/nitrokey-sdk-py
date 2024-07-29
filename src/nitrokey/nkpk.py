@@ -72,14 +72,14 @@ class NKPKBootloader(TrussedBootloaderNrf52):
 
     @classmethod
     def list(cls) -> List["NKPKBootloader"]:
-        return cls.list_vid_pid(_VID_NITROKEY, _PID_NKPK_BOOTLOADER)
+        return cls._list_vid_pid(_VID_NITROKEY, _PID_NKPK_BOOTLOADER)
 
     @classmethod
     def open(cls, path: str) -> Optional["NKPKBootloader"]:
-        return cls.open_vid_pid(_VID_NITROKEY, _PID_NKPK_BOOTLOADER, path)
+        return cls._open_vid_pid(_VID_NITROKEY, _PID_NKPK_BOOTLOADER, path)
 
     @property
-    def signature_keys(self) -> Sequence[SignatureKey]:
+    def _signature_keys(self) -> Sequence[SignatureKey]:
         return _NKPK_DATA.nrf52_signature_keys
 
 

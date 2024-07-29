@@ -133,7 +133,7 @@ class TrussedBootloaderNrf52(TrussedBootloader):
 
     @property
     @abstractmethod
-    def signature_keys(self) -> Sequence[SignatureKey]: ...
+    def _signature_keys(self) -> Sequence[SignatureKey]: ...
 
     def close(self) -> None:
         pass
@@ -149,7 +149,7 @@ class TrussedBootloaderNrf52(TrussedBootloader):
         # we have to implement this ourselves because we want to read the files
         # from memory, not from the filesystem
 
-        image = Image.parse(data, self.signature_keys)
+        image = Image.parse(data, self._signature_keys)
 
         time.sleep(3)
 
@@ -169,11 +169,11 @@ class TrussedBootloaderNrf52(TrussedBootloader):
         dfu.close()
 
     @classmethod
-    def list_vid_pid(cls: type[T], vid: int, pid: int) -> list[T]:
+    def _list_vid_pid(cls: type[T], vid: int, pid: int) -> list[T]:
         return [cls(port, serial) for port, serial in _list_ports(vid, pid)]
 
     @classmethod
-    def open_vid_pid(cls: type[T], vid: int, pid: int, path: str) -> Optional[T]:
+    def _open_vid_pid(cls: type[T], vid: int, pid: int, path: str) -> Optional[T]:
         for port, serial in _list_ports(vid, pid):
             if path == port:
                 return cls(path, serial)

@@ -36,12 +36,12 @@ class TrussedDevice(TrussedBase):
     def __init__(
         self, device: CtapHidDevice, fido2_certs: Sequence[Fido2Certs]
     ) -> None:
-        self.validate_vid_pid(device.descriptor.vid, device.descriptor.pid)
+        self._validate_vid_pid(device.descriptor.vid, device.descriptor.pid)
 
         self.device = device
         self.fido2_certs = fido2_certs
         self._path = _device_path_to_str(device.descriptor.path)
-        self.logger = logger.getChild(self._path)
+        self._logger = logger.getChild(self._path)
 
         from .admin_app import AdminApp
 

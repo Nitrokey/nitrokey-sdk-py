@@ -49,7 +49,7 @@ class NK3BootloaderLpc55(TrussedBootloaderLpc55, NK3Bootloader):
     def _list(cls) -> List["NK3BootloaderLpc55"]:
         from . import _PID_NK3_LPC55_BOOTLOADER
 
-        return cls.list_vid_pid(_VID_NITROKEY, _PID_NK3_LPC55_BOOTLOADER)
+        return cls._list_vid_pid(_VID_NITROKEY, _PID_NK3_LPC55_BOOTLOADER)
 
 
 class NK3BootloaderNrf52(TrussedBootloaderNrf52, NK3Bootloader):
@@ -67,16 +67,16 @@ class NK3BootloaderNrf52(TrussedBootloaderNrf52, NK3Bootloader):
     def _list(cls) -> List["NK3BootloaderNrf52"]:
         from . import _PID_NK3_NRF52_BOOTLOADER
 
-        return cls.list_vid_pid(_VID_NITROKEY, _PID_NK3_NRF52_BOOTLOADER)
+        return cls._list_vid_pid(_VID_NITROKEY, _PID_NK3_NRF52_BOOTLOADER)
 
     @classmethod
     def _open(cls, path: str) -> Optional["NK3BootloaderNrf52"]:
         from . import _PID_NK3_NRF52_BOOTLOADER
 
-        return cls.open_vid_pid(_VID_NITROKEY, _PID_NK3_NRF52_BOOTLOADER, path)
+        return cls._open_vid_pid(_VID_NITROKEY, _PID_NK3_NRF52_BOOTLOADER, path)
 
     @property
-    def signature_keys(self) -> Sequence[SignatureKey]:
+    def _signature_keys(self) -> Sequence[SignatureKey]:
         from . import _NK3_DATA
 
         return _NK3_DATA.nrf52_signature_keys

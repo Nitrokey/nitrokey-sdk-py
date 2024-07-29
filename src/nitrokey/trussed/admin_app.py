@@ -199,7 +199,7 @@ class AdminApp:
                         raise e
         except OSError as e:
             # OS error is expected as the device does not respond during the reboot
-            self.device.logger.debug("ignoring OSError after reboot", exc_info=e)
+            self.device._logger.debug("ignoring OSError after reboot", exc_info=e)
         return True
 
     def rng(self) -> bytes:
@@ -269,7 +269,7 @@ class AdminApp:
             reply = self._call(AdminCommand.FACTORY_RESET, response_len=1)
         except OSError as e:
             if e.errno == 5:
-                self.device.logger.debug("ignoring OSError after reboot", exc_info=e)
+                self.device._logger.debug("ignoring OSError after reboot", exc_info=e)
                 return True
             else:
                 raise e

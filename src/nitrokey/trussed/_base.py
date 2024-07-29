@@ -27,7 +27,7 @@ class TrussedBase(ABC):
     def __exit__(self, exc_type: None, exc_val: None, exc_tb: None) -> None:
         self.close()
 
-    def validate_vid_pid(self, vid: int, pid: int) -> None:
+    def _validate_vid_pid(self, vid: int, pid: int) -> None:
         if (vid, pid) != (self.vid, self.pid):
             raise ValueError(
                 f"Not a {self.name} device: expected VID:PID "

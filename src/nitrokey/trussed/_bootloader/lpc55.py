@@ -36,7 +36,7 @@ class TrussedBootloaderLpc55(TrussedBootloader):
     """A Nitrokey 3 device running the LPC55 bootloader."""
 
     def __init__(self, device: UsbDevice):
-        self.validate_vid_pid(device.vid, device.pid)
+        self._validate_vid_pid(device.vid, device.pid)
         self._path = device.path
         self.device = McuBoot(MbootUSBInterface(device))
 
@@ -101,7 +101,7 @@ class TrussedBootloaderLpc55(TrussedBootloader):
             raise Exception(f"Firmware update failed with status {self.status}")
 
     @classmethod
-    def list_vid_pid(cls: type[T], vid: int, pid: int) -> list[T]:
+    def _list_vid_pid(cls: type[T], vid: int, pid: int) -> list[T]:
         device_filter = USBDeviceFilter(f"0x{vid:x}:0x{pid:x}")
         devices = []
         for device in UsbDevice.enumerate(device_filter):
