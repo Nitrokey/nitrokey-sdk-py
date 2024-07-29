@@ -18,11 +18,30 @@ The SDK supports these devices and features:
 
 ## Installation
 
-The Nitrokey Python SDK has not been released yet.
-You can install the current version from GitHub using the following command:
+The Nitrokey Python SDK is released to the [Python Package Index][pypi] (PyPI) and can be installed with `pip`:
+
+[pypi]: https://pypi.org/project/nitrokey/
 
 ```
-$ pip install "nitrokey @ git+https://github.com/Nitrokey/nitrokey-sdk-py.git"
+$ pip install nitrokey
+```
+
+The releases are also available as [signed tags][releases] in the GitHub repository [Nitrokey/nitrokey-sdk-py][github].
+
+[releases]: https://github.com/Nitrokey/nitrokey-sdk-py/releases
+[github]: https://github.com/Nitrokey/nitrokey-sdk-py
+
+## Getting Started
+
+```python
+from nitrokey.nk3 import NK3
+from nitrokey.nkpk import NKPK
+
+print("Connected Nitrokey devices:")
+for device in NK3.list():
+    print(f"- {device.name} at {device.path}")
+for device in NKPK.list():
+    print(f"- {device.name} at {device.path}")
 ```
 
 ## Compatibility
