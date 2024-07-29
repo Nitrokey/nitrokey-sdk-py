@@ -77,6 +77,6 @@ class NK3BootloaderNrf52(TrussedBootloaderNrf52, NK3Bootloader):
 
     @property
     def signature_keys(self) -> Sequence[SignatureKey]:
-        from . import NK3_DATA
+        from . import _NK3_DATA
 
-        return NK3_DATA.nrf52_signature_keys
+        return _NK3_DATA.nrf52_signature_keys

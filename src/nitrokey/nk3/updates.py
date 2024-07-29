@@ -17,7 +17,7 @@ from typing import Any, Callable, Iterator, List, Optional
 from spsdk.mboot.exceptions import McuBootConnectionError
 
 from nitrokey._helpers import Retries
-from nitrokey.nk3 import NK3, NK3_DATA, NK3Bootloader
+from nitrokey.nk3 import NK3, NK3Bootloader
 from nitrokey.trussed import TimeoutException, TrussedBase, Version
 from nitrokey.trussed._bootloader import (
     Device,
@@ -51,7 +51,7 @@ class UpdatePath(enum.Enum):
 
 
 def get_firmware_update(release: Release) -> Asset:
-    return release.require_asset(NK3_DATA.firmware_pattern)
+    return release.require_asset(Device.NITROKEY3.firmware_pattern)
 
 
 def get_extra_information(upath: UpdatePath) -> List[str]:
@@ -196,7 +196,7 @@ class Updater:
                     bootloader.variant,
                     container.images[bootloader.variant],
                     container.version,
-                    NK3_DATA,
+                    Device.NITROKEY3,
                 )
             except Exception as e:
                 raise self.ui.error("Failed to validate firmware image", e)
@@ -235,7 +235,7 @@ class Updater:
             self._validate_version(current_version, container.version)
             return container
         else:
-            repository = NK3_DATA.firmware_repository
+            repository = Device.NITROKEY3.firmware_repository
             if version:
                 try:
                     logger.info(f"Downloading firmare version {version}")

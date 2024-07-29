@@ -10,7 +10,8 @@ from typing import List, Optional, Sequence
 from fido2.hid import CtapHidDevice
 
 from nitrokey import _VID_NITROKEY
-from nitrokey.trussed import DeviceData, Fido2Certs, TrussedBase, TrussedDevice, Version
+from nitrokey.trussed import Fido2Certs, TrussedBase, TrussedDevice, Version
+from nitrokey.trussed._bootloader import DeviceData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey, TrussedBootloaderNrf52
 
 _PID_NKPK_DEVICE = 0x42F3
@@ -25,8 +26,7 @@ _FIDO2_CERTS = [
     ),
 ]
 
-NKPK_DATA = DeviceData(
-    name="Nitrokey Passkey",
+_NKPK_DATA = DeviceData(
     firmware_repository_name="nitrokey-passkey-firmware",
     firmware_pattern_string="firmware-nkpk-v.*\\.zip$",
     nrf52_signature_keys=[
@@ -80,7 +80,7 @@ class NKPKBootloader(TrussedBootloaderNrf52):
 
     @property
     def signature_keys(self) -> Sequence[SignatureKey]:
-        return NKPK_DATA.nrf52_signature_keys
+        return _NKPK_DATA.nrf52_signature_keys
 
 
 def list() -> List[TrussedBase]:

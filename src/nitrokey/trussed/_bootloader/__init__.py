@@ -9,6 +9,7 @@ import enum
 import hashlib
 import json
 import logging
+import re
 import sys
 from abc import abstractmethod
 from dataclasses import dataclass
@@ -17,11 +18,13 @@ from re import Pattern
 from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple, Union
 from zipfile import ZipFile
 
+from nitrokey.updates import Repository
+
 from .._base import TrussedBase
 from .._utils import Version
 
 if TYPE_CHECKING:
-    from .. import DeviceData
+    from .nrf52 import SignatureKey
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +32,39 @@ logger = logging.getLogger(__name__)
 ProgressCallback = Callable[[int, int], None]
 
 
+@dataclass
+class DeviceData:
+    firmware_repository_name: str
+    firmware_pattern_string: str
+    nrf52_signature_keys: list["SignatureKey"]
+
+
 class Device(enum.Enum):
     NITROKEY3 = "Nitrokey 3"
     NITROKEY_PASSKEY = "Nitrokey Passkey"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @property
+    def firmware_repository(self) -> Repository:
+        return Repository(owner="Nitrokey", name=self._data.firmware_repository_name)
+
+    @property
+    def firmware_pattern(self) -> Pattern[str]:
+        return re.compile(self._data.firmware_pattern_string)
+
+    @property
+    def _data(self) -> "DeviceData":
+        if self == Device.NITROKEY3:
+            from nitrokey.nk3 import _NK3_DATA
+
+            return _NK3_DATA
+        if self == Device.NITROKEY_PASSKEY:
+            from nitrokey.nkpk import _NKPK_DATA
+
+            return _NKPK_DATA
+        raise ValueError(f"Unknown device {self}")
 
     @classmethod
     def from_str(cls, s: str) -> "Device":
@@ -148,7 +181,7 @@ def validate_firmware_image(
     variant: Variant,
     data: bytes,
     version: Optional[Version],
-    device: "DeviceData",
+    device: Device,
 ) -> FirmwareMetadata:
     try:
         metadata = parse_firmware_image(variant, data, device)
@@ -175,7 +208,7 @@ def validate_firmware_image(
 
 
 def parse_firmware_image(
-    variant: Variant, data: bytes, device: "DeviceData"
+    variant: Variant, data: bytes, device: Device
 ) -> FirmwareMetadata:
     from .lpc55 import parse_firmware_image as parse_firmware_image_lpc55
     from .nrf52 import parse_firmware_image as parse_firmware_image_nrf52
@@ -183,6 +216,6 @@ def parse_firmware_image(
     if variant == Variant.LPC55:
         return parse_firmware_image_lpc55(data)
     elif variant == Variant.NRF52:
-        return parse_firmware_image_nrf52(data, device.nrf52_signature_keys)
+        return parse_firmware_image_nrf52(data, device._data.nrf52_signature_keys)
     else:
         raise ValueError(f"Unexpected variant {variant}")
