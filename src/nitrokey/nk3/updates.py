@@ -20,8 +20,8 @@ from nitrokey._helpers import Retries
 from nitrokey.nk3 import NK3, NK3Bootloader
 from nitrokey.trussed import TimeoutException, TrussedBase, Version
 from nitrokey.trussed._bootloader import (
-    Device,
     FirmwareContainer,
+    Model,
     Variant,
     validate_firmware_image,
 )
@@ -51,7 +51,7 @@ class UpdatePath(enum.Enum):
 
 
 def get_firmware_update(release: Release) -> Asset:
-    return release.require_asset(Device.NITROKEY3.firmware_pattern)
+    return release.require_asset(Model.NK3.firmware_pattern)
 
 
 def get_extra_information(upath: UpdatePath) -> List[str]:
@@ -196,7 +196,7 @@ class Updater:
                     bootloader.variant,
                     container.images[bootloader.variant],
                     container.version,
-                    Device.NITROKEY3,
+                    Model.NK3,
                 )
             except Exception as e:
                 raise self.ui.error("Failed to validate firmware image", e)
@@ -229,13 +229,13 @@ class Updater:
     ) -> FirmwareContainer:
         if image:
             try:
-                container = FirmwareContainer.parse(image, Device.NITROKEY3)
+                container = FirmwareContainer.parse(image, Model.NK3)
             except Exception as e:
                 raise self.ui.error("Failed to parse firmware container", e)
             self._validate_version(current_version, container.version)
             return container
         else:
-            repository = Device.NITROKEY3.firmware_repository
+            repository = Model.NK3.firmware_repository
             if version:
                 try:
                     logger.info(f"Downloading firmare version {version}")
@@ -277,7 +277,7 @@ class Updater:
             )
 
         try:
-            container = FirmwareContainer.parse(BytesIO(data), Device.NITROKEY3)
+            container = FirmwareContainer.parse(BytesIO(data), Model.NK3)
         except Exception as e:
             raise self.ui.error(
                 f"Failed to parse firmware container for {update.tag}", e

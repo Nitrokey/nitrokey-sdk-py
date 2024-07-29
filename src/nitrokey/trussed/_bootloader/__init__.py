@@ -33,15 +33,15 @@ ProgressCallback = Callable[[int, int], None]
 
 
 @dataclass
-class DeviceData:
+class ModelData:
     firmware_repository_name: str
     firmware_pattern_string: str
     nrf52_signature_keys: list["SignatureKey"]
 
 
-class Device(enum.Enum):
-    NITROKEY3 = "Nitrokey 3"
-    NITROKEY_PASSKEY = "Nitrokey Passkey"
+class Model(enum.Enum):
+    NK3 = "Nitrokey 3"
+    NKPK = "Nitrokey Passkey"
 
     def __str__(self) -> str:
         return self.value
@@ -55,23 +55,23 @@ class Device(enum.Enum):
         return re.compile(self._data.firmware_pattern_string)
 
     @property
-    def _data(self) -> "DeviceData":
-        if self == Device.NITROKEY3:
+    def _data(self) -> "ModelData":
+        if self == Model.NK3:
             from nitrokey.nk3 import _NK3_DATA
 
             return _NK3_DATA
-        if self == Device.NITROKEY_PASSKEY:
+        if self == Model.NKPK:
             from nitrokey.nkpk import _NKPK_DATA
 
             return _NKPK_DATA
-        raise ValueError(f"Unknown device {self}")
+        raise ValueError(f"Unknown model {self}")
 
     @classmethod
-    def from_str(cls, s: str) -> "Device":
-        for device in cls:
-            if device.value == s:
-                return device
-        raise ValueError(f"Unknown device {s}")
+    def from_str(cls, s: str) -> "Model":
+        for model in cls:
+            if model.value == s:
+                return model
+        raise ValueError(f"Unknown model {s}")
 
 
 class Variant(enum.Enum):
@@ -103,7 +103,7 @@ class FirmwareContainer:
     images: Dict[Variant, bytes]
 
     @classmethod
-    def parse(cls, path: Union[str, BytesIO], device: Device) -> "FirmwareContainer":
+    def parse(cls, path: Union[str, BytesIO], model: Model) -> "FirmwareContainer":
         with ZipFile(path) as z:
             checksum_lines = z.read("sha256sums").decode("utf-8").splitlines()
             checksum_pairs = [line.split("  ", maxsplit=1) for line in checksum_lines]
@@ -112,10 +112,10 @@ class FirmwareContainer:
             manifest_bytes = z.read("manifest.json")
             _validate_checksum(checksums, "manifest.json", manifest_bytes)
             manifest = json.loads(manifest_bytes)
-            actual_device = Device.from_str(manifest["device"])
-            if actual_device != device:
+            actual_model = Model.from_str(manifest["device"])
+            if actual_model != model:
                 raise ValueError(
-                    f"Expected firmware container for {device.value}, got {actual_device.value}"
+                    f"Expected firmware container for {model}, got {actual_model}"
                 )
             version = Version.from_v_str(manifest["version"])
             pynitrokey = None
@@ -181,10 +181,10 @@ def validate_firmware_image(
     variant: Variant,
     data: bytes,
     version: Optional[Version],
-    device: Device,
+    model: Model,
 ) -> FirmwareMetadata:
     try:
-        metadata = parse_firmware_image(variant, data, device)
+        metadata = parse_firmware_image(variant, data, model)
     except Exception:
         logger.exception("Failed to parse firmware image", exc_info=sys.exc_info())
         raise Exception("Failed to parse firmware image")
@@ -208,7 +208,7 @@ def validate_firmware_image(
 
 
 def parse_firmware_image(
-    variant: Variant, data: bytes, device: Device
+    variant: Variant, data: bytes, model: Model
 ) -> FirmwareMetadata:
     from .lpc55 import parse_firmware_image as parse_firmware_image_lpc55
     from .nrf52 import parse_firmware_image as parse_firmware_image_nrf52
@@ -216,6 +216,6 @@ def parse_firmware_image(
     if variant == Variant.LPC55:
         return parse_firmware_image_lpc55(data)
     elif variant == Variant.NRF52:
-        return parse_firmware_image_nrf52(data, device._data.nrf52_signature_keys)
+        return parse_firmware_image_nrf52(data, model._data.nrf52_signature_keys)
     else:
         raise ValueError(f"Unexpected variant {variant}")

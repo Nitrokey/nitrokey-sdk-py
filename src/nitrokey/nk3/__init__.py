@@ -8,7 +8,7 @@
 from typing import List, Optional
 
 from nitrokey.trussed import TrussedBase
-from nitrokey.trussed._bootloader import DeviceData
+from nitrokey.trussed._bootloader import ModelData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey
 
 from ._bootloader import NK3Bootloader as NK3Bootloader  # noqa: F401
@@ -18,7 +18,7 @@ _PID_NK3_DEVICE = 0x42B2
 _PID_NK3_LPC55_BOOTLOADER = 0x42DD
 _PID_NK3_NRF52_BOOTLOADER = 0x42E8
 
-_NK3_DATA = DeviceData(
+_NK3_DATA = ModelData(
     firmware_repository_name="nitrokey-3-firmware",
     firmware_pattern_string="firmware-nk3-v.*\\.zip$",
     nrf52_signature_keys=[

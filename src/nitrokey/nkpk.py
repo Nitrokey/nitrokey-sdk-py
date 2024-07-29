@@ -11,7 +11,7 @@ from fido2.hid import CtapHidDevice
 
 from nitrokey import _VID_NITROKEY
 from nitrokey.trussed import Fido2Certs, TrussedBase, TrussedDevice, Version
-from nitrokey.trussed._bootloader import DeviceData
+from nitrokey.trussed._bootloader import ModelData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey, TrussedBootloaderNrf52
 
 _PID_NKPK_DEVICE = 0x42F3
@@ -26,7 +26,7 @@ _FIDO2_CERTS = [
     ),
 ]
 
-_NKPK_DATA = DeviceData(
+_NKPK_DATA = ModelData(
     firmware_repository_name="nitrokey-passkey-firmware",
     firmware_pattern_string="firmware-nkpk-v.*\\.zip$",
     nrf52_signature_keys=[
