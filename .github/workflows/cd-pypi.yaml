@@ -58,6 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     container: python:3.9-slim
     needs: build
+    environment: PyPI
     env:
       POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
       POETRY_PYPI_URL: https://upload.pypi.org/legacy/
