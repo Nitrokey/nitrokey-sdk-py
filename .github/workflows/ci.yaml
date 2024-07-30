@@ -127,3 +127,22 @@ jobs:
         run: ./venv/bin/pip install .
       - name: Run test suite
         run: ./venv/bin/python -m unittest -v
+  test-readme:
+    name: Run example code from readme
+    runs-on: ubuntu-latest
+    container: python:3.9-slim
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install required packages
+        run: apt update && apt install -y ${REQUIRED_PACKAGES} cargo
+      - name: Install tangler
+        run: cargo install tangler@0.3.0
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Create virtual environment
+        run: make install
+      - name: Extract code from readme
+        run: /github/home/.cargo/bin/tangler python < README.md > readme.py
+      - name: Run code from readme
+        run: poetry run python readme.py
