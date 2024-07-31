@@ -11,16 +11,15 @@ import re
 import sys
 from typing import Optional, TypeVar
 
-from spsdk.mboot.interfaces.usb import MbootUSBInterface
-from spsdk.mboot.mcuboot import McuBoot
-from spsdk.mboot.properties import PropertyTag
-from spsdk.sbfile.sb2.images import BootImageV21
-from spsdk.utils.interfaces.device.usb_device import UsbDevice
-from spsdk.utils.usbfilter import USBDeviceFilter
-
 from nitrokey.trussed import Uuid, Version
 
 from . import FirmwareMetadata, ProgressCallback, TrussedBootloader, Variant
+from .lpc55_upload.mboot.interfaces.usb import MbootUSBInterface
+from .lpc55_upload.mboot.mcuboot import McuBoot
+from .lpc55_upload.mboot.properties import PropertyTag
+from .lpc55_upload.sbfile.sb2.images import BootImageV21
+from .lpc55_upload.utils.interfaces.device.usb_device import UsbDevice
+from .lpc55_upload.utils.usbfilter import USBDeviceFilter
 
 RKTH = bytes.fromhex("050aad3e77791a81e59c5b2ba5a158937e9460ee325d8ccba09734b8fdebb171")
 KEK = bytes([0xAA] * 32)
@@ -135,7 +134,10 @@ class TrussedBootloaderLpc55(TrussedBootloader):
 
 def parse_firmware_image(data: bytes) -> FirmwareMetadata:
     image = BootImageV21.parse(data, kek=KEK)
-    version = Version.from_bcd_version(image.header.product_version)
+    bcd_version = image.header.product_version
+    version = Version(
+        major=bcd_version.major, minor=bcd_version.minor, patch=bcd_version.service
+    )
     metadata = FirmwareMetadata(version=version)
     if image.cert_block:
         if image.cert_block.rkth == RKTH:

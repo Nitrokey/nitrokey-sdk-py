@@ -1,6 +1,7 @@
 [flake8]
 # E203,E701 suggested by black, see:
 # https://black.readthedocs.io/en/stable/guides/using_black_with_other_tools.html#flake8
+# E221 for alignment in mboot code
 # E501 (line length) disabled as this is handled by black which takes better care of edge cases
-extend-ignore = E203,E501,E701
+extend-ignore = E203,E221,E501,E701
 max-complexity = 18

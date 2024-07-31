@@ -25,7 +25,9 @@ semver = "^3"
 tlv8 = "^0.10"
 
 # lpc55
-spsdk = ">=2,<2.3"
+crcmod = "^1.7"
+cryptography = ">=42"
+libusbsio = "^2.1"
 
 # nrf52
 ecdsa = "^0.19"
@@ -43,6 +45,7 @@ isort = "^5.13.2"
 mypy = "^1.4"
 types-protobuf = "^5.26"
 types-requests = "^2.32"
+typing-extensions = "^4"
 
 [tool.black]
 target-version = ["py39"]
@@ -56,3 +59,8 @@ mypy_path = "stubs"
 show_error_codes = true
 python_version = "3.9"
 strict = true
+
+# libusbsio is used by lpc55_upload, will be replaced eventually
+[[tool.mypy.overrides]]
+module = ["libusbsio.*"]
+ignore_missing_imports = true

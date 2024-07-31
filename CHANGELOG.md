@@ -9,6 +9,7 @@
 ### Other Changes
 
 - Update `protobuf` dependency to 5.26
+- Vendor `spsdk` dependency to reduce the total number of dependencies
 
 ## [v0.1.0](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.1.0) (2024-07-29)
 

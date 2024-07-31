@@ -14,8 +14,6 @@ from contextlib import contextmanager
 from io import BytesIO
 from typing import Any, Callable, Iterator, List, Optional
 
-from spsdk.mboot.exceptions import McuBootConnectionError
-
 from nitrokey._helpers import Retries
 from nitrokey.nk3 import NK3, NK3Bootloader
 from nitrokey.trussed import TimeoutException, TrussedBase, Version
@@ -24,6 +22,9 @@ from nitrokey.trussed._bootloader import (
     Model,
     Variant,
     validate_firmware_image,
+)
+from nitrokey.trussed._bootloader.lpc55_upload.mboot.exceptions import (
+    McuBootConnectionError,
 )
 from nitrokey.trussed.admin_app import BootMode
 from nitrokey.updates import Asset, Release
