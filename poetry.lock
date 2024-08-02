@@ -1625,6 +1625,17 @@ files = [
 ]
 
 [[package]]
+name = "types-protobuf"
+version = "3.20.4.6"
+description = "Typing stubs for protobuf"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-protobuf-3.20.4.6.tar.gz", hash = "sha256:ba27443c592bbec1629dd69494a24c84461c63f0d3b7d648ce258aaae9680965"},
+    {file = "types_protobuf-3.20.4.6-py3-none-any.whl", hash = "sha256:ab2d315ba82246b83d28f8797c98dc0fe1dd5cfd187909e56faf87239aedaae3"},
+]
+
+[[package]]
 name = "types-requests"
 version = "2.32.0.20240712"
 description = "Typing stubs for requests"
@@ -1695,4 +1706,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "d952aebb2cef9b04b644703a458901efd1cf19ee8df4f8e6db45ce3fff1c2960"
+content-hash = "731b29d2165d86007c1cce9b644ed16ee9a1c86f26a71efe741b788f6fbd8659"

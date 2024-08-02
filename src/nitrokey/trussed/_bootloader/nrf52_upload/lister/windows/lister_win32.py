@@ -35,13 +35,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+import ctypes
 import sys
 
 from ..enumerated_device import EnumeratedDevice
 from ..lister_backend import AbstractLister
 
 if sys.platform == "win32":
-    import ctypes
     import winreg
 
     from .constants import DEVPKEY, DIGCF_DEVICEINTERFACE, DIGCF_PRESENT
@@ -102,7 +102,7 @@ def get_serial_serial_no(vendor_id, product_id, h_dev_info, device_info_data):
     required_size = ctypes.c_ulong()
 
     instance_id_buffer = ctypes.create_unicode_buffer(MAX_BUFSIZE)
-    res = SetupDiGetDeviceProperty(
+    SetupDiGetDeviceProperty(
         h_dev_info,
         ctypes.byref(device_info_data),
         ctypes.byref(DEVPKEY.Device.ContainerId),
@@ -116,7 +116,7 @@ def get_serial_serial_no(vendor_id, product_id, h_dev_info, device_info_data):
     wanted_GUID = GUID(ctypesInternalGUID(instance_id_buffer))
 
     device_address = ctypes.c_int32()
-    res = setup_api.SetupDiGetDevicePropertyW(
+    setup_api.SetupDiGetDevicePropertyW(
         h_dev_info,
         ctypes.byref(device_info_data),
         ctypes.byref(DEVPKEY.Device.DeviceAddress),
@@ -132,7 +132,7 @@ def get_serial_serial_no(vendor_id, product_id, h_dev_info, device_info_data):
     )
     try:
         vendor_product_hkey = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, hkey_path)
-    except EnvironmentError as err:
+    except EnvironmentError:
         return
 
     serial_numbers_count = winreg.QueryInfoKey(vendor_product_hkey)[0]
@@ -140,7 +140,7 @@ def get_serial_serial_no(vendor_id, product_id, h_dev_info, device_info_data):
     for serial_number_idx in range(serial_numbers_count):
         try:
             serial_number = winreg.EnumKey(vendor_product_hkey, serial_number_idx)
-        except EnvironmentError as err:
+        except EnvironmentError:
             continue
 
         hkey_path = "SYSTEM\\CurrentControlSet\\Enum\\USB\\VID_{}&PID_{}\\{}".format(
@@ -149,18 +149,18 @@ def get_serial_serial_no(vendor_id, product_id, h_dev_info, device_info_data):
 
         try:
             device_hkey = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, hkey_path)
-        except EnvironmentError as err:
+        except EnvironmentError:
             continue
 
         try:
             queried_container_id = winreg.QueryValueEx(device_hkey, "ContainerID")[0]
-        except EnvironmentError as err:
+        except EnvironmentError:
             winreg.CloseKey(device_hkey)
             continue
 
         try:
             queried_address = winreg.QueryValueEx(device_hkey, "Address")[0]
-        except EnvironmentError as err:
+        except EnvironmentError:
             winreg.CloseKey(device_hkey)
             continue
 
@@ -180,7 +180,7 @@ def com_port_is_open(port):
     hkey_path = "HARDWARE\\DEVICEMAP\\SERIALCOMM"
     try:
         device_hkey = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, hkey_path)
-    except EnvironmentError as err:
+    except EnvironmentError:
         #  Unable to check enumerated serialports. Assume open.
         return True
     next_key = 0
@@ -206,12 +206,12 @@ def list_all_com_ports(vendor_id, product_id, serial_number):
 
     try:
         device_hkey = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, hkey_path)
-    except EnvironmentError as err:
+    except EnvironmentError:
         return ports
 
     try:
         parent_id = winreg.QueryValueEx(device_hkey, "ParentIdPrefix")[0]
-    except EnvironmentError as err:
+    except EnvironmentError:
         winreg.CloseKey(device_hkey)
         return ports
 
@@ -225,11 +225,11 @@ def list_all_com_ports(vendor_id, product_id, serial_number):
         try:
             COM_port = winreg.QueryValueEx(device_hkey, "PortName")[0]
             ports.append(COM_port)
-        except EnvironmentError as err:
+        except EnvironmentError:
             #  No COM port for root device.
             pass
         winreg.CloseKey(device_hkey)
-    except EnvironmentError as err:
+    except EnvironmentError:
         #  Root device has no device parameters
         pass
 
@@ -248,12 +248,12 @@ def list_all_com_ports(vendor_id, product_id, serial_number):
         iface_id += 1
         try:
             device_hkey = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, hkey_path)
-        except EnvironmentError as err:
+        except EnvironmentError:
             break
 
         try:
             port_name = winreg.QueryValueEx(device_hkey, "PortName")[0]
-        except EnvironmentError as err:
+        except EnvironmentError:
             winreg.CloseKey(device_hkey)
             continue
 

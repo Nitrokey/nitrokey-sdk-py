@@ -36,13 +36,18 @@
 #
 
 import sys
+from typing import Optional
 
+from .enumerated_device import EnumeratedDevice
+from .lister_backend import AbstractLister
 from .unix.unix_lister import UnixLister
 from .windows.lister_win32 import Win32Lister
 
 
 class DeviceLister:
-    def __init__(self):
+    lister_backend: Optional[AbstractLister]
+
+    def __init__(self) -> None:
         if sys.platform == "win32":
             self.lister_backend = Win32Lister()
         elif "linux" in sys.platform:
@@ -52,37 +57,17 @@ class DeviceLister:
         else:
             self.lister_backend = None
 
-    def enumerate(self):
+    def enumerate(self) -> list[EnumeratedDevice]:
         if self.lister_backend:
             return self.lister_backend.enumerate()
         return []
 
-    def get_device(self, get_all=False, **kwargs):
+    def get_device(self, com: Optional[str] = None) -> Optional[EnumeratedDevice]:
         devices = self.enumerate()
-        matching_devices = []
+
         for dev in devices:
-            if (
-                "vendor_id" in kwargs
-                and kwargs["vendor_id"].lower() != dev.vendor_id.lower()
-            ):
+            if com and not dev.has_com_port(com):
                 continue
-            if (
-                "product_id" in kwargs
-                and kwargs["product_id"].lower() != dev.product_id.lower()
-            ):
-                continue
-            if "serial_number" in kwargs and (
-                kwargs["serial_number"].lower().lstrip("0")
-                != dev.serial_number.lower().lstrip("0")
-            ):
-                continue
-            if "com" in kwargs and not dev.has_com_port(kwargs["com"]):
-                continue
+            return dev
 
-            matching_devices.append(dev)
-
-        if not get_all:
-            if len(matching_devices) == 0:
-                return
-            return matching_devices[0]
-        return matching_devices
+        return None

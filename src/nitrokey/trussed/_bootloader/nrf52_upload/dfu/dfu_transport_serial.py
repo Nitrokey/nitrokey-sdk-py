@@ -42,6 +42,7 @@ import struct
 # Python imports
 import time
 from datetime import datetime, timedelta
+from typing import Optional
 
 # Python 3rd party imports
 from serial import Serial
@@ -50,6 +51,7 @@ from serial.serialutil import SerialException
 # from pc_ble_driver_py.exceptions    import NordicSemiException
 from ..exceptions import NordicSemiException
 from ..lister.device_lister import DeviceLister
+from ..lister.enumerated_device import EnumeratedDevice
 
 # Nordic Semiconductor imports
 from .dfu_transport import TRANSPORT_LOGGING_LEVEL, DfuEvent, DfuTransport
@@ -77,7 +79,7 @@ class Slip:
     SLIP_STATE_CLEARING_INVALID_PACKET = 3
 
     @staticmethod
-    def encode(data):
+    def encode(data: list[int]) -> list[int]:
         newData = []
         for elem in data:
             if elem == Slip.SLIP_BYTE_END:
@@ -92,7 +94,9 @@ class Slip:
         return newData
 
     @staticmethod
-    def decode_add_byte(c, decoded_data, current_state):
+    def decode_add_byte(
+        c: int, decoded_data: list[int], current_state: int
+    ) -> tuple[bool, int, list[int]]:
         finished = False
         if current_state == Slip.SLIP_STATE_DECODING:
             if c == Slip.SLIP_BYTE_END:
@@ -119,10 +123,10 @@ class Slip:
 
 
 class DFUAdapter:
-    def __init__(self, serial_port):
+    def __init__(self, serial_port: Serial) -> None:
         self.serial_port = serial_port
 
-    def send_message(self, data):
+    def send_message(self, data: list[int]) -> None:
         packet = Slip.encode(data)
         logger.log(TRANSPORT_LOGGING_LEVEL, "SLIP: --> " + str(data))
         try:
@@ -134,17 +138,17 @@ class DFUAdapter:
                 "https://wiki.segger.com/index.php?title=J-Link-OB_SAM3U"
             )
 
-    def get_message(self):
+    def get_message(self) -> Optional[list[int]]:
         current_state = Slip.SLIP_STATE_DECODING
         finished = False
-        decoded_data = []
+        decoded_data: list[int] = []
 
-        while finished == False:
+        while finished is False:
             byte = self.serial_port.read(1)
             if byte:
                 (byte) = struct.unpack("B", byte)[0]
                 (finished, current_state, decoded_data) = Slip.decode_add_byte(
-                    byte, decoded_data, current_state
+                    byte, decoded_data, current_state  # type: ignore[arg-type]
                 )
             else:
                 current_state = Slip.SLIP_STATE_CLEARING_INVALID_PACKET
@@ -179,13 +183,13 @@ class DfuTransportSerial(DfuTransport):
 
     def __init__(
         self,
-        com_port,
-        baud_rate=DEFAULT_BAUD_RATE,
-        flow_control=DEFAULT_FLOW_CONTROL,
-        timeout=DEFAULT_TIMEOUT,
-        prn=DEFAULT_PRN,
-        do_ping=DEFAULT_DO_PING,
-    ):
+        com_port: str,
+        baud_rate: int = DEFAULT_BAUD_RATE,
+        flow_control: bool = DEFAULT_FLOW_CONTROL,
+        timeout: float = DEFAULT_TIMEOUT,
+        prn: int = DEFAULT_PRN,
+        do_ping: bool = DEFAULT_DO_PING,
+    ) -> None:
 
         super().__init__()
         self.com_port = com_port
@@ -193,8 +197,8 @@ class DfuTransportSerial(DfuTransport):
         self.flow_control = 1 if flow_control else 0
         self.timeout = timeout
         self.prn = prn
-        self.serial_port = None
-        self.dfu_adapter = None
+        self.serial_port: Optional[Serial] = None
+        self.dfu_adapter: Optional[DFUAdapter] = None
         self.ping_id = 0
         self.do_ping = do_ping
 
@@ -202,8 +206,7 @@ class DfuTransportSerial(DfuTransport):
 
         """:type: serial.Serial """
 
-    def open(self):
-        super().open()
+    def open(self) -> None:
         try:
             self.__ensure_bootloader()
             self.serial_port = Serial(
@@ -224,23 +227,23 @@ class DfuTransportSerial(DfuTransport):
             start = datetime.now()
             while (
                 datetime.now() - start < timedelta(seconds=self.timeout)
-                and ping_success == False
+                and ping_success is False
             ):
-                if self.__ping() == True:
+                if self.__ping() is True:
                     ping_success = True
 
-            if ping_success == False:
+            if ping_success is False:
                 raise NordicSemiException("No ping response after opening COM port")
 
         self.__set_prn()
         self.__get_mtu()
 
-    def close(self):
-        super().close()
+    def close(self) -> None:
+        assert self.serial_port
         self.serial_port.close()
 
-    def send_init_packet(self, init_packet):
-        def try_to_recover():
+    def send_init_packet(self, init_packet: bytes) -> None:
+        def try_to_recover() -> bool:
             if response["offset"] == 0 or response["offset"] > len(init_packet):
                 # There is no init packet or present init packet is too long.
                 return False
@@ -280,8 +283,8 @@ class DfuTransportSerial(DfuTransport):
         except ValidationException:
             raise NordicSemiException("Failed to send init packet")
 
-    def send_firmware(self, firmware):
-        def try_to_recover():
+    def send_firmware(self, firmware: bytes) -> None:
+        def try_to_recover() -> None:
             if response["offset"] == 0:
                 # Nothing to recover
                 return
@@ -339,7 +342,7 @@ class DfuTransportSerial(DfuTransport):
 
             self._send_event(event_type=DfuEvent.PROGRESS_EVENT, progress=len(data))
 
-    def __ensure_bootloader(self):
+    def __ensure_bootloader(self) -> None:
         lister = DeviceLister()
 
         device = None
@@ -354,10 +357,13 @@ class DfuTransportSerial(DfuTransport):
                     "Serial: Device is either not in bootloader mode, or using an unsupported bootloader."
                 )
 
-    def __is_device_in_bootloader_mode(self, device):
+    def __is_device_in_bootloader_mode(
+        self, device: Optional[EnumeratedDevice]
+    ) -> bool:
         if not device:
             return False
 
+        # TODO: Add Nitrokey IDs
         #  Return true if nrf bootloader or Jlink interface detected.
         return (
             (
@@ -374,20 +380,24 @@ class DfuTransportSerial(DfuTransport):
             )
         )  # JLink CDC UART Port (MSD)
 
-    def __set_prn(self):
+    def __set_prn(self) -> None:
+        assert self.dfu_adapter
         logger.debug("Serial: Set Packet Receipt Notification {}".format(self.prn))
         self.dfu_adapter.send_message(
             [DfuTransportSerial.OP_CODE["SetPRN"]] + list(struct.pack("<H", self.prn))
         )
         self.__get_response(DfuTransportSerial.OP_CODE["SetPRN"])
 
-    def __get_mtu(self):
+    def __get_mtu(self) -> None:
+        assert self.dfu_adapter
         self.dfu_adapter.send_message([DfuTransportSerial.OP_CODE["GetSerialMTU"]])
         response = self.__get_response(DfuTransportSerial.OP_CODE["GetSerialMTU"])
 
+        assert response is not None
         self.mtu = struct.unpack("<H", bytearray(response))[0]
 
-    def __ping(self):
+    def __ping(self) -> bool:
+        assert self.dfu_adapter
         self.ping_id = (self.ping_id + 1) % 256
 
         self.dfu_adapter.send_message(
@@ -423,20 +433,22 @@ class DfuTransportSerial(DfuTransport):
             else:
                 return False
 
-    def __create_command(self, size):
+    def __create_command(self, size: int) -> None:
         self.__create_object(0x01, size)
 
-    def __create_data(self, size):
+    def __create_data(self, size: int) -> None:
         self.__create_object(0x02, size)
 
-    def __create_object(self, object_type, size):
+    def __create_object(self, object_type: int, size: int) -> None:
+        assert self.dfu_adapter
         self.dfu_adapter.send_message(
             [DfuTransportSerial.OP_CODE["CreateObject"], object_type]
             + list(struct.pack("<L", size))
         )
         self.__get_response(DfuTransportSerial.OP_CODE["CreateObject"])
 
-    def __calculate_checksum(self):
+    def __calculate_checksum(self) -> dict[str, int]:
+        assert self.dfu_adapter
         self.dfu_adapter.send_message([DfuTransportSerial.OP_CODE["CalcChecSum"]])
         response = self.__get_response(DfuTransportSerial.OP_CODE["CalcChecSum"])
 
@@ -450,23 +462,26 @@ class DfuTransportSerial(DfuTransport):
         (offset, crc) = struct.unpack("<II", bytearray(response))
         return {"offset": offset, "crc": crc}
 
-    def __execute(self):
+    def __execute(self) -> None:
+        assert self.dfu_adapter
         self.dfu_adapter.send_message([DfuTransportSerial.OP_CODE["Execute"]])
         self.__get_response(DfuTransportSerial.OP_CODE["Execute"])
 
-    def __select_command(self):
+    def __select_command(self) -> dict[str, int]:
         return self.__select_object(0x01)
 
-    def __select_data(self):
+    def __select_data(self) -> dict[str, int]:
         return self.__select_object(0x02)
 
-    def __select_object(self, object_type):
+    def __select_object(self, object_type: int) -> dict[str, int]:
+        assert self.dfu_adapter
         logger.debug("Serial: Selecting Object: type:{}".format(object_type))
         self.dfu_adapter.send_message(
             [DfuTransportSerial.OP_CODE["ReadObject"], object_type]
         )
 
         response = self.__get_response(DfuTransportSerial.OP_CODE["ReadObject"])
+        assert response is not None
         (max_size, offset, crc) = struct.unpack("<III", bytearray(response))
 
         logger.debug(
@@ -475,19 +490,21 @@ class DfuTransportSerial(DfuTransport):
         )
         return {"max_size": max_size, "offset": offset, "crc": crc}
 
-    def __get_checksum_response(self):
+    def __get_checksum_response(self) -> dict[str, int]:
         resp = self.__get_response(DfuTransportSerial.OP_CODE["CalcChecSum"])
 
+        assert resp is not None
         (offset, crc) = struct.unpack("<II", bytearray(resp))
         return {"offset": offset, "crc": crc}
 
-    def __stream_data(self, data, crc=0, offset=0):
+    def __stream_data(self, data: bytes, crc: int = 0, offset: int = 0) -> int:
+        assert self.dfu_adapter
         logger.debug(
             "Serial: Streaming Data: "
             + "len:{0} offset:{1} crc:0x{2:08X}".format(len(data), offset, crc)
         )
 
-        def validate_crc():
+        def validate_crc() -> None:
             if crc != response["crc"]:
                 raise ValidationException(
                     "Failed CRC validation.\n"
@@ -523,12 +540,13 @@ class DfuTransportSerial(DfuTransport):
         validate_crc()
         return crc
 
-    def __get_response(self, operation):
-        def get_dict_key(dictionary, value):
+    def __get_response(self, operation: int) -> Optional[list[int]]:
+        def get_dict_key(dictionary: dict[str, int], value: int) -> Optional[str]:
             return next(
                 (key for key, val in list(dictionary.items()) if val == value), None
             )
 
+        assert self.dfu_adapter
         resp = self.dfu_adapter.get_message()
 
         if not resp:

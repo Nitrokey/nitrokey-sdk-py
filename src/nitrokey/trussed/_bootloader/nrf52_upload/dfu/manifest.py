@@ -37,17 +37,18 @@
 
 # Python libraries
 import json
+from typing import Any, Optional, Union
 
 
 class FWMetaData:
     def __init__(
         self,
-        is_debug=None,
-        hw_version=None,
-        fw_version=None,
-        softdevice_req=None,
-        sd_size=None,
-        bl_size=None,
+        is_debug: Optional[Any] = None,
+        hw_version: Optional[Any] = None,
+        fw_version: Optional[Any] = None,
+        softdevice_req: Optional[Any] = None,
+        sd_size: Optional[Any] = None,
+        bl_size: Optional[Any] = None,
     ):
         """
         The FWMetaData data model.
@@ -69,7 +70,14 @@ class FWMetaData:
 
 
 class Firmware:
-    def __init__(self, bin_file=None, dat_file=None, info_read_only_metadata=None):
+    info_read_only_metadata: Optional[FWMetaData]
+
+    def __init__(
+        self,
+        bin_file: Optional[str] = None,
+        dat_file: Optional[str] = None,
+        info_read_only_metadata: Optional[dict[str, Any]] = None,
+    ):
         """
         The firmware datamodel
 
@@ -88,7 +96,12 @@ class Firmware:
 
 
 class SoftdeviceBootloaderFirmware(Firmware):
-    def __init__(self, bin_file=None, dat_file=None, info_read_only_metadata=None):
+    def __init__(
+        self,
+        bin_file: Optional[str] = None,
+        dat_file: Optional[str] = None,
+        info_read_only_metadata: Optional[dict[str, Any]] = None,
+    ):
         """
         The SoftdeviceBootloaderFirmware data model
 
@@ -103,10 +116,10 @@ class SoftdeviceBootloaderFirmware(Firmware):
 class Manifest:
     def __init__(
         self,
-        application=None,
-        bootloader=None,
-        softdevice=None,
-        softdevice_bootloader=None,
+        application: Optional[dict[str, Any]] = None,
+        bootloader: Optional[dict[str, Any]] = None,
+        softdevice: Optional[dict[str, Any]] = None,
+        softdevice_bootloader: Optional[dict[str, Any]] = None,
     ):
         """
         The Manifest data model.
@@ -128,7 +141,7 @@ class Manifest:
         self.application = Firmware(**application) if application else None
 
     @staticmethod
-    def from_json(data):
+    def from_json(data: Union[bytes, str]) -> "Manifest":
         """
         Parses a manifest according to Nordic DFU package specification.
 

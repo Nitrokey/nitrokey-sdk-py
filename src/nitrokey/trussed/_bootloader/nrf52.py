@@ -12,7 +12,7 @@ import time
 from abc import abstractmethod
 from dataclasses import dataclass
 from io import BytesIO
-from typing import Optional, Sequence, TypeVar
+from typing import Optional, Sequence, TypeVar, Union
 from zipfile import ZipFile
 
 import ecdsa
@@ -48,7 +48,7 @@ class SignatureKey:
     def vk(self) -> ecdsa.VerifyingKey:
         return ecdsa.VerifyingKey.from_der(bytes.fromhex(self.der))
 
-    def verify(self, signature: str, message: str) -> bool:
+    def verify(self, signature: Union[bytes, str], message: Union[bytes, str]) -> bool:
         try:
             self.vk().verify(
                 signature,

@@ -1,0 +1,3 @@
+from .serialutil import SerialBase
+
+class Serial(SerialBase): ...

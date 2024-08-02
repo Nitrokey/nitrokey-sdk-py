@@ -1,0 +1,3 @@
+from .list_ports_common import ListPortInfo
+
+def comports() -> list[ListPortInfo]: ...

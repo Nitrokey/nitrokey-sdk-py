@@ -35,6 +35,7 @@
 
 import logging
 from abc import ABC, abstractmethod
+from typing import Any, Callable
 
 # Nordic Semiconductor imports
 
@@ -103,11 +104,11 @@ class DfuTransport(ABC):
     ]
 
     @abstractmethod
-    def __init__(self):
-        self.callbacks = {}
+    def __init__(self) -> None:
+        self.callbacks: dict[int, list[Callable[..., None]]] = {}
 
     @abstractmethod
-    def open(self):
+    def open(self) -> None:
         """
         Open a port if appropriate for the transport.
         :return:
@@ -115,7 +116,7 @@ class DfuTransport(ABC):
         pass
 
     @abstractmethod
-    def close(self):
+    def close(self) -> None:
         """
         Close a port if appropriate for the transport.
         :return:
@@ -123,7 +124,7 @@ class DfuTransport(ABC):
         pass
 
     @abstractmethod
-    def send_init_packet(self, init_packet):
+    def send_init_packet(self, init_packet: bytes) -> None:
         """
         Send init_packet to device.
 
@@ -135,7 +136,7 @@ class DfuTransport(ABC):
         pass
 
     @abstractmethod
-    def send_firmware(self, firmware):
+    def send_firmware(self, firmware: bytes) -> None:
         """
         Start sending firmware to device.
 
@@ -146,7 +147,9 @@ class DfuTransport(ABC):
         """
         pass
 
-    def register_events_callback(self, event_type, callback):
+    def register_events_callback(
+        self, event_type: int, callback: Callable[..., None]
+    ) -> None:
         """
         Register a callback.
 
@@ -158,7 +161,7 @@ class DfuTransport(ABC):
 
         self.callbacks[event_type].append(callback)
 
-    def _send_event(self, event_type, **kwargs):
+    def _send_event(self, event_type: int, **kwargs: Any) -> None:
         """
         Method for sending events to registered callbacks.
 

@@ -35,10 +35,12 @@
 
 from abc import ABC, abstractmethod
 
+from .enumerated_device import EnumeratedDevice
+
 
 class AbstractLister(ABC):
     @abstractmethod
-    def enumerate(self):
+    def enumerate(self) -> list[EnumeratedDevice]:
         """
         Enumerate all usb devices
         """

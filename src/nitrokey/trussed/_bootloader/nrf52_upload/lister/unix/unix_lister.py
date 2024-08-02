@@ -45,13 +45,13 @@ if "linux" in sys.platform or sys.platform == "darwin":
     from ..enumerated_device import EnumeratedDevice
 
 
-def create_id_string(sno, PID, VID):
+def create_id_string(sno: str, PID: str, VID: str) -> str:
     return "{}-{}-{}".format(sno, PID, VID)
 
 
 class UnixLister(AbstractLister):
-    def enumerate(self):
-        device_identities = {}
+    def enumerate(self) -> list[EnumeratedDevice]:
+        device_identities: dict[str, EnumeratedDevice] = {}
         available_ports = serial.tools.list_ports.comports()
 
         for port in available_ports:
