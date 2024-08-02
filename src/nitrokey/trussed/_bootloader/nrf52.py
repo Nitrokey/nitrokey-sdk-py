@@ -25,11 +25,11 @@ from .nrf52_upload.dfu.dfu_transport import DfuEvent
 from .nrf52_upload.dfu.dfu_transport_serial import DfuTransportSerial
 from .nrf52_upload.dfu.init_packet_pb import InitPacketPB
 from .nrf52_upload.dfu.manifest import Manifest
-from .nrf52_upload.dfu.package import Package
 from .nrf52_upload.lister.device_lister import DeviceLister
 
 logger = logging.getLogger(__name__)
 
+MANIFEST_FILENAME = "manifest.json"
 FILENAME_PATTERN = re.compile(
     "(firmware|alpha)-(nk3..|nkpk)-nrf52-(?P<version>.*)\\.zip$"
 )
@@ -72,7 +72,7 @@ class Image:
     def parse(cls, data: bytes, keys: Sequence[SignatureKey]) -> "Image":
         io = BytesIO(data)
         with ZipFile(io) as pkg:
-            with pkg.open(Package.MANIFEST_FILENAME) as f:
+            with pkg.open(MANIFEST_FILENAME) as f:
                 manifest = Manifest.from_json(f.read())
             if not manifest.application:
                 raise Exception("Missing application in firmware package manifest")
