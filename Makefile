@@ -44,3 +44,7 @@ fix:
 .PHONY: test
 test:
 	poetry run python -m unittest -v
+
+.PHONY: generate-protobuf
+generate-protobuf:
+	protoc src/nitrokey/trussed/_bootloader/nrf52_upload/dfu/dfu-cc.proto --python_out=. --pyi_out=.

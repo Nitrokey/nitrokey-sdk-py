@@ -29,7 +29,7 @@ spsdk = ">=2,<2.3"
 
 # nrf52
 ecdsa = "^0.19"
-protobuf = "^3.17.3"
+protobuf = "^5.26"
 pyserial = "^3.5"
 
 [tool.poetry.group.dev]
@@ -41,7 +41,7 @@ fake-winreg = "^1.6"
 flake8 = "^7.1"
 isort = "^5.13.2"
 mypy = "^1.4"
-types-protobuf = "^3.17.3"
+types-protobuf = "^5.26"
 types-requests = "^2.32"
 
 [tool.black]
@@ -56,7 +56,3 @@ mypy_path = "stubs"
 show_error_codes = true
 python_version = "3.9"
 strict = true
-
-[[tool.mypy.overrides]]
-module = "nitrokey.trussed._bootloader.nrf52_upload.dfu.dfu_cc_pb2"
-ignore_errors = true

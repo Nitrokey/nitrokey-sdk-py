@@ -86,7 +86,7 @@ class InitPacketPB:
             )
 
     def get_init_command_bytes(self) -> bytes:
-        return self.init_command.SerializeToString()  # type: ignore[no-any-return]
+        return self.init_command.SerializeToString()
 
     def __str__(self) -> str:
         return str(self.init_command)
