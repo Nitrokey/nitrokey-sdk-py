@@ -5,7 +5,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """Miscellaneous functions used throughout the SPSDK."""
-import hashlib
 import re
 from enum import Enum
 from math import ceil
@@ -259,10 +258,3 @@ def swap16(x: int) -> int:
     if x < 0 or x > 0xFFFF:
         raise SPSDKError("Incorrect number to be swapped")
     return ((x << 8) & 0xFF00) | ((x >> 8) & 0x00FF)
-
-
-def get_hash(text: Union[str, bytes]) -> str:
-    """Returns hash of given text."""
-    if isinstance(text, str):
-        text = text.encode("utf-8")
-    return hashlib.sha1(text).digest().hex()[:8]

@@ -19,7 +19,6 @@ from .lpc55_upload.mboot.mcuboot import McuBoot
 from .lpc55_upload.mboot.properties import PropertyTag
 from .lpc55_upload.sbfile.sb2.images import BootImageV21
 from .lpc55_upload.utils.interfaces.device.usb_device import UsbDevice
-from .lpc55_upload.utils.usbfilter import USBDeviceFilter
 
 RKTH = bytes.fromhex("050aad3e77791a81e59c5b2ba5a158937e9460ee325d8ccba09734b8fdebb171")
 KEK = bytes([0xAA] * 32)
@@ -101,9 +100,8 @@ class TrussedBootloaderLpc55(TrussedBootloader):
 
     @classmethod
     def _list_vid_pid(cls: type[T], vid: int, pid: int) -> list[T]:
-        device_filter = USBDeviceFilter(f"0x{vid:x}:0x{pid:x}")
         devices = []
-        for device in UsbDevice.enumerate(device_filter):
+        for device in UsbDevice.enumerate(vid=vid, pid=pid):
             try:
                 devices.append(cls(device))
             except ValueError:
@@ -114,8 +112,7 @@ class TrussedBootloaderLpc55(TrussedBootloader):
 
     @classmethod
     def _open(cls: type[T], path: str) -> Optional[T]:
-        device_filter = USBDeviceFilter(path)
-        devices = UsbDevice.enumerate(device_filter)
+        devices = UsbDevice.enumerate(path=path)
         if len(devices) == 0:
             logger.warn(f"No HID device at {path}")
             return None

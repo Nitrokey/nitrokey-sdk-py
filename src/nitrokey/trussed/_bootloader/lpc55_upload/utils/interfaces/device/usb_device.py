@@ -7,14 +7,15 @@
 
 """Low level Hid device."""
 import logging
-from typing import List, Optional
-
-import libusbsio
+import warnings
+from typing import TYPE_CHECKING, List, Optional
 
 from ....exceptions import SPSDKConnectionError, SPSDKError
 from ....utils.exceptions import SPSDKTimeoutError
 from ....utils.interfaces.device.base import DeviceBase
-from ....utils.usbfilter import USBDeviceFilter
+
+if TYPE_CHECKING:
+    import hid
 
 logger = logging.getLogger(__name__)
 
@@ -24,29 +25,23 @@ class UsbDevice(DeviceBase):
 
     def __init__(
         self,
-        vid: Optional[int] = None,
-        pid: Optional[int] = None,
-        path: Optional[bytes] = None,
-        serial_number: Optional[str] = None,
-        vendor_name: Optional[str] = None,
-        product_name: Optional[str] = None,
-        interface_number: Optional[int] = None,
-        timeout: Optional[int] = None,
+        vid: int,
+        pid: int,
+        path: bytes,
+        vendor_name: str,
+        product_name: str,
+        interface_number: int,
     ) -> None:
         """Initialize the USB interface object."""
         self._opened = False
-        self.vid = vid or 0
-        self.pid = pid or 0
-        self.path = path or b""
-        self.serial_number = serial_number or ""
-        self.vendor_name = vendor_name or ""
-        self.product_name = product_name or ""
-        self.interface_number = interface_number or 0
-        self._timeout = timeout or 2000
-        libusbsio_logger = logging.getLogger("libusbsio")
-        self._device: libusbsio.LIBUSBSIO.HID_DEVICE = libusbsio.usbsio(
-            loglevel=libusbsio_logger.getEffectiveLevel()
-        ).HIDAPI_DeviceCreate()
+        self.vid = vid
+        self.pid = pid
+        self.path = path
+        self.vendor_name = vendor_name
+        self.product_name = product_name
+        self.interface_number = interface_number
+        self._timeout = 2000
+        self._device: Optional["hid.device"] = None
 
     @property
     def timeout(self) -> int:
@@ -64,7 +59,7 @@ class UsbDevice(DeviceBase):
 
         :return: True if device is open, False othervise.
         """
-        return self._opened
+        return self._device is not None
 
     def open(self) -> None:
         """Open the interface.
@@ -72,14 +67,17 @@ class UsbDevice(DeviceBase):
         :raises SPSDKError: if device is already opened
         :raises SPSDKConnectionError: if the device can not be opened
         """
+        import hid
+
         logger.debug(f"Opening the Interface: {str(self)}")
         if self.is_opened:
             # This would get HID_DEVICE into broken state
             raise SPSDKError("Can't open already opened device")
         try:
-            self._device.Open(self.path)
-            self._opened = True
+            self._device = hid.device()
+            self._device.open_path(self.path)
         except Exception as error:
+            self._device = None
             raise SPSDKConnectionError(
                 f"Unable to open device '{str(self)}'"
             ) from error
@@ -91,10 +89,10 @@ class UsbDevice(DeviceBase):
         :raises SPSDKConnectionError: if the device can not be opened
         """
         logger.debug(f"Closing the Interface: {str(self)}")
-        if self.is_opened:
+        if self._device is not None:
             try:
-                self._device.Close()
-                self._opened = False
+                self._device.close()
+                self._device = None
             except Exception as error:
                 raise SPSDKConnectionError(
                     f"Unable to close device '{str(self)}'"
@@ -110,17 +108,16 @@ class UsbDevice(DeviceBase):
         :raises SPSDKTimeoutError: Time-out
         """
         timeout = timeout or self.timeout
-        if not self.is_opened:
+        if self._device is None:
             raise SPSDKConnectionError("Device is not opened for reading")
         try:
-            (data, result) = self._device.Read(length, timeout_ms=timeout)
+            data = self._device.read(length, timeout_ms=timeout)
         except Exception as e:
             raise SPSDKConnectionError(str(e)) from e
         if not data:
-            logger.error(f"Cannot read from HID device, error={result}")
+            logger.error("Cannot read from HID device")
             raise SPSDKTimeoutError()
-        assert isinstance(data, bytes)
-        return data
+        return bytes(data)
 
     def write(self, data: bytes, timeout: Optional[int] = None) -> None:
         """Send data to device.
@@ -130,10 +127,10 @@ class UsbDevice(DeviceBase):
         :raises SPSDKConnectionError: Sending data to device failure
         """
         timeout = timeout or self.timeout
-        if not self.is_opened:
+        if self._device is None:
             raise SPSDKConnectionError("Device is not opened for writing")
         try:
-            bytes_written = self._device.Write(data, timeout_ms=timeout)
+            bytes_written = self._device.write(data)
         except Exception as e:
             raise SPSDKConnectionError(str(e)) from e
         if bytes_written < 0 or bytes_written < len(data):
@@ -145,7 +142,7 @@ class UsbDevice(DeviceBase):
         """Return information about the USB interface."""
         return (
             f"{self.product_name:s} (0x{self.vid:04X}, 0x{self.pid:04X})"
-            f"path={self.path!r} sn='{self.serial_number}'"
+            f"path={self.path!r}"
         )
 
     def __hash__(self) -> int:
@@ -153,22 +150,27 @@ class UsbDevice(DeviceBase):
 
     @classmethod
     def enumerate(
-        cls, usb_device_filter: USBDeviceFilter, timeout: Optional[int] = None
+        cls,
+        vid: Optional[int] = None,
+        pid: Optional[int] = None,
+        path: Optional[str] = None,
     ) -> List["UsbDevice"]:
-        """Get list of all connected devices which matches device_id.
+        """Get list of all connected devices which matches device_id."""
+        try:
+            import hid
+        except ImportError as err:
+            logger.warning("Failed to import hid module", exc_info=True)
+            warnings.warn(
+                f"Failed to list LPC55 bootloaders due to a missing library: {err}",
+                category=RuntimeWarning,
+            )
+            return []
 
-        :param usb_device_filter: USBDeviceFilter object
-        :param timeout: Default timeout to be set
-        :return: List of interfaces found
-        """
         devices = []
-        libusbsio_logger = logging.getLogger("libusbsio")
-        sio = libusbsio.usbsio(loglevel=libusbsio_logger.getEffectiveLevel())
-        all_hid_devices = sio.HIDAPI_Enumerate()
 
         # iterate on all devices found
-        for dev in all_hid_devices:
-            if usb_device_filter.compare(vars(dev)) is True:
+        for dev in hid.enumerate(vendor_id=vid or 0, product_id=pid or 0):
+            if path is None or dev["path"] == path.encode():
                 new_device = cls(
                     vid=dev["vendor_id"],
                     pid=dev["product_id"],
@@ -176,7 +178,6 @@ class UsbDevice(DeviceBase):
                     vendor_name=dev["manufacturer_string"],
                     product_name=dev["product_string"],
                     interface_number=dev["interface_number"],
-                    timeout=timeout,
                 )
                 devices.append(new_device)
         return devices
