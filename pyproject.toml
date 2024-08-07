@@ -27,7 +27,7 @@ tlv8 = "^0.10"
 # lpc55
 crcmod = "^1.7"
 cryptography = ">=42"
-libusbsio = "^2.1"
+hidapi = "^0.14"
 
 # nrf52
 ecdsa = "^0.19"
@@ -59,8 +59,3 @@ mypy_path = "stubs"
 show_error_codes = true
 python_version = "3.9"
 strict = true
-
-# libusbsio is used by lpc55_upload, will be replaced eventually
-[[tool.mypy.overrides]]
-module = ["libusbsio.*"]
-ignore_missing_imports = true
