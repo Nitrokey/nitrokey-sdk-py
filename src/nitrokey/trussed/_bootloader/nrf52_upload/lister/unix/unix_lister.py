@@ -37,12 +37,11 @@
 
 import sys
 
+from ..enumerated_device import EnumeratedDevice
 from ..lister_backend import AbstractLister
 
 if "linux" in sys.platform or sys.platform == "darwin":
     import serial.tools.list_ports
-
-    from ..enumerated_device import EnumeratedDevice
 
 
 def create_id_string(sno: str, PID: str, VID: str) -> str:
