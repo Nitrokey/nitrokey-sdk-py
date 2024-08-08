@@ -114,19 +114,22 @@ jobs:
         run: make test
   test-pip:
     name: Run test suite with pip installation
-    runs-on: ubuntu-latest
-    container: python:3.9-slim
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Install required packages
-        run: apt update && apt install -y ${REQUIRED_PACKAGES}
-      - name: Create virtual environment
-        run: python3 -m venv venv
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: Install SDK
-        run: ./venv/bin/pip install .
+        run: pip install .
       - name: Run test suite
-        run: ./venv/bin/python -m unittest -v
+        run: python -m unittest -v
   test-readme:
     name: Run example code from readme
     runs-on: ubuntu-latest
