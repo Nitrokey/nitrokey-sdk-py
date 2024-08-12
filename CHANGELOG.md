@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+-
+
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.0-rc.1...HEAD)
+
+## [v0.2.0-rc.1](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.2.0-rc.1) (2024-08-12)
+
+This release refactors the code used for communication with the bootloader, reducing the number of dependencies.
+
 ### Features
 
 - `trussed.admin_app`: Add error codes `CONFIG_ERROR` and `RNG_ERROR` to `InitStatus` enum
@@ -11,6 +19,8 @@
 - Update `protobuf` dependency to 5.26
 - Vendor `spsdk` dependency to reduce the total number of dependencies
 - Replace `libusbsio` dependency with `hidapi`
+
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.1.0...v0.2.0-rc.1)
 
 ## [v0.1.0](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.1.0) (2024-07-29)
 
