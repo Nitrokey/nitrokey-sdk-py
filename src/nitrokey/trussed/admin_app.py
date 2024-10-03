@@ -30,6 +30,7 @@ class AdminCommand(Enum):
     SET_CONFIG = 0x83
     FACTORY_RESET = 0x84
     FACTORY_RESET_APP = 0x85
+    LIST_AVAILABLE_FIELDS = 0x86
 
     def is_legacy_command(self) -> bool:
         if self == AdminCommand.UPDATE:
@@ -150,6 +151,60 @@ class ConfigStatus(Enum):
             raise Exception(f"{msg}: {error}")
 
 
+@enum.unique
+class ConfigFieldType(Enum):
+    BOOL = 0
+    U8 = 1
+
+    @classmethod
+    def from_int(cls, i: int) -> Optional["ConfigFieldType"]:
+        for ty in ConfigFieldType:
+            if ty.value == i:
+                return ty
+        return None
+
+    def is_valid(self, value: str) -> bool:
+        if self == ConfigFieldType.BOOL:
+            return value in ["true", "false"]
+        elif self == ConfigFieldType.U8:
+            try:
+                intval = int(value)
+                if intval < 256 and intval > 0:
+                    return True
+                else:
+                    return False
+            except ValueError:
+                return False
+
+    def __str__(self) -> str:
+        if self == ConfigFieldType.BOOL:
+            return "Bool"
+        elif self == ConfigFieldType.U8:
+            return "u8"
+
+
+class ConfigField:
+    name: str
+    requires_touch_confirmation: bool
+    requires_reboot: bool
+    destructive: bool
+    ty: ConfigFieldType
+
+    def __init__(
+        self,
+        name: str,
+        requires_touch_confirmation: bool,
+        requires_reboot: bool,
+        destructive: bool,
+        ty: ConfigFieldType,
+    ):
+        self.name = name
+        self.requires_touch_confirmation = requires_touch_confirmation
+        self.requires_reboot = requires_reboot
+        self.destructive = destructive
+        self.ty = ty
+
+
 class AdminApp:
     def __init__(self, device: TrussedDevice) -> None:
         self.device = device
@@ -265,6 +320,46 @@ class AdminApp:
         reply = self._call(AdminCommand.SET_CONFIG, data=request, response_len=1)
         assert reply
         ConfigStatus.check(reply[0], "Failed to set config value")
+
+    def list_available_fields(self) -> list[ConfigField]:
+        reply = self._call(AdminCommand.LIST_AVAILABLE_FIELDS)
+        # Function not supported, return values for 1.7.0 release
+        if not reply:
+            return [
+                ConfigField(
+                    "fido.disable_skip_up_timeout",
+                    False,
+                    False,
+                    False,
+                    ConfigFieldType.BOOL,
+                ),
+                ConfigField(
+                    "opcard.use_se050_backend",
+                    True,
+                    True,
+                    True,
+                    ConfigFieldType.BOOL,
+                ),
+            ]
+        parsed = cbor.decode(reply)
+        assert isinstance(parsed, list)
+        ret = []
+
+        for field in parsed:
+            ty = ConfigFieldType.from_int(field["t"])
+            if ty is None:
+                ty = ConfigFieldType.BOOL
+
+            ret.append(
+                ConfigField(
+                    field["n"],
+                    field["c"],
+                    field["r"],
+                    field["d"],
+                    ty,
+                )
+            )
+        return ret
 
     def factory_reset(self) -> bool:
         try:
