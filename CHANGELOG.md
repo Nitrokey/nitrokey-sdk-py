@@ -4,7 +4,15 @@
 
 -
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.0...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.1...HEAD)
+
+## [v0.2.1](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.2.1) (2024-10-21)
+
+### Features
+
+- `trussed.admin_app`: Add `AdminApp.list_available_fields` function for listing all support config fields
+
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.0...v0.2.1)
 
 ## [v0.2.0](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.2.0) (2024-09-11)
 
