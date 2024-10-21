@@ -183,26 +183,13 @@ class ConfigFieldType(Enum):
             return "u8"
 
 
+@dataclass
 class ConfigField:
     name: str
     requires_touch_confirmation: bool
     requires_reboot: bool
     destructive: bool
     ty: ConfigFieldType
-
-    def __init__(
-        self,
-        name: str,
-        requires_touch_confirmation: bool,
-        requires_reboot: bool,
-        destructive: bool,
-        ty: ConfigFieldType,
-    ):
-        self.name = name
-        self.requires_touch_confirmation = requires_touch_confirmation
-        self.requires_reboot = requires_reboot
-        self.destructive = destructive
-        self.ty = ty
 
 
 class AdminApp:
