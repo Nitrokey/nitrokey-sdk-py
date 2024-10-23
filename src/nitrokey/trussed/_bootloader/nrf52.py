@@ -12,11 +12,12 @@ import time
 from abc import abstractmethod
 from dataclasses import dataclass
 from io import BytesIO
-from typing import Optional, Sequence, TypeVar, Union
+from typing import Optional, Sequence, TypeVar
 from zipfile import ZipFile
 
-import ecdsa
-from ecdsa.keys import BadSignatureError
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec, utils
 
 from nitrokey.trussed import Uuid, Version
 
@@ -45,18 +46,23 @@ class SignatureKey:
     # $ openssl ec -in dfu_public.pem -inform pem -pubin -outform der | xxd -p
     der: str
 
-    def vk(self) -> ecdsa.VerifyingKey:
-        return ecdsa.VerifyingKey.from_der(bytes.fromhex(self.der))
+    def public_key(self) -> ec.EllipticCurvePublicKey:
+        public_key = serialization.load_der_public_key(bytes.fromhex(self.der))
+        assert isinstance(public_key, ec.EllipticCurvePublicKey)
+        return public_key
 
-    def verify(self, signature: Union[bytes, str], message: Union[bytes, str]) -> bool:
+    def verify(self, signature: bytes, message: bytes) -> bool:
+        assert len(signature) == 64
+        r = int(signature[:32].hex(), 16)
+        s = int(signature[32:].hex(), 16)
         try:
-            self.vk().verify(
-                signature,
+            self.public_key().verify(
+                utils.encode_dss_signature(r, s),
                 message,
-                hashfunc=hashlib.sha256,
+                signature_algorithm=ec.ECDSA(hashes.SHA256()),
             )
             return True
-        except BadSignatureError:
+        except InvalidSignature:
             return False
 
 

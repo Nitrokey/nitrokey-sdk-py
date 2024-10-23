@@ -2,7 +2,7 @@
 
 ## Unreleased
 
--
+- Remove `ecdsa` dependency
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.2...HEAD)
 
