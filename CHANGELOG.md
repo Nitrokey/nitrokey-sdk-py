@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+-
+
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.2...HEAD)
+
+## [v0.2.2](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.2.2) (2024-10-23)
+
 - Relax version requirement of `cryptography` to `>=41` and `ecdsa` to `>=0.18,<=0.19`.
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.1...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.1...v0.2.2)
 
 ## [v0.2.1](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.2.1) (2024-10-21)
 
