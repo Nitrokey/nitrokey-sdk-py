@@ -2,7 +2,7 @@
 
 ## Unreleased
 
--
+- Relax version requirement of `cryptography` to `>=41` and `ecdsa` to `>=0.18,<=0.19`.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.1...HEAD)
 

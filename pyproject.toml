@@ -26,11 +26,11 @@ tlv8 = "^0.10"
 
 # lpc55
 crcmod = "^1.7"
-cryptography = ">=42"
+cryptography = ">=41"
 hidapi = "^0.14"
 
 # nrf52
-ecdsa = "^0.19"
+ecdsa = ">=0.18,<=0.19"
 protobuf = "^5.26"
 pyserial = "^3.5"
 
