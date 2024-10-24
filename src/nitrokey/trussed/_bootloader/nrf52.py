@@ -49,6 +49,7 @@ class SignatureKey:
     def public_key(self) -> ec.EllipticCurvePublicKey:
         public_key = serialization.load_der_public_key(bytes.fromhex(self.der))
         assert isinstance(public_key, ec.EllipticCurvePublicKey)
+        assert isinstance(public_key.curve, ec.SECP256R1)
         return public_key
 
     def verify(self, signature: bytes, message: bytes) -> bool:
