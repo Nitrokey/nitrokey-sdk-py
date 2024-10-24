@@ -18,6 +18,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
+cryptography = ">=41"
 fido2 = "^1.1.2"
 python = "^3.9"
 requests = "^2"
@@ -26,11 +27,9 @@ tlv8 = "^0.10"
 
 # lpc55
 crcmod = "^1.7"
-cryptography = ">=41"
 hidapi = "^0.14"
 
 # nrf52
-ecdsa = ">=0.18,<=0.19"
 protobuf = "^5.26"
 pyserial = "^3.5"
 
