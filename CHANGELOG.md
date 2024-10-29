@@ -5,6 +5,7 @@
 - Remove `ecdsa` dependency
 - Remove two step update handling on macOS
 - Correct update message
+- Add RPM specification file
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.2...HEAD)
 
