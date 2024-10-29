@@ -6,6 +6,7 @@
 - Remove two step update handling on macOS
 - Correct update message
 - Add RPM specification file
+- Add CI test to make sure versions in `pyproject.toml` and `python3-nitrokey.spec` are the same
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.2...HEAD)
 

@@ -95,6 +95,25 @@ jobs:
         run: make install
       - name: Check docs
         run: make check-docs
+  check-version-accordance:
+    name: Check for version accordance
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install required packages
+        run: dnf makecache && dnf install -y make rpm-build python python-pip
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Create virtual environment
+        run: make install
+      - name: Check versions (Python package and RPM specification)
+        shell: bash
+        run: |
+          PACKAGE_VERSION=$(poetry version --short)
+          RPM_VERSION=$(rpmspec -q --qf "%{version}" ci-scripts/linux/rpm/python3-nitrokey.spec)
+          if [ $PACKAGE_VERSION == $RPM_VERSION ]; then exit 0; else exit 1; fi
   build-docs:
     name: Build documentation
     runs-on: ubuntu-latest
