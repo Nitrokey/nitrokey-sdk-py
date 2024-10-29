@@ -65,7 +65,7 @@ def get_extra_information(upath: UpdatePath) -> List[str]:
             "",
             "During this update process the internal filesystem will be migrated!",
             "- Migration will only work, if your internal filesystem does not contain more than 45 Resident Keys. If you have more please remove some.",
-            "- After the update it might take up to 3minutes for the first boot.",
+            "- After the update it might take up to 3 minutes for the first boot.",
             "Never unplug the device while the LED is active!",
         ]
     return out
