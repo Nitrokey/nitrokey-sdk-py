@@ -9,6 +9,7 @@ import enum
 import logging
 import platform
 import time
+import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from io import BytesIO
@@ -119,9 +120,11 @@ class UpdateUi(ABC):
     def confirm_update_same_version(self, version: Version) -> None:
         pass
 
-    @abstractmethod
     def request_repeated_update(self) -> Optional[Exception]:
-        pass
+        warnings.warn(
+            "UpdateUi.request_repeated_update is no longer needed", DeprecationWarning
+        )
+        return None
 
     @abstractmethod
     def pre_bootloader_hint(self) -> None:
@@ -323,13 +326,6 @@ class Updater:
 
             # needed for udev to properly handle new device
             time.sleep(1)
-
-            maybe_exc = self.ui.request_repeated_update()
-            if platform.system() == "Darwin" and maybe_exc is not None:
-                # Currently there is an issue with device enumeration after reboot on macOS, see
-                # <https://github.com/Nitrokey/pynitrokey/issues/145>.  To avoid this issue, we
-                # cancel the command now and ask the user to run it again.
-                raise maybe_exc
 
             self.ui.pre_bootloader_hint()
 
