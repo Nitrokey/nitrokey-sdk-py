@@ -1,11 +1,21 @@
+diff --git a/poetry.lock b/poetry.lock
+index 6038989..babcefb 100644
+--- a/poetry.lock
++++ b/poetry.lock
+@@ -1485,4 +1485,4 @@ type = ["pytest-mypy"]
+ [metadata]
+ lock-version = "2.0"
+ python-versions = "^3.9"
+-content-hash = "bf3cf1d5036f82de8a351d2da4aba6c8b2bf85fd6bd75e7b12502e0cca0057d2"
++content-hash = "141c56959904ac2d8688a01afa5350137365bbefce5e86c62fd77b37430b3520"
 diff --git a/pyproject.toml b/pyproject.toml
-index acdfc95..1b8558f 100644
+index 99746df..9922246 100644
 --- a/pyproject.toml
 +++ b/pyproject.toml
-@@ -31,7 +31,7 @@ hidapi = "^0.14"
+@@ -30,7 +30,7 @@ crcmod = "^1.7"
+ hidapi = "^0.14"
  
  # nrf52
- ecdsa = ">=0.18"
 -protobuf = "^5.26"
 +protobuf = ">=3.19"
  pyserial = "^3.5"
