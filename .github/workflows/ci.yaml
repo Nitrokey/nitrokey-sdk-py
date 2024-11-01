@@ -103,7 +103,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Install required packages
-        run: dnf makecache && dnf install -y make rpm-build python python-pip
+        run: dnf makecache && dnf install -y make rpm-build python python-pip python3-devel gcc systemd-devel
       - name: Install Poetry
         run: pip install poetry
       - name: Create virtual environment
