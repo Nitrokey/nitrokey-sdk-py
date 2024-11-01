@@ -15,6 +15,7 @@ BuildRequires:  %{py3_dist crcmod}
 BuildRequires:  %{py3_dist cryptography}
 BuildRequires:  %{py3_dist fido2}
 BuildRequires:  %{py3_dist hidapi}
+BuildRequires:  %{py3_dist poetry-core}
 BuildRequires:  %{py3_dist protobuf}
 BuildRequires:  %{py3_dist pyserial}
 BuildRequires:  %{py3_dist semver}
@@ -44,5 +45,7 @@ The Nitrokey Python SDK can be used to use and configure Nitrokey devices.
 %doc README.md
 
 %changelog
+* Fri Nov 01 2024 Markus Merklinger <markus@nitrokey.com> - 0.2.3-1
+- Add build dependency.
 * Mon Oct 21 2024 Markus Merklinger <markus@nitrokey.com> - 0.2.0-1
 - Initial package.
