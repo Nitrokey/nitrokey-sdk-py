@@ -2,13 +2,19 @@
 
 ## Unreleased
 
+-
+
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.3...HEAD)
+
+## [v0.2.3](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.2.3) (2024-11-02)
+
 - Remove `ecdsa` dependency
 - Remove two step update handling on macOS
 - Correct update message
 - Add RPM specification file
 - Add CI test to make sure versions in `pyproject.toml` and `python3-nitrokey.spec` are the same
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.2...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.2...v0.2.3)
 
 ## [v0.2.2](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.2.2) (2024-10-23)
 

@@ -1,5 +1,5 @@
 Name:           python3-nitrokey
-Version:        0.2.2
+Version:        0.2.3
 Release:        %autorelease
 Summary:        Python SDK for Nitrokey devices
 
