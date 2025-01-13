@@ -6,6 +6,7 @@ on:
 
 env:
   REQUIRED_PACKAGES: make
+  POETRY_SPEC: poetry >=1,<2
 
 jobs:
   version-check:
@@ -18,7 +19,7 @@ jobs:
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
       - name: Check version tag format
@@ -43,7 +44,7 @@ jobs:
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
       - name: Build
@@ -71,7 +72,7 @@ jobs:
           name: nitrokey-pypi
           path: dist
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Configure PyPI repository
         run: poetry config repositories.pypi $POETRY_PYPI_URL
       - name: Publish release

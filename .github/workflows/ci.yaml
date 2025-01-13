@@ -3,6 +3,7 @@ on: [push, pull_request]
 
 env:
   REQUIRED_PACKAGES: make
+  POETRY_SPEC: poetry >=1,<2
 
 jobs:
   format-code:
@@ -15,7 +16,7 @@ jobs:
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
       - name: Check code format
@@ -30,7 +31,7 @@ jobs:
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
       - name: Check code import format
@@ -45,7 +46,7 @@ jobs:
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
       - name: Check code style
@@ -60,7 +61,7 @@ jobs:
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
       - name: Check code static typing
@@ -75,7 +76,7 @@ jobs:
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
       - name: Check poetry configuration
@@ -90,7 +91,7 @@ jobs:
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
       - name: Check docs
@@ -105,7 +106,7 @@ jobs:
       - name: Install required packages
         run: dnf makecache && dnf install -y make rpm-build python python-pip python3-devel gcc systemd-devel
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
       - name: Check versions (Python package and RPM specification)
@@ -124,7 +125,7 @@ jobs:
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
       - name: Build docs
@@ -139,7 +140,7 @@ jobs:
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
       - name: Run test suite
@@ -154,7 +155,7 @@ jobs:
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
       - name: Update locked dependencies
@@ -190,7 +191,7 @@ jobs:
       - name: Install tangler
         run: cargo install tangler@0.3.0
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
       - name: Extract code from readme
