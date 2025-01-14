@@ -11,7 +11,7 @@ import platform
 import sys
 from abc import abstractmethod
 from enum import Enum
-from typing import Optional, Sequence, TypeVar, Union
+from typing import List, Optional, Sequence, TypeVar, Union
 
 from fido2.hid import CtapHidDevice, open_device
 
@@ -110,15 +110,8 @@ class TrussedDevice(TrussedBase):
             return None
 
     @classmethod
-    def list(cls: type[T]) -> list[T]:
-        devices = []
-        for device in CtapHidDevice.list_devices():
-            try:
-                devices.append(cls.from_device(device))
-            except ValueError:
-                # not the correct device type, skip
-                pass
-        return devices
+    @abstractmethod
+    def list(cls: type[T]) -> List[T]: ...
 
 
 def _device_path_to_str(path: Union[bytes, str]) -> str:

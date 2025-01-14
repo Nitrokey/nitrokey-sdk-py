@@ -7,7 +7,7 @@
 
 from typing import List, Optional, Sequence, Union
 
-from fido2.hid import CtapHidDevice
+from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
 from nitrokey import _VID_NITROKEY
 from nitrokey.trussed import Fido2Certs, TrussedDevice, Version
@@ -59,6 +59,21 @@ class NKPK(TrussedDevice):
     @classmethod
     def from_device(cls, device: CtapHidDevice) -> "NKPK":
         return cls(device)
+
+    @classmethod
+    def list(cls) -> List["NKPK"]:
+        descriptors = [
+            desc
+            for desc in list_descriptors()  # type: ignore
+            if desc.vid == _VID_NITROKEY and desc.pid == _PID_NKPK_DEVICE
+        ]
+
+        devices = []
+
+        # iterate on all descriptors found and open the device
+        for desc in descriptors:
+            devices.append(cls.from_device(open_device(desc.path)))
+        return devices
 
 
 class NKPKBootloader(TrussedBootloaderNrf52):

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
--
+- The list methods of `NK3` and `NKPK` now only open the respective device, based on the USB vendor and product ID.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.3...HEAD)
 

@@ -5,8 +5,11 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
-from fido2.hid import CtapHidDevice
+from typing import List
 
+from fido2.hid import CtapHidDevice, list_descriptors, open_device
+
+from nitrokey import _VID_NITROKEY
 from nitrokey.trussed import Fido2Certs, TrussedDevice, Version
 
 FIDO2_CERTS = [
@@ -46,3 +49,20 @@ class NK3(TrussedDevice):
     @classmethod
     def from_device(cls, device: CtapHidDevice) -> "NK3":
         return cls(device)
+
+    @classmethod
+    def list(cls) -> List["NK3"]:
+        from . import _PID_NK3_DEVICE
+
+        descriptors = [
+            desc
+            for desc in list_descriptors()  # type: ignore
+            if desc.vid == _VID_NITROKEY and desc.pid == _PID_NK3_DEVICE
+        ]
+
+        devices = []
+
+        # iterate on all descriptors found and open the device
+        for desc in descriptors:
+            devices.append(cls.from_device(open_device(desc.path)))
+        return devices
