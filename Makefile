@@ -1,6 +1,6 @@
 FORMAT_DIRS := src stubs tests
 LINT_DIRS := src tests
-PACKAGE_VERSION:=$(shell poetry version --short)
+PACKAGE_VERSION := $(shell poetry version --short)
 
 .PHONY: install
 install:
@@ -63,5 +63,6 @@ build-docs:
 	poetry run sphinx-build --fail-on-warning docs _build
 
 .PHONY: update-version
+update-version: RPM_VERSION=$(shell echo ${PACKAGE_VERSION} | sed 's/-rc\./~rc/')
 update-version:
-	sed -i "/^Version:/s/[[:digit:]].*/$(PACKAGE_VERSION)/" ci-scripts/linux/rpm/python3-nitrokey.spec
+	sed -i "/^Version:/s/[[:digit:]].*/$(RPM_VERSION)/" ci-scripts/linux/rpm/python3-nitrokey.spec

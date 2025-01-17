@@ -112,7 +112,7 @@ jobs:
       - name: Check versions (Python package and RPM specification)
         shell: bash
         run: |
-          PACKAGE_VERSION=$(poetry version --short)
+          PACKAGE_VERSION=$(poetry version --short | sed s'/-rc\./~rc/')
           RPM_VERSION=$(rpmspec -q --qf "%{version}" ci-scripts/linux/rpm/python3-nitrokey.spec)
           if [ $PACKAGE_VERSION == $RPM_VERSION ]; then exit 0; else exit 1; fi
   build-docs:
