@@ -4,7 +4,7 @@ on:
   push:
   pull_request:
   release:
-    types: [released]
+    types: [published]
 
 env:
   POETRY_SPEC: poetry >=1,<2
@@ -46,7 +46,7 @@ jobs:
     name: Publish to TestPyPI
     runs-on: ubuntu-latest
     needs: build
-    if: github.event.name == 'release' || github.ref == 'refs/heads/main'
+    if: github.event_name == 'release' || github.ref == 'refs/heads/main'
     environment:
       name: testpypi
       url: https://test.pypi.org/p/nitrokey
@@ -69,7 +69,7 @@ jobs:
     name: Check tag version
     runs-on: ubuntu-latest
     container: python:3.9-slim
-    if: github.event.name == 'release'
+    if: github.event_name == 'release'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
     name: Publish to PyPI
     runs-on: ubuntu-latest
     needs: [build, check-tag-version]
-    if: github.event.name == 'release'
+    if: github.event_name == 'release'
     environment:
       name: pypi
       url: https://pypi.org/p/nitrokey
