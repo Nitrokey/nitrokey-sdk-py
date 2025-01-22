@@ -95,6 +95,21 @@ These make targets can be used to invoke poetry for the most common tasks:
 
 For more information, see poetry’s documentation on [Managing depencies](https://python-poetry.org/docs/managing-dependencies/) and [Commands](https://python-poetry.org/docs/cli/).
 
+### Publishing Releases
+
+Releases are published using Github Actions.
+To create a new release:
+1. Update the `version` field in `pyproject.toml` manually or using `poetry version`.
+2. Update the [changelog](./CHANGELOG.md) for the release.
+3. Run `make update-version` to update the RPM package version.
+4. Commit these changes, create a PR and merge into `main`.
+5. Create a signed tag with the version number and a `v` prefix, for example `v0.2.4`, and push it to this repository.
+6. [Create a new release](https://github.com/Nitrokey/nitrokey-sdk-py/releases/new) for this tag and copy the relevant parts from the [changelog](./CHANGELOG.md) to the release description.
+7. Wait for the deployment action to run and approve the deployment to [PyPI](https://pypi.org/p/nitrokey).
+
+All commits to `main` are automatically deployed to [TestPyPI](https://test.pypi.org/p/nitrokey).
+It is also possible to publish release candidates (pre-releases) with a suffix like `-rc.1`.
+
 ## License
 
 This software is fully open source.
