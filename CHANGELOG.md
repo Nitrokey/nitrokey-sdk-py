@@ -2,16 +2,17 @@
 
 ## Unreleased
 
-- Add support for `poetry-core` v2.
+-
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.4-rc.1...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.4...HEAD)
 
-## [v0.2.4-rc.1](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.2.4-rc.1) (2025-01-17)
+## [v0.2.4](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.2.4) (2025-01-22)
 
 - The list methods of `NK3` and `NKPK` now only open the respective device, based on the USB vendor and product ID.
 - Use trusted publishing for PyPI.
+- Add support for `poetry-core` v2.
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.3...v0.2.4-rc.1)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.3...v0.2.4)
 
 ## [v0.2.3](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.2.3) (2024-11-02)
 
