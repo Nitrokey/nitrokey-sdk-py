@@ -2,7 +2,7 @@
 
 ## Unreleased
 
--
+- Add support for `poetry-core` v2.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.4-rc.1...HEAD)
 
