@@ -20,7 +20,7 @@ packages = [
 [tool.poetry.dependencies]
 cryptography = ">=41"
 fido2 = "^1.1.2"
-python = "^3.9"
+python = "^3.9.2"
 requests = "^2"
 semver = "^3"
 tlv8 = "^0.10"

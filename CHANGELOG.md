@@ -2,7 +2,7 @@
 
 ## Unreleased
 
--
+- Bump minimum Python version from 3.9 to 3.9.2.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.4...HEAD)
 
