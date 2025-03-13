@@ -100,6 +100,7 @@ def _validate_checksum(checksums: dict[str, str], path: str, data: bytes) -> Non
 class FirmwareContainer:
     version: Version
     pynitrokey: Optional[Version]
+    sdk: Optional[Version]
     images: Dict[Variant, bytes]
 
     @classmethod
@@ -121,6 +122,9 @@ class FirmwareContainer:
             pynitrokey = None
             if "pynitrokey" in manifest:
                 pynitrokey = Version.from_v_str(manifest["pynitrokey"])
+            sdk = None
+            if "sdk" in manifest:
+                sdk = Version.from_v_str(manifest["sdk"])
 
             images = {}
             for variant, image in manifest["images"].items():
@@ -131,6 +135,7 @@ class FirmwareContainer:
             return cls(
                 version=version,
                 pynitrokey=pynitrokey,
+                sdk=sdk,
                 images=images,
             )
 

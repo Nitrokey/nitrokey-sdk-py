@@ -2,7 +2,10 @@
 
 ## Unreleased
 
--
+- Add support for setting a minimum SDK version in firmware update containers.
+  - Add an `sdk` field to `nitrokey.trussed.FirmwareContainer`.
+  - Add abstract `confirm_sdk_version` and `abort_sdk_version` methods to `nitrokey.nk3.updates.UpdateUi`.
+  - Check SDK version in `nitrokey.nk3.updates.Updater.update` and rename `ignore_pynitrokey_version` argument to `ignore_minimum_version`.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.4...HEAD)
 
