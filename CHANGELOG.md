@@ -9,6 +9,10 @@
   - Reboot devices in firmware mode before the update to make sure that the status is up to date.
   - Add `Warning` enum, `show_warning` and `raise_warning` methods to `UpdateUi` and `ignore_warnings` argument to `UpdateUi.__init__`.
 - Add support for updates to Nitrokey 3 firmware v1.8.2.
+- Add support for setting a minimum SDK version in firmware update containers.
+  - Add an `sdk` field to `nitrokey.trussed.FirmwareContainer`.
+  - Check SDK version in `nitrokey.nk3.updates.Updater.update`.
+  - Add `nitrokey.nk3.updates.Warning.SDK_VERSION` variant.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.4...HEAD)
 

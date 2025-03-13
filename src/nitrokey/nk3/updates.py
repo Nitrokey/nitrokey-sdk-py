@@ -6,6 +6,7 @@
 # copied, modified, or distributed except according to those terms.
 
 import enum
+import importlib.metadata
 import logging
 import platform
 import time
@@ -13,6 +14,7 @@ import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Set
 from contextlib import contextmanager
+from importlib.metadata import PackageNotFoundError
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Union
 
@@ -49,6 +51,7 @@ class Warning(enum.Enum):
 
     IFS_MIGRATION_V2 = "ifs-migration-v2"
     MISSING_STATUS = "missing-status"
+    SDK_VERSION = "sdk-version"
     UPDATE_FROM_BOOTLOADER = "update-from-bootloader"
 
     @property
@@ -63,6 +66,11 @@ class Warning(enum.Enum):
             return (
                 "Could not determine the device state as the current firmware is too old."
                 " Please update to firmware version v1.3.1 first."
+            )
+        if self == Warning.SDK_VERSION:
+            return (
+                "Your Nitrokey SDK version is outdated.  Please update this program to the latest"
+                " version and try again."
             )
         if self == Warning.UPDATE_FROM_BOOTLOADER:
             return (
@@ -290,18 +298,7 @@ class Updater:
             if status is None and container.version > Version.from_str("1.3.1"):
                 self._trigger_warning(Warning.MISSING_STATUS)
 
-        if container.pynitrokey:
-            # this is the version of pynitrokey when we moved to the SDK
-            pynitrokey_version = Version.from_str("0.4.49")
-            if container.pynitrokey > pynitrokey_version:
-                if ignore_pynitrokey_version:
-                    self.ui.confirm_pynitrokey_version(
-                        current=pynitrokey_version, required=container.pynitrokey
-                    )
-                else:
-                    raise self.ui.abort_pynitrokey_version(
-                        current=pynitrokey_version, required=container.pynitrokey
-                    )
+        self._check_minimum_version(container, ignore_pynitrokey_version)
 
         self.ui.confirm_update(current_version, container.version)
 
@@ -419,6 +416,36 @@ class Updater:
             )
 
         return container
+
+    def _check_minimum_version(
+        self, container: FirmwareContainer, ignore_pynitrokey_version: bool
+    ) -> None:
+        if container.sdk:
+            try:
+                sdk_version = Version.from_str(importlib.metadata.version("nitrokey"))
+            except PackageNotFoundError:
+                raise self.ui.error("Failed to determine the Nitrokey SDK version")
+
+            if container.sdk > sdk_version:
+                logger.warning(
+                    f"Minimum SDK version required for update is {container.sdk} (current version: {sdk_version})"
+                )
+                self._trigger_warning(Warning.SDK_VERSION)
+        elif container.pynitrokey:
+            # The minimum pynitrokey version has been replaced by the minimum SDK version, so we
+            # only check it if there is no minimum SDK version set.
+
+            # this is the version of pynitrokey when we moved to the SDK
+            pynitrokey_version = Version.from_str("0.4.49")
+            if container.pynitrokey > pynitrokey_version:
+                if ignore_pynitrokey_version:
+                    self.ui.confirm_pynitrokey_version(
+                        current=pynitrokey_version, required=container.pynitrokey
+                    )
+                else:
+                    raise self.ui.abort_pynitrokey_version(
+                        current=pynitrokey_version, required=container.pynitrokey
+                    )
 
     def _validate_version(
         self,
