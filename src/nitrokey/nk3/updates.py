@@ -6,12 +6,14 @@
 # copied, modified, or distributed except according to those terms.
 
 import enum
+import importlib.metadata
 import logging
 import platform
 import time
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from importlib.metadata import PackageNotFoundError
 from io import BytesIO
 from typing import Any, Callable, Iterator, List, Optional
 
@@ -101,6 +103,10 @@ class UpdateUi(ABC):
         pass
 
     @abstractmethod
+    def abort_sdk_version(self, current: Version, required: Version) -> Exception:
+        pass
+
+    @abstractmethod
     def confirm_download(self, current: Optional[Version], new: Version) -> None:
         pass
 
@@ -110,6 +116,10 @@ class UpdateUi(ABC):
 
     @abstractmethod
     def confirm_pynitrokey_version(self, current: Version, required: Version) -> None:
+        pass
+
+    @abstractmethod
+    def confirm_sdk_version(self, current: Version, required: Version) -> None:
         pass
 
     @abstractmethod
@@ -168,24 +178,13 @@ class Updater:
         device: TrussedBase,
         image: Optional[str],
         update_version: Optional[str],
-        ignore_pynitrokey_version: bool = False,
+        ignore_minimum_version: bool = False,
     ) -> Version:
         current_version = device.admin.version() if isinstance(device, NK3) else None
         logger.info(f"Firmware version before update: {current_version or ''}")
         container = self._prepare_update(image, update_version, current_version)
 
-        if container.pynitrokey:
-            # this is the version of pynitrokey when we moved to the SDK
-            pynitrokey_version = Version.from_str("0.4.49")
-            if container.pynitrokey > pynitrokey_version:
-                if ignore_pynitrokey_version:
-                    self.ui.confirm_pynitrokey_version(
-                        current=pynitrokey_version, required=container.pynitrokey
-                    )
-                else:
-                    raise self.ui.abort_pynitrokey_version(
-                        current=pynitrokey_version, required=container.pynitrokey
-                    )
+        self._check_minimum_version(container, ignore_minimum_version)
 
         self.ui.confirm_update(current_version, container.version)
 
@@ -294,6 +293,40 @@ class Updater:
             )
 
         return container
+
+    def _check_minimum_version(
+        self, container: FirmwareContainer, ignore_minimum_version: bool
+    ) -> None:
+        if container.sdk:
+            try:
+                sdk_version = Version.from_str(importlib.metadata.version("nitrokey"))
+            except PackageNotFoundError:
+                raise self.ui.error("Failed to determine the Nitrokey SDK version")
+
+            if container.sdk > sdk_version:
+                if ignore_minimum_version:
+                    self.ui.confirm_sdk_version(
+                        current=sdk_version, required=container.sdk
+                    )
+                else:
+                    raise self.ui.abort_sdk_version(
+                        current=sdk_version, required=container.sdk
+                    )
+        elif container.pynitrokey:
+            # The minimum pynitrokey version has been replaced by the minimum SDK version, so we
+            # only check it if there is no minimum SDK version set.
+
+            # this is the version of pynitrokey when we moved to the SDK
+            pynitrokey_version = Version.from_str("0.4.49")
+            if container.pynitrokey > pynitrokey_version:
+                if ignore_minimum_version:
+                    self.ui.confirm_pynitrokey_version(
+                        current=pynitrokey_version, required=container.pynitrokey
+                    )
+                else:
+                    raise self.ui.abort_pynitrokey_version(
+                        current=pynitrokey_version, required=container.pynitrokey
+                    )
 
     def _validate_version(
         self,
