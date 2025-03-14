@@ -11,9 +11,10 @@ import platform
 import time
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Set
 from contextlib import contextmanager
 from io import BytesIO
-from typing import Any, Callable, Iterator, List, Optional
+from typing import Any, Callable, Iterator, List, Optional, Union
 
 from nitrokey._helpers import Retries
 from nitrokey.nk3 import NK3, NK3Bootloader
@@ -27,40 +28,67 @@ from nitrokey.trussed._bootloader import (
 from nitrokey.trussed._bootloader.lpc55_upload.mboot.exceptions import (
     McuBootConnectionError,
 )
-from nitrokey.trussed.admin_app import BootMode
+from nitrokey.trussed.admin_app import BootMode, Status
+from nitrokey.trussed.admin_app import Variant as AdminAppVariant
 from nitrokey.updates import Asset, Release
 
 logger = logging.getLogger(__name__)
 
 
 @enum.unique
-class UpdatePath(enum.Enum):
-    default = enum.auto()
-    nRF_IFS_Migration_v1_3 = enum.auto()
+class _Migration(enum.Enum):
+    # IFS migration to use journaling on the NRF52 introduced in v1.3.0
+    NRF_IFS_MIGRATION = enum.auto()
+    # IFS migration to filesystem layout 2 in v1.8.2 (FIDO2 RK migration)
+    IFS_MIGRATION_V2 = enum.auto()
 
     @classmethod
-    def create(
-        cls, variant: Optional[Variant], current: Optional[Version], new: Version
-    ) -> "UpdatePath":
+    def get(
+        cls,
+        variant: Union[Variant, AdminAppVariant],
+        current: Optional[Version],
+        new: Version,
+    ) -> frozenset["_Migration"]:
+        if isinstance(variant, AdminAppVariant):
+            if variant == AdminAppVariant.USBIP:
+                raise ValueError("Cannot perform firmware update for USBIP runner")
+            elif variant == AdminAppVariant.LPC55:
+                variant = Variant.LPC55
+            elif variant == AdminAppVariant.NRF52:
+                variant = Variant.NRF52
+            else:
+                raise ValueError(f"Unsupported device variant: {variant}")
+
+        migrations = set()
+
         if variant == Variant.NRF52:
             if (
                 current is None
                 or current <= Version(1, 2, 2)
                 and new >= Version(1, 3, 0)
             ):
-                return cls.nRF_IFS_Migration_v1_3
-        return cls.default
+                migrations.add(cls.NRF_IFS_MIGRATION)
+
+        ifs_migration_v2 = Version(1, 8, 2)
+        if (
+            current is not None
+            and current < ifs_migration_v2
+            and new >= ifs_migration_v2
+        ):
+            migrations.add(cls.IFS_MIGRATION_V2)
+
+        return frozenset(migrations)
 
 
 def get_firmware_update(release: Release) -> Asset:
     return release.require_asset(Model.NK3.firmware_pattern)
 
 
-def get_extra_information(upath: UpdatePath) -> List[str]:
+def _get_extra_information(migrations: Set[_Migration]) -> List[str]:
     """Return additional information for the device after update based on update-path"""
 
     out = []
-    if upath == UpdatePath.nRF_IFS_Migration_v1_3:
+    if _Migration.NRF_IFS_MIGRATION in migrations:
         out += [
             "",
             "During this update process the internal filesystem will be migrated!",
@@ -71,11 +99,11 @@ def get_extra_information(upath: UpdatePath) -> List[str]:
     return out
 
 
-def get_finalization_wait_retries(upath: UpdatePath) -> int:
+def _get_finalization_wait_retries(migrations: Set[_Migration]) -> int:
     """Return number of retries to wait for the device after update based on update-path"""
 
     out = 60
-    if upath == UpdatePath.nRF_IFS_Migration_v1_3:
+    if _Migration.NRF_IFS_MIGRATION in migrations:
         # max time 150secs == 300 retries
         out = 500
     return out
@@ -106,6 +134,10 @@ class UpdateUi(ABC):
 
     @abstractmethod
     def confirm_update(self, current: Optional[Version], new: Version) -> None:
+        pass
+
+    @abstractmethod
+    def confirm_update_from_bootloader(self) -> None:
         pass
 
     @abstractmethod
@@ -170,7 +202,11 @@ class Updater:
         update_version: Optional[str],
         ignore_pynitrokey_version: bool = False,
     ) -> Version:
+        if isinstance(device, NK3Bootloader):
+            self.ui.confirm_update_from_bootloader()
+
         current_version = device.admin.version() if isinstance(device, NK3) else None
+        status = device.admin.status() if isinstance(device, NK3) else None
         logger.info(f"Firmware version before update: {current_version or ''}")
         container = self._prepare_update(image, update_version, current_version)
 
@@ -189,6 +225,16 @@ class Updater:
 
         self.ui.confirm_update(current_version, container.version)
 
+        migrations = None
+        if status is not None and status.variant is not None:
+            migrations = self._check_migrations(
+                status.variant, current_version, container.version, status
+            )
+        elif isinstance(device, NK3Bootloader):
+            migrations = self._check_migrations(
+                device.variant, current_version, container.version, status
+            )
+
         with self._get_bootloader(device) as bootloader:
             if bootloader.variant not in container.images:
                 raise self.ui.error(
@@ -205,15 +251,14 @@ class Updater:
             except Exception as e:
                 raise self.ui.error("Failed to validate firmware image", e)
 
-            update_path = UpdatePath.create(
-                bootloader.variant, current_version, container.version
-            )
-            txt = get_extra_information(update_path)
-            self.ui.confirm_extra_information(txt)
+            if migrations is None:
+                migrations = self._check_migrations(
+                    bootloader.variant, current_version, container.version, status
+                )
 
             self._perform_update(bootloader, container)
 
-        wait_retries = get_finalization_wait_retries(update_path)
+        wait_retries = _get_finalization_wait_retries(migrations)
         with self.ui.finalization_progress_bar() as callback:
             with self.await_device(wait_retries, callback) as device:
                 version = device.admin.version()
@@ -350,6 +395,33 @@ class Updater:
             yield device
         else:
             raise self.ui.error(f"Unexpected Nitrokey 3 device: {device}")
+
+    def _check_migrations(
+        self,
+        variant: Union[Variant, AdminAppVariant],
+        current_version: Optional[Version],
+        new_version: Version,
+        status: Optional[Status],
+    ) -> frozenset["_Migration"]:
+        try:
+            migrations = _Migration.get(
+                variant=variant, current=current_version, new=new_version
+            )
+        except ValueError as e:
+            raise self.ui.error(str(e))
+
+        txt = _get_extra_information(migrations)
+        self.ui.confirm_extra_information(txt)
+
+        if _Migration.IFS_MIGRATION_V2 in migrations:
+            if status and status.ifs_blocks is not None and status.ifs_blocks < 5:
+                raise self.ui.error(
+                    "Not enough space on the internal filesystem to perform the firmware "
+                    "update. See the release notes for more information: "
+                    "https://github.com/Nitrokey/nitrokey-3-firmware/releases/tag/v1.8.2-test.20250312"
+                )
+
+        return migrations
 
     def _perform_update(
         self, device: NK3Bootloader, container: FirmwareContainer
