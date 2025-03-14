@@ -28,7 +28,7 @@ from nitrokey.trussed._bootloader import (
 from nitrokey.trussed._bootloader.lpc55_upload.mboot.exceptions import (
     McuBootConnectionError,
 )
-from nitrokey.trussed.admin_app import BootMode
+from nitrokey.trussed.admin_app import BootMode, Status
 from nitrokey.updates import Asset, Release
 
 logger = logging.getLogger(__name__)
@@ -36,13 +36,17 @@ logger = logging.getLogger(__name__)
 
 @enum.unique
 class _Migration(enum.Enum):
+    # IFS migration to use journaling on the NRF52 introduced in v1.3.0
     NRF_IFS_MIGRATION = enum.auto()
+    # IFS migration to filesystem layout 2 in v1.8.2 (FIDO2 RK migration)
+    IFS_MIGRATION_V2 = enum.auto()
 
     @classmethod
     def get(
         cls, variant: Optional[Variant], current: Optional[Version], new: Version
     ) -> frozenset["_Migration"]:
         migrations = set()
+
         if variant == Variant.NRF52:
             if (
                 current is None
@@ -50,6 +54,15 @@ class _Migration(enum.Enum):
                 and new >= Version(1, 3, 0)
             ):
                 migrations.add(cls.NRF_IFS_MIGRATION)
+
+        ifs_migration_v2 = Version(1, 8, 2)
+        if (
+            current is not None
+            and current < ifs_migration_v2
+            and new >= ifs_migration_v2
+        ):
+            migrations.add(cls.IFS_MIGRATION_V2)
+
         return frozenset(migrations)
 
 
@@ -172,6 +185,7 @@ class Updater:
         ignore_pynitrokey_version: bool = False,
     ) -> Version:
         current_version = device.admin.version() if isinstance(device, NK3) else None
+        status = device.admin.status() if isinstance(device, NK3) else None
         logger.info(f"Firmware version before update: {current_version or ''}")
         container = self._prepare_update(image, update_version, current_version)
 
@@ -209,8 +223,7 @@ class Updater:
             migrations = _Migration.get(
                 bootloader.variant, current_version, container.version
             )
-            txt = _get_extra_information(migrations)
-            self.ui.confirm_extra_information(txt)
+            self._check_migrations(migrations, status)
 
             self._perform_update(bootloader, container)
 
@@ -351,6 +364,20 @@ class Updater:
             yield device
         else:
             raise self.ui.error(f"Unexpected Nitrokey 3 device: {device}")
+
+    def _check_migrations(
+        self, migrations: Set[_Migration], status: Optional[Status]
+    ) -> None:
+        txt = _get_extra_information(migrations)
+        self.ui.confirm_extra_information(txt)
+
+        if _Migration.IFS_MIGRATION_V2 in migrations:
+            if status and status.ifs_blocks is not None and status.ifs_blocks < 5:
+                raise self.ui.error(
+                    "Not enough space on the internal filesystem to perform the firmware "
+                    "update. See the release notes for more information: "
+                    "https://github.com/Nitrokey/nitrokey-3-firmware/releases/tag/v1.8.2-test.20250312"
+                )
 
     def _perform_update(
         self, device: NK3Bootloader, container: FirmwareContainer

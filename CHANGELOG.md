@@ -4,6 +4,7 @@
 
 - Bump minimum Python version from 3.9 to 3.9.2.
 - `nitrokey.nk3.updates`: Remove `UpdatePath`, `get_extra_information` and `get_finalization_wait_retries` from public API.
+- Add support for updates to Nitrokey 3 firmware v1.8.2.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.4...HEAD)
 
