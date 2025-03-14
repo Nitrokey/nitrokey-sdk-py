@@ -33,7 +33,11 @@ class TestNk3Updates(unittest.TestCase):
             frozenset(),
         )
         self.assertEqual(
-            _Migration.get(None, Version(1, 8, 2), Version(1, 9, 0)),
+            _Migration.get(Variant.NRF52, Version(1, 8, 2), Version(1, 9, 0)),
+            frozenset(),
+        )
+        self.assertEqual(
+            _Migration.get(Variant.LPC55, Version(1, 2, 2), Version(1, 3, 0)),
             frozenset(),
         )
 
@@ -67,7 +71,11 @@ class TestNk3Updates(unittest.TestCase):
             migrations,
         )
         self.assertEqual(
-            _Migration.get(None, Version(1, 8, 0), Version(1, 8, 2)),
+            _Migration.get(Variant.LPC55, Version(1, 1, 0), Version(1, 8, 2)),
+            migrations,
+        )
+        self.assertEqual(
+            _Migration.get(Variant.LPC55, Version(1, 8, 0), Version(1, 8, 2)),
             migrations,
         )
 

@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Set
 from contextlib import contextmanager
 from io import BytesIO
-from typing import Any, Callable, Iterator, List, Optional
+from typing import Any, Callable, Iterator, List, Optional, Union
 
 from nitrokey._helpers import Retries
 from nitrokey.nk3 import NK3, NK3Bootloader
@@ -29,6 +29,7 @@ from nitrokey.trussed._bootloader.lpc55_upload.mboot.exceptions import (
     McuBootConnectionError,
 )
 from nitrokey.trussed.admin_app import BootMode, Status
+from nitrokey.trussed.admin_app import Variant as AdminAppVariant
 from nitrokey.updates import Asset, Release
 
 logger = logging.getLogger(__name__)
@@ -43,8 +44,21 @@ class _Migration(enum.Enum):
 
     @classmethod
     def get(
-        cls, variant: Optional[Variant], current: Optional[Version], new: Version
+        cls,
+        variant: Union[Variant, AdminAppVariant],
+        current: Optional[Version],
+        new: Version,
     ) -> frozenset["_Migration"]:
+        if isinstance(variant, AdminAppVariant):
+            if variant == AdminAppVariant.USBIP:
+                raise ValueError("Cannot perform firmware update for USBIP runner")
+            elif variant == AdminAppVariant.LPC55:
+                variant = Variant.LPC55
+            elif variant == AdminAppVariant.NRF52:
+                variant = Variant.NRF52
+            else:
+                raise ValueError(f"Unsupported device variant: {variant}")
+
         migrations = set()
 
         if variant == Variant.NRF52:
@@ -204,6 +218,16 @@ class Updater:
 
         self.ui.confirm_update(current_version, container.version)
 
+        migrations = None
+        if status is not None and status.variant is not None:
+            migrations = self._check_migrations(
+                status.variant, current_version, container.version, status
+            )
+        elif isinstance(device, NK3Bootloader):
+            migrations = self._check_migrations(
+                device.variant, current_version, container.version, status
+            )
+
         with self._get_bootloader(device) as bootloader:
             if bootloader.variant not in container.images:
                 raise self.ui.error(
@@ -220,10 +244,10 @@ class Updater:
             except Exception as e:
                 raise self.ui.error("Failed to validate firmware image", e)
 
-            migrations = _Migration.get(
-                bootloader.variant, current_version, container.version
-            )
-            self._check_migrations(migrations, status)
+            if migrations is None:
+                migrations = self._check_migrations(
+                    bootloader.variant, current_version, container.version, status
+                )
 
             self._perform_update(bootloader, container)
 
@@ -366,8 +390,19 @@ class Updater:
             raise self.ui.error(f"Unexpected Nitrokey 3 device: {device}")
 
     def _check_migrations(
-        self, migrations: Set[_Migration], status: Optional[Status]
-    ) -> None:
+        self,
+        variant: Union[Variant, AdminAppVariant],
+        current_version: Optional[Version],
+        new_version: Version,
+        status: Optional[Status],
+    ) -> frozenset["_Migration"]:
+        try:
+            migrations = _Migration.get(
+                variant=variant, current=current_version, new=new_version
+            )
+        except ValueError as e:
+            raise self.ui.error(str(e))
+
         txt = _get_extra_information(migrations)
         self.ui.confirm_extra_information(txt)
 
@@ -378,6 +413,8 @@ class Updater:
                     "update. See the release notes for more information: "
                     "https://github.com/Nitrokey/nitrokey-3-firmware/releases/tag/v1.8.2-test.20250312"
                 )
+
+        return migrations
 
     def _perform_update(
         self, device: NK3Bootloader, container: FirmwareContainer
