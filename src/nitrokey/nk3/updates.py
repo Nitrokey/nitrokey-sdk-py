@@ -11,6 +11,7 @@ import platform
 import time
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Set
 from contextlib import contextmanager
 from io import BytesIO
 from typing import Any, Callable, Iterator, List, Optional
@@ -34,33 +35,33 @@ logger = logging.getLogger(__name__)
 
 
 @enum.unique
-class UpdatePath(enum.Enum):
-    default = enum.auto()
-    nRF_IFS_Migration_v1_3 = enum.auto()
+class _Migration(enum.Enum):
+    NRF_IFS_MIGRATION = enum.auto()
 
     @classmethod
-    def create(
+    def get(
         cls, variant: Optional[Variant], current: Optional[Version], new: Version
-    ) -> "UpdatePath":
+    ) -> frozenset["_Migration"]:
+        migrations = set()
         if variant == Variant.NRF52:
             if (
                 current is None
                 or current <= Version(1, 2, 2)
                 and new >= Version(1, 3, 0)
             ):
-                return cls.nRF_IFS_Migration_v1_3
-        return cls.default
+                migrations.add(cls.NRF_IFS_MIGRATION)
+        return frozenset(migrations)
 
 
 def get_firmware_update(release: Release) -> Asset:
     return release.require_asset(Model.NK3.firmware_pattern)
 
 
-def get_extra_information(upath: UpdatePath) -> List[str]:
+def _get_extra_information(migrations: Set[_Migration]) -> List[str]:
     """Return additional information for the device after update based on update-path"""
 
     out = []
-    if upath == UpdatePath.nRF_IFS_Migration_v1_3:
+    if _Migration.NRF_IFS_MIGRATION in migrations:
         out += [
             "",
             "During this update process the internal filesystem will be migrated!",
@@ -71,11 +72,11 @@ def get_extra_information(upath: UpdatePath) -> List[str]:
     return out
 
 
-def get_finalization_wait_retries(upath: UpdatePath) -> int:
+def _get_finalization_wait_retries(migrations: Set[_Migration]) -> int:
     """Return number of retries to wait for the device after update based on update-path"""
 
     out = 60
-    if upath == UpdatePath.nRF_IFS_Migration_v1_3:
+    if _Migration.NRF_IFS_MIGRATION in migrations:
         # max time 150secs == 300 retries
         out = 500
     return out
@@ -205,15 +206,15 @@ class Updater:
             except Exception as e:
                 raise self.ui.error("Failed to validate firmware image", e)
 
-            update_path = UpdatePath.create(
+            migrations = _Migration.get(
                 bootloader.variant, current_version, container.version
             )
-            txt = get_extra_information(update_path)
+            txt = _get_extra_information(migrations)
             self.ui.confirm_extra_information(txt)
 
             self._perform_update(bootloader, container)
 
-        wait_retries = get_finalization_wait_retries(update_path)
+        wait_retries = _get_finalization_wait_retries(migrations)
         with self.ui.finalization_progress_bar() as callback:
             with self.await_device(wait_retries, callback) as device:
                 version = device.admin.version()

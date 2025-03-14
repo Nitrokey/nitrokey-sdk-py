@@ -25,27 +25,29 @@ class TestBasic(unittest.TestCase):
 
 class TestNk3Updates(unittest.TestCase):
     def test_update_path_default(self) -> None:
-        from nitrokey.nk3.updates import UpdatePath
+        from nitrokey.nk3.updates import _Migration
         from nitrokey.trussed import Variant, Version
 
         self.assertEqual(
-            UpdatePath.create(Variant.NRF52, Version(1, 0, 0), Version(1, 1, 0)),
-            UpdatePath.default,
+            _Migration.get(Variant.NRF52, Version(1, 0, 0), Version(1, 1, 0)),
+            frozenset(),
         )
 
     def test_update_path_match(self) -> None:
-        from nitrokey.nk3.updates import UpdatePath
+        from nitrokey.nk3.updates import _Migration
         from nitrokey.trussed import Variant, Version
 
+        nrf_migration = frozenset([_Migration.NRF_IFS_MIGRATION])
+
         self.assertEqual(
-            UpdatePath.create(Variant.NRF52, Version(1, 2, 2), Version(1, 3, 0)),
-            UpdatePath.nRF_IFS_Migration_v1_3,
+            _Migration.get(Variant.NRF52, Version(1, 2, 2), Version(1, 3, 0)),
+            nrf_migration,
         )
         self.assertEqual(
-            UpdatePath.create(Variant.NRF52, Version(1, 0, 0), Version(1, 3, 0)),
-            UpdatePath.nRF_IFS_Migration_v1_3,
+            _Migration.get(Variant.NRF52, Version(1, 0, 0), Version(1, 3, 0)),
+            nrf_migration,
         )
         self.assertEqual(
-            UpdatePath.create(Variant.NRF52, None, Version(1, 3, 0)),
-            UpdatePath.nRF_IFS_Migration_v1_3,
+            _Migration.get(Variant.NRF52, None, Version(1, 3, 0)),
+            nrf_migration,
         )
