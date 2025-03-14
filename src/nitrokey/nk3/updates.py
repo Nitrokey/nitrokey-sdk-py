@@ -137,6 +137,10 @@ class UpdateUi(ABC):
         pass
 
     @abstractmethod
+    def confirm_update_from_bootloader(self) -> None:
+        pass
+
+    @abstractmethod
     def confirm_pynitrokey_version(self, current: Version, required: Version) -> None:
         pass
 
@@ -198,6 +202,9 @@ class Updater:
         update_version: Optional[str],
         ignore_pynitrokey_version: bool = False,
     ) -> Version:
+        if isinstance(device, NK3Bootloader):
+            self.ui.confirm_update_from_bootloader()
+
         current_version = device.admin.version() if isinstance(device, NK3) else None
         status = device.admin.status() if isinstance(device, NK3) else None
         logger.info(f"Firmware version before update: {current_version or ''}")
