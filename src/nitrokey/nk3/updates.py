@@ -266,12 +266,23 @@ class Updater:
         update_version: Optional[str],
         ignore_pynitrokey_version: bool = False,
     ) -> Version:
-        update_from_bootloader = isinstance(device, NK3Bootloader)
-        if update_from_bootloader:
+        update_from_bootloader = False
+        current_version = None
+        status = None
+        if isinstance(device, NK3Bootloader):
+            update_from_bootloader = True
             self._trigger_warning(Warning.UPDATE_FROM_BOOTLOADER)
+        elif isinstance(device, NK3):
+            # We reboot here so that the status is always up to date
+            device.reboot()
+            time.sleep(1)
 
-        current_version = device.admin.version() if isinstance(device, NK3) else None
-        status = device.admin.status() if isinstance(device, NK3) else None
+            with self.await_device(3, None) as device:
+                current_version = device.admin.version()
+                status = device.admin.status()
+        else:
+            raise self.ui.error(f"Unexpected Trussed device: {device}")
+
         logger.info(f"Firmware version before update: {current_version or ''}")
         container = self._prepare_update(image, update_version, current_version)
 

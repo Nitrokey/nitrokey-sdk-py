@@ -6,6 +6,7 @@
 - `nitrokey.nk3.updates`:
   - Remove `UpdatePath`, `get_extra_information` and `get_finalization_wait_retries` from public API.
   - Show warning when updating from bootloader mode and if the status command is not available.
+  - Reboot devices in firmware mode before the update to make sure that the status is up to date.
   - Add `Warning` enum, `show_warning` and `raise_warning` methods to `UpdateUi` and `ignore_warnings` argument to `UpdateUi.__init__`.
 - Add support for updates to Nitrokey 3 firmware v1.8.2.
 
