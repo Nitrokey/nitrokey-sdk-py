@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Set
 from contextlib import contextmanager
 from io import BytesIO
-from typing import Any, Callable, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Union
 
 from nitrokey._helpers import Retries
 from nitrokey.nk3 import NK3, NK3Bootloader
@@ -32,7 +32,50 @@ from nitrokey.trussed.admin_app import BootMode, Status
 from nitrokey.trussed.admin_app import Variant as AdminAppVariant
 from nitrokey.updates import Asset, Release
 
+if TYPE_CHECKING:
+    import typing_extensions
+
 logger = logging.getLogger(__name__)
+
+
+@enum.unique
+class Warning(enum.Enum):
+    """
+    A warning that can occur during a firmware update.
+
+    By default, these warnings abort the firmware update.  This enum can be used to select types
+    of warnings that should be ignored and not cause the firmware update to fail.
+    """
+
+    IFS_MIGRATION_V2 = "ifs-migration-v2"
+    UPDATE_FROM_BOOTLOADER = "update-from-bootloader"
+
+    @property
+    def message(self) -> str:
+        if self == Warning.IFS_MIGRATION_V2:
+            return (
+                "Not enough space on the internal filesystem to perform the firmware"
+                " update. See the release notes for more information:"
+                " https://github.com/Nitrokey/nitrokey-3-firmware/releases/tag/v1.8.2-test.20250312"
+            )
+        if self == Warning.UPDATE_FROM_BOOTLOADER:
+            return (
+                "The current state of the device cannot be checked as it is already in bootloader"
+                " mode. Please review the release notes at:"
+                " https://github.com/Nitrokey/nitrokey-3-firmware/releases"
+            )
+
+        if TYPE_CHECKING:
+            typing_extensions.assert_never(self)
+
+        return self.value
+
+    @classmethod
+    def from_str(cls, s: str) -> "Warning":
+        for w in cls:
+            if w.value == s:
+                return w
+        raise ValueError(f"Unexpected update warning id: {s}")
 
 
 @enum.unique
@@ -57,6 +100,9 @@ class _Migration(enum.Enum):
             elif variant == AdminAppVariant.NRF52:
                 variant = Variant.NRF52
             else:
+                if TYPE_CHECKING:
+                    typing_extensions.assert_never(variant)
+
                 raise ValueError(f"Unsupported device variant: {variant}")
 
         migrations = set()
@@ -115,6 +161,14 @@ class UpdateUi(ABC):
         pass
 
     @abstractmethod
+    def show_warning(self, warning: Warning) -> None:
+        pass
+
+    @abstractmethod
+    def raise_warning(self, warning: Warning) -> Exception:
+        pass
+
+    @abstractmethod
     def abort(self, *msgs: Any) -> Exception:
         pass
 
@@ -134,10 +188,6 @@ class UpdateUi(ABC):
 
     @abstractmethod
     def confirm_update(self, current: Optional[Version], new: Version) -> None:
-        pass
-
-    @abstractmethod
-    def confirm_update_from_bootloader(self) -> None:
         pass
 
     @abstractmethod
@@ -190,10 +240,18 @@ class Updater:
         await_device: Callable[
             [Optional[int], Optional[Callable[[int, int], None]]], NK3
         ],
+        ignore_warnings: Set[Warning] = frozenset(),
     ) -> None:
         self.ui = ui
         self.await_bootloader = await_bootloader
         self.await_device = await_device
+        self.ignore_warnings = ignore_warnings
+
+    def _trigger_warning(self, warning: Warning) -> None:
+        if warning in self.ignore_warnings:
+            self.ui.show_warning(warning)
+        else:
+            raise self.ui.raise_warning(warning)
 
     def update(
         self,
@@ -203,7 +261,7 @@ class Updater:
         ignore_pynitrokey_version: bool = False,
     ) -> Version:
         if isinstance(device, NK3Bootloader):
-            self.ui.confirm_update_from_bootloader()
+            self._trigger_warning(Warning.UPDATE_FROM_BOOTLOADER)
 
         current_version = device.admin.version() if isinstance(device, NK3) else None
         status = device.admin.status() if isinstance(device, NK3) else None
@@ -415,11 +473,7 @@ class Updater:
 
         if _Migration.IFS_MIGRATION_V2 in migrations:
             if status and status.ifs_blocks is not None and status.ifs_blocks < 5:
-                raise self.ui.error(
-                    "Not enough space on the internal filesystem to perform the firmware "
-                    "update. See the release notes for more information: "
-                    "https://github.com/Nitrokey/nitrokey-3-firmware/releases/tag/v1.8.2-test.20250312"
-                )
+                self._trigger_warning(Warning.IFS_MIGRATION_V2)
 
         return migrations
 

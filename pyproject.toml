@@ -46,7 +46,7 @@ rstcheck = { version = "^6", extras = ["sphinx"] }
 sphinx = "^7"
 types-protobuf = "^5.26"
 types-requests = "^2.32"
-typing-extensions = "^4"
+typing-extensions = "^4.1"
 
 [tool.black]
 target-version = ["py39"]
