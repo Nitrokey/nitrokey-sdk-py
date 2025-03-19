@@ -48,6 +48,7 @@ class Warning(enum.Enum):
     """
 
     IFS_MIGRATION_V2 = "ifs-migration-v2"
+    MISSING_STATUS = "missing-status"
     UPDATE_FROM_BOOTLOADER = "update-from-bootloader"
 
     @property
@@ -57,6 +58,11 @@ class Warning(enum.Enum):
                 "Not enough space on the internal filesystem to perform the firmware"
                 " update. See the release notes for more information:"
                 " https://github.com/Nitrokey/nitrokey-3-firmware/releases/tag/v1.8.2-test.20250312"
+            )
+        if self == Warning.MISSING_STATUS:
+            return (
+                "Could not determine the device state as the current firmware is too old."
+                " Please update to firmware version v1.3.1 first."
             )
         if self == Warning.UPDATE_FROM_BOOTLOADER:
             return (
@@ -260,13 +266,18 @@ class Updater:
         update_version: Optional[str],
         ignore_pynitrokey_version: bool = False,
     ) -> Version:
-        if isinstance(device, NK3Bootloader):
+        update_from_bootloader = isinstance(device, NK3Bootloader)
+        if update_from_bootloader:
             self._trigger_warning(Warning.UPDATE_FROM_BOOTLOADER)
 
         current_version = device.admin.version() if isinstance(device, NK3) else None
         status = device.admin.status() if isinstance(device, NK3) else None
         logger.info(f"Firmware version before update: {current_version or ''}")
         container = self._prepare_update(image, update_version, current_version)
+
+        if not update_from_bootloader:
+            if status is None and container.version > Version.from_str("1.3.1"):
+                self._trigger_warning(Warning.MISSING_STATUS)
 
         if container.pynitrokey:
             # this is the version of pynitrokey when we moved to the SDK

@@ -5,7 +5,7 @@
 - Bump minimum Python version from 3.9 to 3.9.2.
 - `nitrokey.nk3.updates`:
   - Remove `UpdatePath`, `get_extra_information` and `get_finalization_wait_retries` from public API.
-  - Show warning when updating from bootloader mode.
+  - Show warning when updating from bootloader mode and if the status command is not available.
   - Add `Warning` enum, `show_warning` and `raise_warning` methods to `UpdateUi` and `ignore_warnings` argument to `UpdateUi.__init__`.
 - Add support for updates to Nitrokey 3 firmware v1.8.2.
 
