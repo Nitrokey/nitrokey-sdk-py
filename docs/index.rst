@@ -1,5 +1,5 @@
-Nitrokey Python SDK
-===================
+Nitrokey Python SDK |nitrokey_sdk_version|
+==========================================
 
 .. toctree::
    :maxdepth: 2
