@@ -10,7 +10,6 @@ import importlib.metadata
 import logging
 import platform
 import time
-import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Set
 from contextlib import contextmanager
@@ -215,12 +214,6 @@ class UpdateUi(ABC):
     @abstractmethod
     def confirm_update_same_version(self, version: Version) -> None:
         pass
-
-    def request_repeated_update(self) -> Optional[Exception]:
-        warnings.warn(
-            "UpdateUi.request_repeated_update is no longer needed", DeprecationWarning
-        )
-        return None
 
     @abstractmethod
     def pre_bootloader_hint(self) -> None:
