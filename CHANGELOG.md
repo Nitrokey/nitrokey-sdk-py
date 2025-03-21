@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+-
+
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.0...HEAD)
+
+## [v0.3.0](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.3.0) (2025-03-21)
+
 - Bump minimum Python version from 3.9 to 3.9.2.
 - `nitrokey.nk3.updates`:
   - Remove `UpdatePath`, `get_extra_information` and `get_finalization_wait_retries` from public API.
@@ -15,7 +21,7 @@
   - Check SDK version in `nitrokey.nk3.updates.Updater.update`.
   - Add `nitrokey.nk3.updates.Warning.SDK_VERSION` variant.
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.4...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.0...HEAD)
 
 ## [v0.2.4](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.2.4) (2025-01-22)
 
