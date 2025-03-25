@@ -21,7 +21,7 @@
   - Check SDK version in `nitrokey.nk3.updates.Updater.update`.
   - Add `nitrokey.nk3.updates.Warning.SDK_VERSION` variant.
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.0...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.2.4...v0.3.0)
 
 ## [v0.2.4](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.2.4) (2025-01-22)
 
