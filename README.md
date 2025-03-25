@@ -2,6 +2,8 @@
 
 The Nitrokey Python SDK can be used to use and configure Nitrokey devices.
 
+**[Documentation](https://docs.nitrokey.com/software/nitrokey-sdk-py/)**
+
 ## Features
 
 The SDK supports these devices and features:
