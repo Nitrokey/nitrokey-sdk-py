@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+-
+
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.1...HEAD)
+
+## [v0.3.1](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.3.1) (2025-03-28)
+
 - `nitropy.nk3.updates`: Remove reboot during update.
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.0...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.0...v0.3.1)
 
 ## [v0.3.0](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.3.0) (2025-03-21)
 
