@@ -274,13 +274,8 @@ class Updater:
             update_from_bootloader = True
             self._trigger_warning(Warning.UPDATE_FROM_BOOTLOADER)
         elif isinstance(device, NK3):
-            # We reboot here so that the status is always up to date
-            device.reboot()
-            time.sleep(1)
-
-            with self.await_device(3, None) as device:
-                current_version = device.admin.version()
-                status = device.admin.status()
+            current_version = device.admin.version()
+            status = device.admin.status()
         else:
             raise self.ui.error(f"Unexpected Trussed device: {device}")
 

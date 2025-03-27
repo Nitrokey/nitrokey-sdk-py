@@ -2,7 +2,7 @@
 
 ## Unreleased
 
--
+- `nitropy.nk3.updates`: Remove reboot during update.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.0...HEAD)
 
