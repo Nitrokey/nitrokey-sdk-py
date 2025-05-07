@@ -155,7 +155,7 @@ jobs:
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
-        run: pip install "${POETRY_SPEC}"
+        run: pip install "poetry==2"
       - name: Create virtual environment
         run: make install
       - name: Update locked dependencies
