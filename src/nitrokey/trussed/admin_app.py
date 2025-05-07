@@ -63,6 +63,7 @@ class InitStatus(IntFlag):
     SE050_ERROR = 0b00010000
     CONFIG_ERROR = 0b00100000
     RNG_ERROR = 0b01000000
+    EXT_FLASH_NEED_REFORMAT = 0b10000000
 
     def is_error(self) -> bool:
         return self.value != 0
