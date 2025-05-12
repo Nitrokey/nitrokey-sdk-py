@@ -3,6 +3,7 @@
 ## Unreleased
 
 - `nitrokey.trussed.admin_app.InitStatus`: add support for `EXT_FLASH_NEED_REFORMAT`
+- `nitrokey.nk3.updates`: return device status after an update
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.2...HEAD)
 
