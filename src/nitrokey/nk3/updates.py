@@ -15,7 +15,7 @@ from collections.abc import Set
 from contextlib import contextmanager
 from importlib.metadata import PackageNotFoundError
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, Union
 
 from nitrokey._helpers import Retries
 from nitrokey.nk3 import NK3, NK3Bootloader
@@ -266,7 +266,7 @@ class Updater:
         image: Optional[str],
         update_version: Optional[str],
         ignore_pynitrokey_version: bool = False,
-    ) -> Version:
+    ) -> Tuple[Version, Status]:
         update_from_bootloader = False
         current_version = None
         status = None
@@ -332,8 +332,9 @@ class Updater:
                         f"The firmware update to {container.version} was successful, but the "
                         f"firmware is still reporting version {version}."
                     )
+                status = device.admin.status()
 
-        return container.version
+        return container.version, status
 
     def _prepare_update(
         self,
