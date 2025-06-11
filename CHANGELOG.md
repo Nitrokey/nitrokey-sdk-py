@@ -6,6 +6,11 @@
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.1...HEAD)
 
+## [v0.4.0](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.3.2) (2025-05-12)
+
+- `nitrokey.trussed.admin_app.InitStatus`: add support for `EXT_FLASH_NEED_REFORMAT`
+- `nitrokey.nk3.updates`: return device status after an update
+
 ## [v0.3.1](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.3.1) (2025-03-28)
 
 - `nitropy.nk3.updates`: Remove reboot during update.
