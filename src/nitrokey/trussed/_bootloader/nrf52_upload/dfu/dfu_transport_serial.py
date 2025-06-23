@@ -148,7 +148,7 @@ class DFUAdapter:
             if byte:
                 (byte) = struct.unpack("B", byte)[0]
                 (finished, current_state, decoded_data) = Slip.decode_add_byte(
-                    byte, decoded_data, current_state  # type: ignore[arg-type]
+                    byte, decoded_data, current_state
                 )
             else:
                 current_state = Slip.SLIP_STATE_CLEARING_INVALID_PACKET
