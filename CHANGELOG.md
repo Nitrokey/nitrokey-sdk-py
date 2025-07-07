@@ -2,7 +2,7 @@
 
 ## Unreleased
 
--
+- Add support `fido2` v2.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.1...HEAD)
 
