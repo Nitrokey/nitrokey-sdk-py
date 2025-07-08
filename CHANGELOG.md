@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+-
+
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.2...HEAD)
+
+## [v0.3.2](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.3.2) (2025-07-08)
+
 - Add support `fido2` v2.
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.1...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.1...v0.3.2)
 
 ## [v0.3.1](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.3.1) (2025-03-28)
 
