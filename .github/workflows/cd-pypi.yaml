@@ -7,7 +7,7 @@ on:
     types: [published]
 
 env:
-  POETRY_SPEC: poetry >=1,<2
+  POETRY_SPEC: poetry >=2, <3
 
 jobs:
   check-package-version:

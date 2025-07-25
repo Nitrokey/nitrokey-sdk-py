@@ -1,37 +1,45 @@
 [build-system]
-requires = ["poetry-core >=1,<3"]
+requires = ["poetry-core >=2, <3"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry]
+[project]
 name = "nitrokey"
 version = "0.3.2"
 description = "Nitrokey Python SDK"
-authors = ["Nitrokey <pypi@nitrokey.com>"]
+authors = [
+    { name = "Nitrokey", email = "pypi@nitrokey.com" },
+]
 license = "Apache-2.0 or MIT"
 readme = "README.md"
-repository = "https://github.com/Nitrokey/nitrokey-sdk-py"
-classifiers = [
-    "Intended Audience :: Developers",
-]
 packages = [
     { include = "nitrokey", from = "src" },
 ]
+requires-python = ">=3.9.2, <4"
+dynamic = ["classifiers"]
 
-[tool.poetry.dependencies]
-cryptography = ">=41"
-fido2 = ">=1.1.2, <3"
-python = "^3.9.2"
-requests = "^2"
-semver = "^3"
-tlv8 = "^0.10"
+dependencies = [
+    "cryptography >=41",
+    "fido2 >=1.1.2, <3",
+    "requests >=2, <3",
+    "semver >=3, <4",
+    "tlv8 >=0.10, <0.11",
 
-# lpc55
-crcmod = "^1.7"
-hidapi = "^0.14"
+    # lpc55
+    "crcmod >=1.7, <2",
+    "hidapi >=0.14, <0.15",
 
-# nrf52
-protobuf = "^5.26"
-pyserial = "^3.5"
+    # nrf52
+    "protobuf >=5.26, <6",
+    "pyserial >=3.5, <4",
+]
+
+[project.urls]
+repository = "https://github.com/Nitrokey/nitrokey-sdk-py"
+
+[tool.poetry]
+classifiers = [
+    "Intended Audience :: Developers",
+]
 
 [tool.poetry.group.dev]
 optional = true

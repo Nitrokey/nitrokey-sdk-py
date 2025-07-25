@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 env:
   REQUIRED_PACKAGES: make
-  POETRY_SPEC: poetry >=1,<2
+  POETRY_SPEC: poetry >=2, <3
 
 jobs:
   format-code:
@@ -208,7 +208,7 @@ jobs:
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
-        run: pip install "poetry==2"
+        run: pip install "${POETRY_SPEC}"
       - name: Bump Python version
         run: |
           sed --in-place 's/python = ".*"/python = "^3.10"/' pyproject.toml
