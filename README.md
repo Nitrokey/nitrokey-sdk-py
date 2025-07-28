@@ -48,7 +48,7 @@ for device in NKPK.list():
 
 ## Compatibility
 
-The Nitrokey Python SDK currently requires Python 3.9.2 or later.
+The Nitrokey Python SDK currently requires Python 3.10 or later.
 Support for old Python versions may be dropped in minor releases.
 
 ## Related Projects
@@ -64,7 +64,7 @@ Support for old Python versions may be dropped in minor releases.
 
 The following software is required for the development of the SDK:
 
-- Python 3.9 or newer
+- Python 3.10 or newer
 - [poetry](https://python-poetry.org/)
 - GNU Make
 - git

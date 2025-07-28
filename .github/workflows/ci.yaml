@@ -9,7 +9,7 @@ jobs:
   format-code:
     name: Check code format
     runs-on: ubuntu-latest
-    container: python:3.9-slim
+    container: python:3.10-slim
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
   format-import:
     name: Check imports sorting
     runs-on: ubuntu-latest
-    container: python:3.9-slim
+    container: python:3.10-slim
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
   lint-style:
     name: Check code style
     runs-on: ubuntu-latest
-    container: python:3.9-slim
+    container: python:3.10-slim
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
   lint-typing:
     name: Check static typing
     runs-on: ubuntu-latest
-    container: python:3.9-slim
+    container: python:3.10-slim
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -69,7 +69,7 @@ jobs:
   lint-poetry:
     name: Check poetry configuration
     runs-on: ubuntu-latest
-    container: python:3.9-slim
+    container: python:3.10-slim
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -84,7 +84,7 @@ jobs:
   lint-docs:
     name: Check documentation
     runs-on: ubuntu-latest
-    container: python:3.9-slim
+    container: python:3.10-slim
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -118,7 +118,7 @@ jobs:
   build-docs:
     name: Build documentation
     runs-on: ubuntu-latest
-    container: python:3.9-slim
+    container: python:3.10-slim
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -133,7 +133,7 @@ jobs:
   test:
     name: Run test suite
     runs-on: ubuntu-latest
-    container: python:3.9-slim
+    container: python:3.10-slim
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -148,7 +148,7 @@ jobs:
   test-update:
     name: Run test suite with updated dependencies
     runs-on: ubuntu-latest
-    container: python:3.9-slim
+    container: python:3.10-slim
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -174,7 +174,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: "3.10"
       - name: Install SDK
         run: pip install .
       - name: Run test suite
@@ -182,7 +182,7 @@ jobs:
   test-readme:
     name: Run example code from readme
     runs-on: ubuntu-latest
-    container: python:3.9-slim
+    container: python:3.10-slim
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -209,10 +209,6 @@ jobs:
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
         run: pip install "${POETRY_SPEC}"
-      - name: Bump Python version
-        run: |
-          sed --in-place 's/python = ".*"/python = "^3.10"/' pyproject.toml
-          sed --in-place 's/python_version = ".*"/python_version = "3.10"/' pyproject.toml
       - name: Update fido2 to v2
         run: poetry add --lock "fido2@^2"
       - name: Create virtual environment
@@ -240,10 +236,6 @@ jobs:
         run: apt update && apt install -y ${REQUIRED_PACKAGES} gcc libffi-dev
       - name: Install uv
         run: pip install uv
-      - name: Bump Python version
-        run: |
-          sed --in-place 's/python = ".*"/python = ">=3.10, <4"/' pyproject.toml
-          sed --in-place 's/python_version = ".*"/python_version = "3.10"/' pyproject.toml
       - name: Lock dependencies
         run: uv lock && uv tree --locked
       - name: Check code static typing
