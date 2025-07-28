@@ -20,7 +20,7 @@ dynamic = ["classifiers"]
 dependencies = [
     "cryptography >=41",
     "fido2 >=1.1.2, <3",
-    "requests >=2, <3",
+    "requests >=2.16, <3",
     "semver >=3, <4",
     "tlv8 >=0.10, <0.11",
 
@@ -53,8 +53,23 @@ mypy = "^1.4"
 rstcheck = { version = "^6", extras = ["sphinx"] }
 sphinx = "^7"
 types-protobuf = "^5.26"
-types-requests = "^2.32"
+types-requests = "^2.16"
 typing-extensions = "^4.1"
+
+[tool.uv]
+dev-dependencies = [
+    # These dependencies are required for running the type checks.
+    "fake-winreg >=1.6, <2",
+    "mypy >=1.4, <2",
+    "types-protobuf >=5.26, <6",
+    "types-requests >=2.16, <3",
+
+    # These additional lower bounds are required for --resolution lowest.
+    # As these are transitive dependencies, we don’t include them in our dependency list.
+    "cffi >=1.14.1",
+    "typing-extensions >=4.1",
+    "urllib3 >= 2",
+]
 
 [tool.black]
 target-version = ["py39"]

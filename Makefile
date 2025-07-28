@@ -1,6 +1,9 @@
 FORMAT_DIRS := src stubs tests
 LINT_DIRS := src tests
 
+PYTHON ?= poetry run python
+MYPY ?= poetry run mypy
+
 .PHONY: install
 install:
 	poetry install --sync --with dev
@@ -34,7 +37,7 @@ check-style:
 
 .PHONY: check-typing
 check-typing:
-	poetry run mypy $(LINT_DIRS)
+	$(MYPY) $(LINT_DIRS)
 
 .PHONY: check-docs
 check-docs:
@@ -47,7 +50,7 @@ fix:
 
 .PHONY: test
 test:
-	poetry run python -m unittest -v
+	$(PYTHON) -m unittest -v
 
 .PHONY: generate-protobuf
 generate-protobuf:

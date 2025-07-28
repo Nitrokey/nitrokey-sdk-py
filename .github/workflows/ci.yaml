@@ -221,3 +221,32 @@ jobs:
         run: make check-typing
       - name: Run test suite
         run: make test
+  test-uv-resolution:
+    name: Test different resolution strategies with uv
+    runs-on: ubuntu-latest
+    container: python:3.10-slim
+    strategy:
+      matrix:
+        resolution:
+          - lowest
+          - lowest-direct
+          - highest
+    env:
+      UV_RESOLUTION: ${{ matrix.resolution }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install required packages
+        run: apt update && apt install -y ${REQUIRED_PACKAGES} gcc libffi-dev
+      - name: Install uv
+        run: pip install uv
+      - name: Bump Python version
+        run: |
+          sed --in-place 's/python = ".*"/python = ">=3.10, <4"/' pyproject.toml
+          sed --in-place 's/python_version = ".*"/python_version = "3.10"/' pyproject.toml
+      - name: Lock dependencies
+        run: uv lock && uv tree --locked
+      - name: Check code static typing
+        run: make check-typing MYPY="uv run --locked mypy"
+      - name: Run test suite
+        run: make test PYTHON="uv run --locked python"
