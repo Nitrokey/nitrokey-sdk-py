@@ -6,6 +6,7 @@
 # copied, modified, or distributed except according to those terms.
 
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Optional, TypeVar
 
 from nitrokey import _VID_NITROKEY
@@ -13,6 +14,21 @@ from nitrokey import _VID_NITROKEY
 from ._utils import Uuid
 
 T = TypeVar("T", bound="TrussedBase")
+
+
+class Model(Enum):
+    NK3 = "Nitrokey 3"
+    NKPK = "Nitrokey Passkey"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def from_str(cls, s: str) -> "Model":
+        for model in cls:
+            if model.value == s:
+                return model
+        raise ValueError(f"Unknown model {s}")
 
 
 class TrussedBase(ABC):
@@ -33,6 +49,10 @@ class TrussedBase(ABC):
                 f"Not a {self.name} device: expected VID:PID "
                 f"{self.vid:x}:{self.pid:x}, got {vid:x}:{pid:x}"
             )
+
+    @property
+    @abstractmethod
+    def model(self) -> Model: ...
 
     @property
     def vid(self) -> int:

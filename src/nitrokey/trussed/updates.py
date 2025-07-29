@@ -9,6 +9,7 @@ import enum
 import importlib.metadata
 import logging
 import platform
+import re
 import time
 from abc import ABC, abstractmethod
 from collections.abc import Set
@@ -18,20 +19,22 @@ from io import BytesIO
 from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, Union
 
 from nitrokey._helpers import Retries
-from nitrokey.nk3 import NK3, NK3Bootloader
 from nitrokey.trussed import TimeoutException, TrussedBase, Version
+from nitrokey.trussed._base import Model
 from nitrokey.trussed._bootloader import (
     FirmwareContainer,
-    Model,
+    TrussedBootloader,
     Variant,
+    get_model_data,
     validate_firmware_image,
 )
 from nitrokey.trussed._bootloader.lpc55_upload.mboot.exceptions import (
     McuBootConnectionError,
 )
+from nitrokey.trussed._device import TrussedDevice
 from nitrokey.trussed.admin_app import BootMode, Status
 from nitrokey.trussed.admin_app import Variant as AdminAppVariant
-from nitrokey.updates import Asset, Release
+from nitrokey.updates import Asset, Release, Repository
 
 if TYPE_CHECKING:
     import typing_extensions
@@ -93,18 +96,22 @@ class Warning(enum.Enum):
 
 @enum.unique
 class _Migration(enum.Enum):
-    # IFS migration to use journaling on the NRF52 introduced in v1.3.0
+    # IFS migration to use journaling on the NRF52 introduced in v1.3.0 (NK3)
     NRF_IFS_MIGRATION = enum.auto()
-    # IFS migration to filesystem layout 2 in v1.8.2 (FIDO2 RK migration)
+    # IFS migration to filesystem layout 2 (FIDO2 RK migration) in v1.8.2 (NK3)
     IFS_MIGRATION_V2 = enum.auto()
 
     @classmethod
     def get(
         cls,
+        model: Model,
         variant: Union[Variant, AdminAppVariant],
         current: Optional[Version],
         new: Version,
     ) -> frozenset["_Migration"]:
+        if model != Model.NK3:
+            return frozenset()
+
         if isinstance(variant, AdminAppVariant):
             if variant == AdminAppVariant.USBIP:
                 raise ValueError("Cannot perform firmware update for USBIP runner")
@@ -139,8 +146,14 @@ class _Migration(enum.Enum):
         return frozenset(migrations)
 
 
-def get_firmware_update(release: Release) -> Asset:
-    return release.require_asset(Model.NK3.firmware_pattern)
+def get_firmware_repository(model: Model) -> Repository:
+    data = get_model_data(model)
+    return Repository(owner="Nitrokey", name=data.firmware_repository_name)
+
+
+def get_firmware_update(model: Model, release: Release) -> Asset:
+    data = get_model_data(model)
+    return release.require_asset(re.compile(data.firmware_pattern_string))
 
 
 def _get_extra_information(migrations: Set[_Migration]) -> List[str]:
@@ -243,9 +256,9 @@ class Updater:
     def __init__(
         self,
         ui: UpdateUi,
-        await_bootloader: Callable[[], NK3Bootloader],
+        await_bootloader: Callable[[Model], TrussedBootloader],
         await_device: Callable[
-            [Optional[int], Optional[Callable[[int, int], None]]], NK3
+            [Model, Optional[int], Optional[Callable[[int, int], None]]], TrussedDevice
         ],
         ignore_warnings: Set[Warning] = frozenset(),
     ) -> None:
@@ -267,24 +280,30 @@ class Updater:
         update_version: Optional[str],
         ignore_pynitrokey_version: bool = False,
     ) -> Tuple[Version, Status]:
+        model = device.model
+
         update_from_bootloader = False
         current_version = None
         status = None
-        if isinstance(device, NK3Bootloader):
+        if isinstance(device, TrussedBootloader):
             update_from_bootloader = True
             self._trigger_warning(Warning.UPDATE_FROM_BOOTLOADER)
-        elif isinstance(device, NK3):
+        elif isinstance(device, TrussedDevice):
             current_version = device.admin.version()
             status = device.admin.status()
         else:
             raise self.ui.error(f"Unexpected Trussed device: {device}")
 
         logger.info(f"Firmware version before update: {current_version or ''}")
-        container = self._prepare_update(image, update_version, current_version)
+        container = self._prepare_update(model, image, update_version, current_version)
 
         if not update_from_bootloader:
-            if status is None and container.version > Version.from_str("1.3.1"):
-                self._trigger_warning(Warning.MISSING_STATUS)
+            if status is None:
+                if model == Model.NK3:
+                    if container.version > Version.from_str("1.3.1"):
+                        self._trigger_warning(Warning.MISSING_STATUS)
+                else:
+                    self.ui.error(f"Missing status for {model} device")
 
         self._check_minimum_version(container, ignore_pynitrokey_version)
 
@@ -293,11 +312,11 @@ class Updater:
         migrations = None
         if status is not None and status.variant is not None:
             migrations = self._check_migrations(
-                status.variant, current_version, container.version, status
+                model, status.variant, current_version, container.version, status
             )
-        elif isinstance(device, NK3Bootloader):
+        elif isinstance(device, TrussedBootloader):
             migrations = self._check_migrations(
-                device.variant, current_version, container.version, status
+                model, device.variant, current_version, container.version, status
             )
 
         with self._get_bootloader(device) as bootloader:
@@ -311,21 +330,25 @@ class Updater:
                     bootloader.variant,
                     container.images[bootloader.variant],
                     container.version,
-                    Model.NK3,
+                    model,
                 )
             except Exception as e:
                 raise self.ui.error("Failed to validate firmware image", e)
 
             if migrations is None:
                 migrations = self._check_migrations(
-                    bootloader.variant, current_version, container.version, status
+                    model,
+                    bootloader.variant,
+                    current_version,
+                    container.version,
+                    status,
                 )
 
             self._perform_update(bootloader, container)
 
         wait_retries = _get_finalization_wait_retries(migrations)
         with self.ui.finalization_progress_bar() as callback:
-            with self.await_device(wait_retries, callback) as device:
+            with self.await_device(model, wait_retries, callback) as device:
                 version = device.admin.version()
                 if version != container.version:
                     raise self.ui.error(
@@ -338,19 +361,20 @@ class Updater:
 
     def _prepare_update(
         self,
+        model: Model,
         image: Optional[str],
         version: Optional[str],
         current_version: Optional[Version],
     ) -> FirmwareContainer:
         if image:
             try:
-                container = FirmwareContainer.parse(image, Model.NK3)
+                container = FirmwareContainer.parse(image, model)
             except Exception as e:
                 raise self.ui.error("Failed to parse firmware container", e)
             self._validate_version(current_version, container.version)
             return container
         else:
-            repository = Model.NK3.firmware_repository
+            repository = get_firmware_repository(model)
             if version:
                 try:
                     logger.info(f"Downloading firmare version {version}")
@@ -370,11 +394,11 @@ class Updater:
                 raise self.ui.error("Failed to parse version from release tag", e)
             self._validate_version(current_version, release_version)
             self.ui.confirm_download(current_version, release_version)
-            return self._download_update(release)
+            return self._download_update(model, release)
 
-    def _download_update(self, release: Release) -> FirmwareContainer:
+    def _download_update(self, model: Model, release: Release) -> FirmwareContainer:
         try:
-            update = get_firmware_update(release)
+            update = get_firmware_update(model, release)
         except Exception as e:
             raise self.ui.error(
                 f"Failed to find firmware image for release {release}",
@@ -392,7 +416,7 @@ class Updater:
             )
 
         try:
-            container = FirmwareContainer.parse(BytesIO(data), Model.NK3)
+            container = FirmwareContainer.parse(BytesIO(data), model)
         except Exception as e:
             raise self.ui.error(
                 f"Failed to parse firmware container for {update.tag}", e
@@ -455,8 +479,9 @@ class Updater:
                 self.ui.confirm_update_same_version(same_version)
 
     @contextmanager
-    def _get_bootloader(self, device: TrussedBase) -> Iterator[NK3Bootloader]:
-        if isinstance(device, NK3):
+    def _get_bootloader(self, device: TrussedBase) -> Iterator[TrussedBootloader]:
+        model = device.model
+        if isinstance(device, TrussedDevice):
             self.ui.request_bootloader_confirmation()
             try:
                 device.admin.reboot(BootMode.BOOTROM)
@@ -474,7 +499,7 @@ class Updater:
             for t in Retries(3):
                 logger.debug(f"Trying to connect to bootloader ({t})")
                 try:
-                    with self.await_bootloader() as bootloader:
+                    with self.await_bootloader(model) as bootloader:
                         # noop to test communication
                         bootloader.uuid
                         yield bootloader
@@ -483,17 +508,18 @@ class Updater:
                     logger.debug("Received connection error", exc_info=True)
                     exc = e
             else:
-                msgs = ["Failed to connect to Nitrokey 3 bootloader"]
+                msgs = [f"Failed to connect to {model} bootloader"]
                 if platform.system() == "Linux":
                     msgs += ["Are the Nitrokey udev rules installed and active?"]
                 raise self.ui.error(*msgs, exc)
-        elif isinstance(device, NK3Bootloader):
+        elif isinstance(device, TrussedBootloader):
             yield device
         else:
-            raise self.ui.error(f"Unexpected Nitrokey 3 device: {device}")
+            raise self.ui.error(f"Unexpected {model} device: {device}")
 
     def _check_migrations(
         self,
+        model: Model,
         variant: Union[Variant, AdminAppVariant],
         current_version: Optional[Version],
         new_version: Version,
@@ -501,7 +527,10 @@ class Updater:
     ) -> frozenset["_Migration"]:
         try:
             migrations = _Migration.get(
-                variant=variant, current=current_version, new=new_version
+                model=model,
+                variant=variant,
+                current=current_version,
+                new=new_version,
             )
         except ValueError as e:
             raise self.ui.error(str(e))
@@ -516,7 +545,7 @@ class Updater:
         return migrations
 
     def _perform_update(
-        self, device: NK3Bootloader, container: FirmwareContainer
+        self, device: TrussedBootloader, container: FirmwareContainer
     ) -> None:
         logger.debug("Starting firmware update")
         image = container.images[device.variant]

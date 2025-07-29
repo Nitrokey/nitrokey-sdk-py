@@ -9,7 +9,6 @@ nitrokey.nk3
    :maxdepth: 1
 
    nitrokey.nk3.secrets_app
-   nitrokey.nk3.updates
 
 Accessing Nitrokey 3 Devices
 ----------------------------

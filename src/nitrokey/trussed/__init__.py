@@ -5,10 +5,10 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
+from ._base import Model as Model  # noqa: F401
 from ._base import TrussedBase as TrussedBase  # noqa: F401
 from ._bootloader import FirmwareContainer as FirmwareContainer  # noqa: F401
 from ._bootloader import FirmwareMetadata as FirmwareMetadata  # noqa: F401
-from ._bootloader import Model as Model  # noqa: F401
 from ._bootloader import TrussedBootloader as TrussedBootloader  # noqa: F401
 from ._bootloader import Variant as Variant  # noqa: F401
 from ._bootloader import parse_firmware_image as parse_firmware_image  # noqa: F401

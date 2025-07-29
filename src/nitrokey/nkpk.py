@@ -11,6 +11,7 @@ from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
 from nitrokey import _VID_NITROKEY
 from nitrokey.trussed import Fido2Certs, TrussedDevice, Version
+from nitrokey.trussed._base import Model
 from nitrokey.trussed._bootloader import ModelData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey, TrussedBootloaderNrf52
 
@@ -49,6 +50,10 @@ class NKPK(TrussedDevice):
         super().__init__(device, _FIDO2_CERTS)
 
     @property
+    def model(self) -> Model:
+        return Model.NKPK
+
+    @property
     def pid(self) -> int:
         return _PID_NKPK_DEVICE
 
@@ -77,6 +82,10 @@ class NKPK(TrussedDevice):
 
 
 class NKPKBootloader(TrussedBootloaderNrf52):
+    @property
+    def model(self) -> Model:
+        return Model.NKPK
+
     @property
     def name(self) -> str:
         return "Nitrokey Passkey Bootloader"
