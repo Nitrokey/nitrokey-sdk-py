@@ -9,8 +9,9 @@
 - `nitrokey.nk3.updates`:
   - Move to `nitrokey.trussed.updates` and prepare adding NKPK support.
   - Return device status after an update.
-  - Add `model` argument to `get_firmware_update` and to the connection callbacks in `Updater`.
+  - Add `model` argument to `get_firmware_update`.
   - Add `get_firmware_repository` method.
+  - Replace connection callbacks in `Updater` with `DeviceHandler` class.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.2...HEAD)
 

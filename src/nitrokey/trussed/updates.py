@@ -252,19 +252,28 @@ class UpdateUi(ABC):
         pass
 
 
+class DeviceHandler(ABC):
+    @abstractmethod
+    def await_bootloader(self, model: Model) -> TrussedBootloader: ...
+
+    @abstractmethod
+    def await_device(
+        self,
+        model: Model,
+        wait_retries: Optional[int],
+        callback: Optional[Callable[[int, int], None]],
+    ) -> TrussedDevice: ...
+
+
 class Updater:
     def __init__(
         self,
         ui: UpdateUi,
-        await_bootloader: Callable[[Model], TrussedBootloader],
-        await_device: Callable[
-            [Model, Optional[int], Optional[Callable[[int, int], None]]], TrussedDevice
-        ],
+        device_handler: DeviceHandler,
         ignore_warnings: Set[Warning] = frozenset(),
     ) -> None:
         self.ui = ui
-        self.await_bootloader = await_bootloader
-        self.await_device = await_device
+        self.device_handler = device_handler
         self.ignore_warnings = ignore_warnings
 
     def _trigger_warning(self, warning: Warning) -> None:
@@ -348,7 +357,9 @@ class Updater:
 
         wait_retries = _get_finalization_wait_retries(migrations)
         with self.ui.finalization_progress_bar() as callback:
-            with self.await_device(model, wait_retries, callback) as device:
+            with self.device_handler.await_device(
+                model, wait_retries, callback
+            ) as device:
                 version = device.admin.version()
                 if version != container.version:
                     raise self.ui.error(
@@ -499,7 +510,7 @@ class Updater:
             for t in Retries(3):
                 logger.debug(f"Trying to connect to bootloader ({t})")
                 try:
-                    with self.await_bootloader(model) as bootloader:
+                    with self.device_handler.await_bootloader(model) as bootloader:
                         # noop to test communication
                         bootloader.uuid
                         yield bootloader
