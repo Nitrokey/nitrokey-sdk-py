@@ -10,6 +10,7 @@ nitrokey.trussed
 
    nitrokey.trussed.admin_app
    nitrokey.trussed.provisioner_app
+   nitrokey.trussed.updates
 
 Trussed Device Objects
 ----------------------

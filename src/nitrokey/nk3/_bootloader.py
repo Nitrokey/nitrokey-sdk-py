@@ -8,12 +8,17 @@
 from typing import List, Optional, Sequence
 
 from nitrokey import _VID_NITROKEY
+from nitrokey.trussed._base import Model
 from nitrokey.trussed._bootloader import TrussedBootloader
 from nitrokey.trussed._bootloader.lpc55 import TrussedBootloaderLpc55
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey, TrussedBootloaderNrf52
 
 
 class NK3Bootloader(TrussedBootloader):
+    @property
+    def model(self) -> Model:
+        return Model.NK3
+
     @staticmethod
     def list() -> List["NK3Bootloader"]:
         devices: List[NK3Bootloader] = []

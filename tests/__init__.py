@@ -25,69 +25,87 @@ class TestBasic(unittest.TestCase):
 
 class TestNk3Updates(unittest.TestCase):
     def test_update_path_default(self) -> None:
-        from nitrokey.nk3.updates import _Migration
-        from nitrokey.trussed import Variant, Version
+        from nitrokey.trussed import Model, Variant, Version
+        from nitrokey.trussed.updates import _Migration
 
         self.assertEqual(
-            _Migration.get(Variant.NRF52, Version(1, 0, 0), Version(1, 1, 0)),
+            _Migration.get(
+                Model.NK3, Variant.NRF52, Version(1, 0, 0), Version(1, 1, 0)
+            ),
             frozenset(),
         )
         self.assertEqual(
-            _Migration.get(Variant.NRF52, Version(1, 8, 2), Version(1, 9, 0)),
+            _Migration.get(
+                Model.NK3, Variant.NRF52, Version(1, 8, 2), Version(1, 9, 0)
+            ),
             frozenset(),
         )
         self.assertEqual(
-            _Migration.get(Variant.LPC55, Version(1, 2, 2), Version(1, 3, 0)),
+            _Migration.get(
+                Model.NK3, Variant.LPC55, Version(1, 2, 2), Version(1, 3, 0)
+            ),
             frozenset(),
         )
 
     def test_update_path_nrf(self) -> None:
-        from nitrokey.nk3.updates import _Migration
-        from nitrokey.trussed import Variant, Version
+        from nitrokey.trussed import Model, Variant, Version
+        from nitrokey.trussed.updates import _Migration
 
         migrations = frozenset([_Migration.NRF_IFS_MIGRATION])
 
         self.assertEqual(
-            _Migration.get(Variant.NRF52, Version(1, 2, 2), Version(1, 3, 0)),
+            _Migration.get(
+                Model.NK3, Variant.NRF52, Version(1, 2, 2), Version(1, 3, 0)
+            ),
             migrations,
         )
         self.assertEqual(
-            _Migration.get(Variant.NRF52, Version(1, 0, 0), Version(1, 3, 0)),
+            _Migration.get(
+                Model.NK3, Variant.NRF52, Version(1, 0, 0), Version(1, 3, 0)
+            ),
             migrations,
         )
         self.assertEqual(
-            _Migration.get(Variant.NRF52, None, Version(1, 3, 0)),
+            _Migration.get(Model.NK3, Variant.NRF52, None, Version(1, 3, 0)),
             migrations,
         )
 
     def test_update_path_ifs_v2(self) -> None:
-        from nitrokey.nk3.updates import _Migration
-        from nitrokey.trussed import Variant, Version
+        from nitrokey.trussed import Model, Variant, Version
+        from nitrokey.trussed.updates import _Migration
 
         migrations = frozenset([_Migration.IFS_MIGRATION_V2])
 
         self.assertEqual(
-            _Migration.get(Variant.NRF52, Version(1, 5, 0), Version(1, 8, 2)),
+            _Migration.get(
+                Model.NK3, Variant.NRF52, Version(1, 5, 0), Version(1, 8, 2)
+            ),
             migrations,
         )
         self.assertEqual(
-            _Migration.get(Variant.LPC55, Version(1, 1, 0), Version(1, 8, 2)),
+            _Migration.get(
+                Model.NK3, Variant.LPC55, Version(1, 1, 0), Version(1, 8, 2)
+            ),
             migrations,
         )
         self.assertEqual(
-            _Migration.get(Variant.LPC55, Version(1, 8, 0), Version(1, 8, 2)),
+            _Migration.get(
+                Model.NK3, Variant.LPC55, Version(1, 8, 0), Version(1, 8, 2)
+            ),
             migrations,
         )
 
     def test_update_path_multi(self) -> None:
-        from nitrokey.nk3.updates import _Migration
-        from nitrokey.trussed import Variant, Version
+        from nitrokey.trussed import Model, Variant, Version
+        from nitrokey.trussed.updates import _Migration
 
         migrations = frozenset(
             [_Migration.NRF_IFS_MIGRATION, _Migration.IFS_MIGRATION_V2]
         )
 
         self.assertEqual(
-            _Migration.get(Variant.NRF52, Version(1, 2, 2), Version(1, 8, 2)),
+            _Migration.get(
+                Model.NK3, Variant.NRF52, Version(1, 2, 2), Version(1, 8, 2)
+            ),
             migrations,
         )

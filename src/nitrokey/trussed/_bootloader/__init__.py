@@ -9,7 +9,6 @@ import enum
 import hashlib
 import json
 import logging
-import re
 import sys
 from abc import abstractmethod
 from dataclasses import dataclass
@@ -18,9 +17,7 @@ from re import Pattern
 from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple, Union
 from zipfile import ZipFile
 
-from nitrokey.updates import Repository
-
-from .._base import TrussedBase
+from .._base import Model, TrussedBase
 from .._utils import Version
 
 if TYPE_CHECKING:
@@ -39,39 +36,16 @@ class ModelData:
     nrf52_signature_keys: list["SignatureKey"]
 
 
-class Model(enum.Enum):
-    NK3 = "Nitrokey 3"
-    NKPK = "Nitrokey Passkey"
+def get_model_data(model: Model) -> ModelData:
+    if model == Model.NK3:
+        from nitrokey.nk3 import _NK3_DATA
 
-    def __str__(self) -> str:
-        return self.value
+        return _NK3_DATA
+    if model == Model.NKPK:
+        from nitrokey.nkpk import _NKPK_DATA
 
-    @property
-    def firmware_repository(self) -> Repository:
-        return Repository(owner="Nitrokey", name=self._data.firmware_repository_name)
-
-    @property
-    def firmware_pattern(self) -> Pattern[str]:
-        return re.compile(self._data.firmware_pattern_string)
-
-    @property
-    def _data(self) -> "ModelData":
-        if self == Model.NK3:
-            from nitrokey.nk3 import _NK3_DATA
-
-            return _NK3_DATA
-        if self == Model.NKPK:
-            from nitrokey.nkpk import _NKPK_DATA
-
-            return _NKPK_DATA
-        raise ValueError(f"Unknown model {self}")
-
-    @classmethod
-    def from_str(cls, s: str) -> "Model":
-        for model in cls:
-            if model.value == s:
-                return model
-        raise ValueError(f"Unknown model {s}")
+        return _NKPK_DATA
+    raise ValueError(f"Unknown model {model}")
 
 
 class Variant(enum.Enum):
@@ -221,6 +195,8 @@ def parse_firmware_image(
     if variant == Variant.LPC55:
         return parse_firmware_image_lpc55(data)
     elif variant == Variant.NRF52:
-        return parse_firmware_image_nrf52(data, model._data.nrf52_signature_keys)
+        return parse_firmware_image_nrf52(
+            data, get_model_data(model).nrf52_signature_keys
+        )
     else:
         raise ValueError(f"Unexpected variant {variant}")

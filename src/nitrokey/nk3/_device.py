@@ -10,7 +10,7 @@ from typing import List
 from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
 from nitrokey import _VID_NITROKEY
-from nitrokey.trussed import Fido2Certs, TrussedDevice, Version
+from nitrokey.trussed import Fido2Certs, Model, TrussedDevice, Version
 
 FIDO2_CERTS = [
     Fido2Certs(
@@ -35,6 +35,10 @@ class NK3(TrussedDevice):
 
     def __init__(self, device: CtapHidDevice) -> None:
         super().__init__(device, FIDO2_CERTS)
+
+    @property
+    def model(self) -> Model:
+        return Model.NK3
 
     @property
     def pid(self) -> int:
