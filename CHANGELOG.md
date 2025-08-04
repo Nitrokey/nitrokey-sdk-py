@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+-
+
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.4.0...HEAD)
+
+## [v0.4.0](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.4.0) (2025-08-04)
+
 - `nitrokey.trussed.admin_app.InitStatus`: add support for `EXT_FLASH_NEED_REFORMAT`
 - Use `poetry-core` v2 as build backend.
 - Bump minimum Python version to 3.10.
@@ -13,7 +19,7 @@
   - Add `get_firmware_repository` method.
   - Replace connection callbacks in `Updater` with `DeviceHandler` class.
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.2...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.2...v0.4.0)
 
 ## [v0.3.2](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.3.2) (2025-07-08)
 
