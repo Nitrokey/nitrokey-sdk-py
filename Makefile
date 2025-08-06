@@ -6,11 +6,11 @@ MYPY ?= poetry run mypy
 
 .PHONY: install
 install:
-	poetry install --sync --with dev
+	poetry sync --with dev
 
 .PHONY: lock
 lock:
-	poetry lock --no-update
+	poetry lock
 
 .PHONY: update
 update:
