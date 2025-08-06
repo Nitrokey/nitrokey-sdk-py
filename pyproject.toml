@@ -29,7 +29,7 @@ dependencies = [
     "hidapi >=0.14, <0.15",
 
     # nrf52
-    "protobuf >=5.26, <6",
+    "protobuf >=5.26, <7",
     "pyserial >=3.5, <4",
 ]
 
@@ -52,7 +52,7 @@ isort = "^5.13.2"
 mypy = "^1.4"
 rstcheck = { version = "^6", extras = ["sphinx"] }
 sphinx = "^7"
-types-protobuf = "^5.26"
+types-protobuf = ">=5.26, <7"
 types-requests = "^2.16"
 typing-extensions = "^4.1"
 
@@ -61,7 +61,7 @@ dev-dependencies = [
     # These dependencies are required for running the type checks.
     "fake-winreg >=1.6, <2",
     "mypy >=1.4, <2",
-    "types-protobuf >=5.26, <6",
+    "types-protobuf >=5.26, <7",
     "types-requests >=2.16, <3",
 
     # These additional lower bounds are required for --resolution lowest.

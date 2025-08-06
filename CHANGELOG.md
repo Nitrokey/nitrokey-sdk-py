@@ -2,7 +2,7 @@
 
 ## Unreleased
 
--
+- Add support for `protobuf` v6.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.4.0...HEAD)
 
@@ -23,7 +23,7 @@
 
 ## [v0.3.2](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.3.2) (2025-07-08)
 
-- Add support `fido2` v2.
+- Add support for `fido2` v2.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.3.1...v0.3.2)
 
