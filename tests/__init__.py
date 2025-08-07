@@ -109,3 +109,37 @@ class TestNk3Updates(unittest.TestCase):
             ),
             migrations,
         )
+
+
+class TestConfigFieldType(unittest.TestCase):
+    def test_is_valid_bool(self) -> None:
+        from nitrokey.trussed.admin_app import ConfigFieldType
+
+        t = ConfigFieldType.BOOL
+
+        self.assertTrue(t.is_valid("true"))
+        self.assertTrue(t.is_valid("false"))
+
+        self.assertFalse(t.is_valid(""))
+        self.assertFalse(t.is_valid("True"))
+        self.assertFalse(t.is_valid("False"))
+        self.assertFalse(t.is_valid("0"))
+        self.assertFalse(t.is_valid("1"))
+        self.assertFalse(t.is_valid("something else"))
+
+    def test_is_valid_u8(self) -> None:
+        from nitrokey.trussed.admin_app import ConfigFieldType
+
+        t = ConfigFieldType.U8
+
+        self.assertTrue(t.is_valid("0"))
+        self.assertTrue(t.is_valid("1"))
+        self.assertTrue(t.is_valid("42"))
+        self.assertTrue(t.is_valid("255"))
+
+        self.assertFalse(t.is_valid(""))
+        self.assertFalse(t.is_valid("-1"))
+        self.assertFalse(t.is_valid("256"))
+        self.assertFalse(t.is_valid("4242"))
+        self.assertFalse(t.is_valid("something else"))
+        self.assertFalse(t.is_valid("True"))

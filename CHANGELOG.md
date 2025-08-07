@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add support for `protobuf` v6.
+- `nitrokey.trussed.admin_app`: Fix validation of `ConfigFieldType.U8` values.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.4.0...HEAD)
 

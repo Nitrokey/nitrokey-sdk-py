@@ -170,7 +170,7 @@ class ConfigFieldType(Enum):
         elif self == ConfigFieldType.U8:
             try:
                 intval = int(value)
-                if intval < 256 and intval > 0:
+                if intval < 256 and intval >= 0:
                     return True
                 else:
                     return False
