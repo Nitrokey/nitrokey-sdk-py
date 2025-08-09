@@ -12,36 +12,27 @@ Devices in bootloader mode can be accessed using :py:class:`nitrokey.nk3.NK3Boot
 Listing and Opening Devices
 ---------------------------
 
-Use the :py:meth:`nitrokey.trussed.TrussedDevice.list` function to list and open all connected devices::
+Use the :py:func:`nitrokey.trussed.list` function to list and open all connected devices::
 
-    from nitrokey.nk3 import NK3
-    from nitrokey.nkpk import NKPK
+    import nitrokey.trussed
 
     print("Connected Nitrokey devices:")
-    for device in NK3.list():
-        print(f"- {device.name} at {device.path}")
-    for device in NKPK.list():
+    for device in nitrokey.trussed.list():
         print(f"- {device.name} at {device.path}")
 
-If you know the device path, use :py:meth:`nitrokey.trussed.TrussedDevice.open` instead::
+If you know the device path, use :py:func:`nitrokey.trussed.open` instead::
 
-    from nitrokey.nk3 import NK3
-    from nitrokey.nkpk import NKPK
+    import nitrokey.trussed
 
     path = "/dev/hidraw1"
-    device = NK3.open(path)
+    device = nitrokey.trussed.open(path)
     if device is not None:
         print(f"Found {device.name} at {path}")
-    device = NKPK.open(path)
-    if device is not None:
-        print(f"Found {device.name} at {path}")
+    else:
+        print(f"No device found at {path}")
 
-Similar functions are available for :py:class:`nitrokey.nk3.NK3Bootloader` and :py:class:`nitrokey.nkpk.NKPKBootloader`.
-To list both normal and bootloader devices, use :py:meth:`nitrokey.nk3.list` and :py:meth:`nitrokey.nkpk.list`.
-
-.. note::
-   Currently, the devices returned by :py:meth:`nitrokey.trussed.TrussedDevice.list`, :py:meth:`nitrokey.nk3.list` and :py:meth:`nitrokey.nkpk.list` are only valid until the next call to any of the these functions.
-   See `issue 31 <https://github.com/Nitrokey/nitrokey-sdk-py/issues/31>`_ for more information.
+If you know the model you want to connect to, you can also use the ``list`` and ``open`` functions in the :py:mod:`nitrokey.nk3` or :py:mod:`nitrokey.nkpk` modules.
+If you also know the type of the device, you can use the ``list`` and ``open`` methods of the :py:class:`nitrokey.nk3.NK3`, :py:class:`nitrokey.nkpk.NKPK`, :py:class:`nitrokey.nk3.NK3Bootloader` and :py:class:`nitrokey.nkpk.NKPKBootloader` classes.
 
 Using Applications
 ------------------

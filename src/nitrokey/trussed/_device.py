@@ -13,7 +13,7 @@ from abc import abstractmethod
 from enum import Enum
 from typing import List, Optional, Sequence, TypeVar, Union
 
-from fido2.hid import CtapHidDevice, open_device
+from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
 from ._base import TrussedBase
 from ._utils import Fido2Certs, Uuid
@@ -112,6 +112,15 @@ class TrussedDevice(TrussedBase):
     @classmethod
     @abstractmethod
     def list(cls: type[T]) -> List[T]: ...
+
+    @classmethod
+    def _list_vid_pid(cls: type[T], vid: int, pid: int) -> List[T]:
+        descriptors = [
+            desc
+            for desc in list_descriptors()  # type: ignore
+            if desc.vid == vid and desc.pid == pid
+        ]
+        return [cls.from_device(open_device(desc.path)) for desc in descriptors]
 
 
 def _device_path_to_str(path: Union[bytes, str]) -> str:
