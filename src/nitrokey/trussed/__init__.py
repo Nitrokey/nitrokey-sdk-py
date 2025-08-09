@@ -5,6 +5,8 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
+from typing import List, Optional
+
 from ._base import Model as Model  # noqa: F401
 from ._base import TrussedBase as TrussedBase  # noqa: F401
 from ._bootloader import FirmwareContainer as FirmwareContainer  # noqa: F401
@@ -19,3 +21,28 @@ from ._exceptions import TrussedException as TrussedException  # noqa: F401
 from ._utils import Fido2Certs as Fido2Certs  # noqa: F401
 from ._utils import Uuid as Uuid  # noqa: F401
 from ._utils import Version as Version  # noqa: F401
+
+
+def list() -> List[TrussedBase]:
+    from nitrokey.nk3 import list as list_nk3
+    from nitrokey.nkpk import list as list_nkpk
+
+    devices: List[TrussedBase] = []
+    devices.extend(list_nk3())
+    devices.extend(list_nkpk())
+    return devices
+
+
+def open(path: str) -> Optional[TrussedBase]:
+    from nitrokey.nk3 import open as open_nk3
+    from nitrokey.nkpk import open as open_nkpk
+
+    nk3 = open_nk3(path)
+    nkpk = open_nkpk(path)
+    if nk3 and nkpk:
+        raise Exception(f"Found multiple devices at path {path}")
+    if nk3:
+        return nk3
+    if nkpk:
+        return nkpk
+    return None

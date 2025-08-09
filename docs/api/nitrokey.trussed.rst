@@ -12,6 +12,14 @@ nitrokey.trussed
    nitrokey.trussed.provisioner_app
    nitrokey.trussed.updates
 
+
+Accessing Trussed Devices
+-------------------------
+
+.. autofunction:: nitrokey.trussed.list
+
+.. autofunction:: nitrokey.trussed.open
+
 Trussed Device Objects
 ----------------------
 

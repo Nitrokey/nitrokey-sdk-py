@@ -36,13 +36,10 @@ The releases are also available as [signed tags][releases] in the GitHub reposit
 ## Getting Started
 
 ```python
-from nitrokey.nk3 import NK3
-from nitrokey.nkpk import NKPK
+import nitrokey.trussed
 
 print("Connected Nitrokey devices:")
-for device in NK3.list():
-    print(f"- {device.name} at {device.path}")
-for device in NKPK.list():
+for device in nitrokey.trussed.list():
     print(f"- {device.name} at {device.path}")
 ```
 
