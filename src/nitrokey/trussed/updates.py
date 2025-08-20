@@ -547,7 +547,8 @@ class Updater:
             raise self.ui.error(str(e))
 
         txt = _get_extra_information(migrations)
-        self.ui.confirm_extra_information(txt)
+        if len(txt) > 0:
+            self.ui.confirm_extra_information(txt)
 
         if _Migration.IFS_MIGRATION_V2 in migrations:
             if status and status.ifs_blocks is not None and status.ifs_blocks < 5:

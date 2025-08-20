@@ -5,7 +5,9 @@
 - Add support for `protobuf` v6.
 - `nitrokey.trussed.admin_app`: Fix validation of `ConfigFieldType.U8` values.
 - `nitrokey.trussed`: Add `list` and `open` functions.
-- `nitrokey.trussed.updates`: Add default values for the `image` and `update_version` arguments for `Updater.update`.
+- `nitrokey.trussed.updates`:
+  - Add default values for the `image` and `update_version` arguments for `Updater.update`.
+  - Only call `UpdateUi.confirm_extra_information` if the passed list is not empty.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.4.0...HEAD)
 
