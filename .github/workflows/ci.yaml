@@ -1,5 +1,9 @@
 name: Continuous integration
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 env:
   REQUIRED_PACKAGES: make
