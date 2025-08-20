@@ -285,8 +285,8 @@ class Updater:
     def update(
         self,
         device: TrussedBase,
-        image: Optional[str],
-        update_version: Optional[str],
+        image: Optional[str] = None,
+        update_version: Optional[str] = None,
         ignore_pynitrokey_version: bool = False,
     ) -> Tuple[Version, Status]:
         model = device.model
