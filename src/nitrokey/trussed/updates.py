@@ -62,7 +62,7 @@ class Warning(enum.Enum):
             return (
                 "Not enough space on the internal filesystem to perform the firmware"
                 " update. See the release notes for more information:"
-                " https://github.com/Nitrokey/nitrokey-3-firmware/releases/tag/v1.8.2-test.20250312"
+                " https://github.com/Nitrokey/nitrokey-3-firmware/releases/tag/v1.8.2"
             )
         if self == Warning.MISSING_STATUS:
             return (
