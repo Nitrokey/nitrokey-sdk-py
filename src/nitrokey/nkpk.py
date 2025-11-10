@@ -8,6 +8,7 @@
 from typing import List, Optional, Sequence, Union
 
 from fido2.hid import CtapHidDevice
+from smartcard.CardConnection import CardConnection
 
 from nitrokey import _VID_NITROKEY
 from nitrokey.trussed import Fido2Certs, TrussedDevice, Version
@@ -44,7 +45,7 @@ _NKPK_DATA = ModelData(
 
 
 class NKPK(TrussedDevice):
-    def __init__(self, device: CtapHidDevice) -> None:
+    def __init__(self, device: CtapHidDevice | CardConnection) -> None:
         super().__init__(device, _FIDO2_CERTS)
 
     @property
@@ -60,12 +61,16 @@ class NKPK(TrussedDevice):
         return "Nitrokey Passkey"
 
     @classmethod
-    def from_device(cls, device: CtapHidDevice) -> "NKPK":
+    def from_device(cls, device: CtapHidDevice | CardConnection) -> "NKPK":
         return cls(device)
 
     @classmethod
-    def list(cls) -> List["NKPK"]:
+    def list_ctaphid(cls) -> List["NKPK"]:
         return cls._list_vid_pid(_VID_NITROKEY, _PID_NKPK_DEVICE)
+
+    @classmethod
+    def list_ccid(cls) -> List["NKPK"]:
+        return []
 
 
 class NKPKBootloader(TrussedBootloaderNrf52):
@@ -94,10 +99,13 @@ class NKPKBootloader(TrussedBootloaderNrf52):
         return _NKPK_DATA.nrf52_signature_keys
 
 
-def list() -> List[Union[NKPK, NKPKBootloader]]:
+def list(use_ccid: bool = False) -> List[Union[NKPK, NKPKBootloader]]:
     devices: List[Union[NKPK, NKPKBootloader]] = []
     devices.extend(NKPKBootloader.list())
-    devices.extend(NKPK.list())
+    if use_ccid:
+        devices.extend(NKPK.list_ccid())
+    else:
+        devices.extend(NKPK.list_ctaphid())
     return devices
 
 

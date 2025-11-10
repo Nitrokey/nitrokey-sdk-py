@@ -64,7 +64,7 @@ class TrussedBase(ABC):
 
     @property
     @abstractmethod
-    def path(self) -> str: ...
+    def path(self) -> Optional[str]: ...
 
     @property
     @abstractmethod

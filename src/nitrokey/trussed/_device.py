@@ -14,6 +14,9 @@ from enum import Enum
 from typing import List, Optional, Sequence, TypeVar, Union
 
 from fido2.hid import CtapHidDevice, list_descriptors, open_device
+from smartcard.CardConnection import CardConnection
+from smartcard.Exceptions import NoCardException
+from smartcard.System import readers
 
 from ._base import TrussedBase
 from ._utils import Fido2Certs, Uuid
@@ -33,13 +36,19 @@ class App(Enum):
 
 
 class TrussedDevice(TrussedBase):
-    def __init__(self, device: CtapHidDevice, fido2_certs: Sequence[Fido2Certs]) -> None:
-        self._validate_vid_pid(device.descriptor.vid, device.descriptor.pid)
+    def __init__(
+        self, device: CtapHidDevice | CardConnection, fido2_certs: Sequence[Fido2Certs]
+    ) -> None:
+        self._path = None
+        if isinstance(device, CtapHidDevice):
+            self._validate_vid_pid(device.descriptor.vid, device.descriptor.pid)
+            self._path = _device_path_to_str(device.descriptor.path)
+            self._logger = logger.getChild(self._path)
+        else:
+            self._logger = logger.getChild(str(device.getReader()))
 
         self.device = device
         self.fido2_certs = fido2_certs
-        self._path = _device_path_to_str(device.descriptor.path)
-        self._logger = logger.getChild(self._path)
 
         from .admin_app import AdminApp
 
@@ -47,11 +56,15 @@ class TrussedDevice(TrussedBase):
         self.admin.status()
 
     @property
-    def path(self) -> str:
+    def path(self) -> Optional[str]:
         return self._path
 
     def close(self) -> None:
-        self.device.close()
+        if isinstance(self.device, CtapHidDevice):
+            self.device.close()
+        else:
+            self.device.disconnect()
+            self.device.release()
 
     def reboot(self) -> bool:
         from .admin_app import BootMode
@@ -62,12 +75,18 @@ class TrussedDevice(TrussedBase):
         return self.admin.uuid()
 
     def wink(self) -> None:
-        self.device.wink()
+        if isinstance(self.device, CtapHidDevice):
+            self.device.wink()
 
     def _call(
         self, command: int, command_name: str, response_len: Optional[int] = None, data: bytes = b""
     ) -> bytes:
-        response = self.device.call(command, data=data)
+        response = []
+        if isinstance(self.device, CtapHidDevice):
+            response = self.device.call(command, data=data)
+        else:
+            response = _call_ccid(self.device, command, data)
+
         if response_len is not None and response_len != len(response):
             raise ValueError(
                 f"The response for the CTAPHID {command_name} command has an unexpected length "
@@ -80,7 +99,7 @@ class TrussedDevice(TrussedBase):
 
     @classmethod
     @abstractmethod
-    def from_device(cls: type[T], device: CtapHidDevice) -> T: ...
+    def from_device(cls: type[T], device: CtapHidDevice | CardConnection) -> T: ...
 
     @classmethod
     def open(cls: type[T], path: str) -> Optional[T]:
@@ -100,7 +119,11 @@ class TrussedDevice(TrussedBase):
 
     @classmethod
     @abstractmethod
-    def list(cls: type[T]) -> List[T]: ...
+    def list_ccid(cls: type[T]) -> List[T]: ...
+
+    @classmethod
+    @abstractmethod
+    def list_ctaphid(cls: type[T]) -> List[T]: ...
 
     @classmethod
     def _list_vid_pid(cls: type[T], vid: int, pid: int) -> List[T]:
@@ -110,6 +133,29 @@ class TrussedDevice(TrussedBase):
             if desc.vid == vid and desc.pid == pid
         ]
         return [cls.from_device(open_device(desc.path)) for desc in descriptors]
+
+    @classmethod
+    def _list_pcsc_atr(cls: type[T], atr: List[int]) -> List[T]:
+        devices = []
+        for r in readers():
+            connection = r.createConnection()
+            try:
+                connection.connect()
+            except NoCardException:
+                continue
+            if atr != connection.getATR():
+                connection.disconnect()
+                connection.release()
+                continue
+            devices.append(cls.from_device(connection))
+
+        return devices
+
+
+def _call_ccid(
+    device: CardConnection, command: int, data: bytes = b"", response_len: Optional[int] = None
+) -> bytes:
+    raise NotImplementedError("TODO")
 
 
 def _device_path_to_str(path: Union[bytes, str]) -> str:
