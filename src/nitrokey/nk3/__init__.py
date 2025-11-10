@@ -35,10 +35,14 @@ _NK3_DATA = ModelData(
 )
 
 
-def list() -> List[Union[NK3, NK3Bootloader]]:
+def list(use_ccid: bool = False) -> List[Union[NK3, NK3Bootloader]]:
     devices: List[Union[NK3, NK3Bootloader]] = []
     devices.extend(NK3Bootloader.list())
-    devices.extend(NK3.list())
+    if use_ccid:
+        devices.extend(NK3.list_ccid())
+    else:
+        devices.extend(NK3.list_ctaphid())
+
     return devices
 
 
