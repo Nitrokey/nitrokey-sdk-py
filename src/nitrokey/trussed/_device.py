@@ -61,7 +61,7 @@ class TrussedDevice(TrussedBase):
     def close(self) -> None:
         if isinstance(self.device, CtapHidDevice):
             self.device.close()
-        if isinstance(self.device, CardConnection):
+        else:
             self.device.disconnect()
             self.device.release()
 
@@ -84,10 +84,11 @@ class TrussedDevice(TrussedBase):
         response_len: Optional[int] = None,
         data: bytes = b"",
     ) -> bytes:
-        if isinstance(self.device, CardConnection):
-            response = _call_ccid(self.device, command, data)
-        elif isinstance(self.device, CtapHidDevice):
+        response  =  []
+        if isinstance(self.device, CtapHidDevice):
             response = self.device.call(command, data=data)
+        else:
+            response = _call_ccid(self.device, command, data)
 
         if response_len is not None and response_len != len(response):
             raise ValueError(
