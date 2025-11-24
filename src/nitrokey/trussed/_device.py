@@ -238,7 +238,7 @@ class TrussedDevice(TrussedBase):
                 connection.connect()
             except NoCardException:
                 continue
-            if atr == connection.getATR():
+            if atr != connection.getATR():
                 connection.disconnect()
                 connection.release()
                 continue
