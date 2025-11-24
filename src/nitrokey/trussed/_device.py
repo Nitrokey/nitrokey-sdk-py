@@ -111,7 +111,7 @@ class TrussedDevice(TrussedBase):
         assert not isinstance(self.device, CtapHidDevice)
         app = App.ADMIN
         select = bytes([0xA0, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
-        data, sw1, sw2 = self.device.transmit(select)
+        data, sw1, sw2 = self.device.transmit(list(select))
         if sw1 != 0x90 or sw2 != 0x00:
             raise ValueError(
                 f"Failed to select application {app}, got error code: {hex(sw1 << 8 | sw2)}"
@@ -121,12 +121,12 @@ class TrussedDevice(TrussedBase):
             p1 = data[0]
             data = bytes()
         apdu = Iso7816Apdu(0xA0, command, 0, p1, data, le=response_len)
-        data, sw1, sw2 = self.device.transmit(apdu.to_bytes())
+        data, sw1, sw2 = self.device.transmit(list(apdu.to_bytes()))
         accumulator = data
         while True:
             if sw1 == 0x61:
                 data, sw1, sw2 = self.device.transmit(
-                    Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes()
+                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
                 )
                 continue
 
@@ -145,7 +145,7 @@ class TrussedDevice(TrussedBase):
     ) -> bytes:
         assert not isinstance(self.device, CtapHidDevice)
         select = bytes([0xA0, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
-        data, sw1, sw2 = self.device.transmit(select)
+        data, sw1, sw2 = self.device.transmit(list(select))
         if sw1 != 0x90 or sw2 != 0x00:
             raise ValueError(
                 f"Failed to select application {app}, got error code: {hex(sw1 << 8 | sw2)}"
@@ -153,12 +153,12 @@ class TrussedDevice(TrussedBase):
 
         command = Iso7816Apdu(0xA0, app.value, 0, 0, data, le=response_len)
 
-        data, sw1, sw2 = self.device.transmit(command.to_bytes())
+        data, sw1, sw2 = self.device.transmit(list(command.to_bytes()))
         accumulator = data
         while True:
             if sw1 == 0x61:
                 data, sw1, sw2 = self.device.transmit(
-                    Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes()
+                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
                 )
                 continue
 
