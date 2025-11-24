@@ -205,7 +205,7 @@ class AdminApp:
     ) -> Optional[bytes]:
         try:
             if command.is_legacy_command():
-                return self.device._call(
+                return self.device._call_admin_legacy(
                     command.value,
                     command.name,
                     response_len=response_len,
