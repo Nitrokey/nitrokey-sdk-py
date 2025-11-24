@@ -198,11 +198,14 @@ class AdminApp:
         self.device = device
 
     def _call(
-        self, command: AdminCommand, response_len: Optional[int] = None, data: bytes = b""
+        self,
+        command: AdminCommand,
+        response_len: Optional[int] = None,
+        data: bytes = b"",
     ) -> Optional[bytes]:
         try:
             if command.is_legacy_command():
-                return self.device._call(
+                return self.device._call_admin_legacy(
                     command.value, command.name, response_len=response_len, data=data
                 )
             else:
@@ -309,9 +312,15 @@ class AdminApp:
         if not reply:
             return [
                 ConfigField(
-                    "fido.disable_skip_up_timeout", False, False, False, ConfigFieldType.BOOL
+                    "fido.disable_skip_up_timeout",
+                    False,
+                    False,
+                    False,
+                    ConfigFieldType.BOOL,
                 ),
-                ConfigField("opcard.use_se050_backend", True, True, True, ConfigFieldType.BOOL),
+                ConfigField(
+                    "opcard.use_se050_backend", True, True, True, ConfigFieldType.BOOL
+                ),
             ]
         parsed = cbor.decode(reply)
         assert isinstance(parsed, list)
@@ -340,8 +349,12 @@ class AdminApp:
 
     def factory_reset_app(self, application: str) -> bool:
         reply = self._call(
-            AdminCommand.FACTORY_RESET_APP, data=application.encode("ascii"), response_len=1
+            AdminCommand.FACTORY_RESET_APP,
+            data=application.encode("ascii"),
+            response_len=1,
         )
         if reply:
-            FactoryResetStatus.check(reply[0], "Failed to factory reset the application")
+            FactoryResetStatus.check(
+                reply[0], "Failed to factory reset the application"
+            )
         return reply is not None
