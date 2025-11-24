@@ -235,3 +235,61 @@ class Fido2Certs:
             return max(matching_certs, key=lambda c: c.start)
         else:
             return None
+
+
+class Iso7816Apdu:
+    def __init__(
+        self,
+        cla: int,
+        ins: int,
+        p1: int,
+        p2: int,
+        data: Optional[bytes] = None,
+        le: Optional[int] = None,
+    ) -> None:
+        self.cla = cla
+        self.ins = ins
+        self.p1 = p1
+        self.p2 = p2
+        self.data = data or b""
+        self.le = le
+
+    def _encode_lc(self) -> bytes:
+        """Encode Lc according to short / extended format."""
+        lc_len = len(self.data)
+        if lc_len == 0:
+            return b""
+        if lc_len <= 0xFF:
+            return bytes([lc_len])
+        if lc_len <= 0xFFFF:
+            return b"\x00" + lc_len.to_bytes(2, "big")
+        raise ValueError("Data too long (max 6535 bytes)")
+
+    def _encode_le(self) -> bytes:
+        """Encode Le according to short / extended format."""
+        if self.le is None:
+            return b""
+        if self.le == 0:
+            return b"\x00"
+        if self.le <= 0xFF:
+            return bytes([self.le])
+        if self.le <= 0xFFFF:
+            return b"\x00" + self.le.to_bytes(2, "big")
+        raise ValueError("Le out of range (max 65535)")
+
+    def to_bytes(self) -> bytes:
+        """Serialize the APDU to its binary representation."""
+        header = bytes([self.cla, self.ins, self.p1, self.p2])
+
+        # No data, no Le → case 1
+        if not self.data and self.le is None:
+            return header
+
+        lc = self._encode_lc()
+        le = self._encode_le()
+
+        # Cases:
+        # 2: no data, Le present
+        # 3: data present, no Le
+        # 4: data present, Le present
+        return header + lc + self.data + le

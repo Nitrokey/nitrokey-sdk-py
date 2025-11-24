@@ -14,12 +14,12 @@ from enum import Enum
 from typing import List, Optional, Sequence, TypeVar, Union
 
 from fido2.hid import CtapHidDevice, list_descriptors, open_device
-from smartcard.CardConnection import CardConnection
 from smartcard.Exceptions import NoCardException
+from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
 from smartcard.System import readers
 
 from ._base import TrussedBase
-from ._utils import Fido2Certs, Uuid
+from ._utils import Fido2Certs, Iso7816Apdu, Uuid
 
 T = TypeVar("T", bound="TrussedDevice")
 
@@ -34,10 +34,20 @@ class App(Enum):
     PROVISIONER = 0x71
     ADMIN = 0x72
 
+    def aid(self) -> bytes:
+        if self == App.SECRETS:
+            return bytes.fromhex("A000000527 2101")
+        elif self == App.ADMIN:
+            return bytes.fromhex("A00000084700000001")
+        elif self == App.PROVISIONER:
+            return bytes.fromhex("A00000084700000001")
+
 
 class TrussedDevice(TrussedBase):
     def __init__(
-        self, device: CtapHidDevice | CardConnection, fido2_certs: Sequence[Fido2Certs]
+        self,
+        device: CtapHidDevice | ExclusiveConnectCardConnection,
+        fido2_certs: Sequence[Fido2Certs],
     ) -> None:
         self._path = None
         if isinstance(device, CtapHidDevice):
@@ -78,14 +88,14 @@ class TrussedDevice(TrussedBase):
         if isinstance(self.device, CtapHidDevice):
             self.device.wink()
 
-    def _call(
+    def _call_admin_legacy(
         self, command: int, command_name: str, response_len: Optional[int] = None, data: bytes = b""
     ) -> bytes:
-        response = []
+        response: bytes = bytes()
         if isinstance(self.device, CtapHidDevice):
             response = self.device.call(command, data=data)
         else:
-            response = _call_ccid(self.device, command, data)
+            response = self._call_admin_ccid_legacy(command, data)
 
         if response_len is not None and response_len != len(response):
             raise ValueError(
@@ -94,12 +104,103 @@ class TrussedDevice(TrussedBase):
             )
         return response
 
+    def _call_admin_ccid_legacy(
+        self, command: int, data: bytes, response_len: Optional[int] = None
+    ) -> bytes:
+        assert not isinstance(self.device, CtapHidDevice)
+        app = App.ADMIN
+        select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
+        _, sw1, sw2 = self.device.transmit(list(select))
+        while True:
+            if sw1 == 0x61:
+                _, sw1, sw2 = self.device.transmit(
+                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
+                )
+                continue
+            break
+        if sw1 != 0x90 or sw2 != 0x00:
+            raise ValueError(
+                f"Failed to select application {app}, got error code: {hex(sw1 << 8 | sw2)}"
+            )
+        p1 = 0
+        if len(data) >= 1:
+            p1 = data[0]
+        apdu = Iso7816Apdu(0x00, command, 0, p1, data, le=response_len)
+        data, sw1, sw2 = self.device.transmit(list(apdu.to_bytes()))
+        accumulator = bytes(data)
+        while True:
+            if sw1 == 0x61:
+                data, sw1, sw2 = self.device.transmit(
+                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
+                )
+                accumulator += bytes(data)
+                continue
+            break
+        if sw1 != 0x90 or sw2 != 0x00:
+            raise ValueError(f"Failed to run command, got error code: {hex(sw1 << 8 | sw2)}")
+
+        return accumulator
+
+    def _call_ccid(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
+        assert not isinstance(self.device, CtapHidDevice)
+        select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
+        _, sw1, sw2 = self.device.transmit(list(select))
+        while True:
+            if sw1 == 0x61:
+                _, sw1, sw2 = self.device.transmit(
+                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
+                )
+                continue
+            break
+        if sw1 != 0x90 or sw2 != 0x00:
+            raise ValueError(
+                f"Failed to select application {app}, got error code: {hex(sw1 << 8 | sw2)}"
+            )
+
+        command = None
+        if app == App.ADMIN or app == App.PROVISIONER:
+            command = list(Iso7816Apdu(0x00, data[0], 0, 0, data[1:], le=response_len).to_bytes())
+        elif app == App.SECRETS:
+            command = list(data)
+
+        data, sw1, sw2 = self.device.transmit(command)
+        accumulator = bytes(data)
+        while True:
+            if sw1 == 0x61:
+                data, sw1, sw2 = self.device.transmit(
+                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
+                )
+                accumulator += bytes(data)
+                continue
+            break
+
+        if app == App.SECRETS:
+            accumulator = bytes([sw1, sw2]) + accumulator
+            # Let the secret app handle the error
+            return accumulator
+
+        if sw1 != 0x90 or sw2 != 0x00:
+            raise ValueError(f"Failed to run command, got error code: {hex(sw1 << 8 | sw2)}")
+
+        return accumulator
+
     def _call_app(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
-        return self._call(app.value, app.name, response_len, data)
+        response: bytes = bytes()
+        if isinstance(self.device, CtapHidDevice):
+            response = self.device.call(app.value, data=data)
+        else:
+            response = self._call_ccid(app, response_len, data)
+
+        if response_len is not None and response_len != len(response):
+            raise ValueError(
+                f"The response for the CTAPHID {app.name} command has an unexpected length "
+                f"(expected: {response_len}, actual: {len(response)})"
+            )
+        return response
 
     @classmethod
     @abstractmethod
-    def from_device(cls: type[T], device: CtapHidDevice | CardConnection) -> T: ...
+    def from_device(cls: type[T], device: CtapHidDevice | ExclusiveConnectCardConnection) -> T: ...
 
     @classmethod
     def open(cls: type[T], path: str) -> Optional[T]:
@@ -138,7 +239,7 @@ class TrussedDevice(TrussedBase):
     def _list_pcsc_atr(cls: type[T], atr: List[int]) -> List[T]:
         devices = []
         for r in readers():
-            connection = r.createConnection()
+            connection = ExclusiveConnectCardConnection(r.createConnection())
             try:
                 connection.connect()
             except NoCardException:
@@ -150,12 +251,6 @@ class TrussedDevice(TrussedBase):
             devices.append(cls.from_device(connection))
 
         return devices
-
-
-def _call_ccid(
-    device: CardConnection, command: int, data: bytes = b"", response_len: Optional[int] = None
-) -> bytes:
-    raise NotImplementedError("TODO")
 
 
 def _device_path_to_str(path: Union[bytes, str]) -> str:

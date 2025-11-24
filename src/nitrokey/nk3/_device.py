@@ -8,7 +8,7 @@
 from typing import List
 
 from fido2.hid import CtapHidDevice
-from smartcard.CardConnection import CardConnection
+from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
 
 from nitrokey import _VID_NITROKEY
 from nitrokey.trussed import Fido2Certs, Model, TrussedDevice, Version
@@ -32,7 +32,7 @@ FIDO2_CERTS = [
 class NK3(TrussedDevice):
     """A Nitrokey 3 device running the firmware."""
 
-    def __init__(self, device: CtapHidDevice | CardConnection) -> None:
+    def __init__(self, device: CtapHidDevice | ExclusiveConnectCardConnection) -> None:
         super().__init__(device, FIDO2_CERTS)
 
     @property
@@ -50,7 +50,7 @@ class NK3(TrussedDevice):
         return "Nitrokey 3"
 
     @classmethod
-    def from_device(cls, device: CtapHidDevice | CardConnection) -> "NK3":
+    def from_device(cls, device: CtapHidDevice | ExclusiveConnectCardConnection) -> "NK3":
         return cls(device)
 
     @classmethod
