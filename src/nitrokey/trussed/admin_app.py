@@ -5,6 +5,7 @@ from typing import Optional
 
 from fido2 import cbor
 from fido2.ctap import CtapError
+from smartcard.Exceptions import CardConnectionException
 
 from . import App, TimeoutException, TrussedDevice, Uuid, Version
 
@@ -236,7 +237,7 @@ class AdminApp:
                         raise TimeoutException() from e
                     else:
                         raise e
-        except OSError as e:
+        except (OSError, CardConnectionException) as e:
             # OS error is expected as the device does not respond during the reboot
             self.device._logger.debug("ignoring OSError after reboot", exc_info=e)
         return True
