@@ -49,6 +49,7 @@ class TrussedDevice(TrussedBase):
         device: CtapHidDevice | ExclusiveConnectCardConnection,
         fido2_certs: Sequence[Fido2Certs],
     ) -> None:
+        self._path = None
         if isinstance(device, CtapHidDevice):
             self._validate_vid_pid(device.descriptor.vid, device.descriptor.pid)
             self._path = _device_path_to_str(device.descriptor.path)
@@ -63,7 +64,7 @@ class TrussedDevice(TrussedBase):
         self.admin.status()
 
     @property
-    def path(self) -> str:
+    def path(self) -> Optional[str]:
         return self._path
 
     def close(self) -> None:
