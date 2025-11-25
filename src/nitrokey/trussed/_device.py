@@ -14,8 +14,8 @@ from enum import Enum
 from typing import List, Optional, Sequence, TypeVar, Union
 
 from fido2.hid import CtapHidDevice, list_descriptors, open_device
-from smartcard.CardConnection import CardConnection
 from smartcard.Exceptions import NoCardException
+from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
 from smartcard.System import readers
 
 from ._base import TrussedBase
@@ -46,7 +46,7 @@ class App(Enum):
 class TrussedDevice(TrussedBase):
     def __init__(
         self,
-        device: CtapHidDevice | CardConnection,
+        device: CtapHidDevice | ExclusiveConnectCardConnection,
         fido2_certs: Sequence[Fido2Certs],
     ) -> None:
         if isinstance(device, CtapHidDevice):
@@ -117,9 +117,8 @@ class TrussedDevice(TrussedBase):
                 f"Failed to select application {app}, got error code: {hex(sw1 << 8 | sw2)}"
             )
         p1 = 0
-        if len(data) == 1:
+        if len(data) >= 1:
             p1 = data[0]
-            data = bytes()
         apdu = Iso7816Apdu(0xA0, command, 0, p1, data, le=response_len)
         data, sw1, sw2 = self.device.transmit(list(apdu.to_bytes()))
         accumulator = data
@@ -128,13 +127,14 @@ class TrussedDevice(TrussedBase):
                 data, sw1, sw2 = self.device.transmit(
                     list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
                 )
+                accumulator += data
                 continue
+            break
+        if sw1 != 0x90 or sw2 != 0x00:
+            raise ValueError(
+                f"Failed to run command, got error code: {hex(sw1 << 8 | sw2)}"
+            )
 
-            if sw1 != 0x90 or sw2 != 0x00:
-                raise ValueError(
-                    f"Failed to run command, got error code: {hex(sw1 << 8 | sw2)}"
-                )
-            accumulator += data
         return accumulator
 
     def _call_ccid(
@@ -145,28 +145,35 @@ class TrussedDevice(TrussedBase):
     ) -> bytes:
         assert not isinstance(self.device, CtapHidDevice)
         select = bytes([0xA0, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
-        data, sw1, sw2 = self.device.transmit(list(select))
+        select_data, sw1, sw2 = self.device.transmit(list(select))
         if sw1 != 0x90 or sw2 != 0x00:
             raise ValueError(
                 f"Failed to select application {app}, got error code: {hex(sw1 << 8 | sw2)}"
             )
 
-        command = Iso7816Apdu(0xA0, app.value, 0, 0, data, le=response_len)
+        command = None
+        if app == App.ADMIN or app == App.PROVISIONER:
+            command = list(
+                Iso7816Apdu(0xA0, data[0], 0, 0, data[1:], le=response_len).to_bytes()
+            )
+        elif app == App.SECRETS:
+            command = list(data)
 
-        data, sw1, sw2 = self.device.transmit(list(command.to_bytes()))
+        data, sw1, sw2 = self.device.transmit(command)
         accumulator = data
         while True:
             if sw1 == 0x61:
                 data, sw1, sw2 = self.device.transmit(
                     list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
                 )
+                accumulator += data
                 continue
+            break
+        if sw1 != 0x90 or sw2 != 0x00:
+            raise ValueError(
+                f"Failed to run command, got error code: {hex(sw1 << 8 | sw2)}"
+            )
 
-            if sw1 != 0x90 or sw2 != 0x00:
-                raise ValueError(
-                    f"Failed to run command, got error code: {hex(sw1 << 8 | sw2)}"
-                )
-            accumulator += data
         return accumulator
 
     def _call_app(
@@ -193,7 +200,7 @@ class TrussedDevice(TrussedBase):
     @abstractmethod
     def from_device(
         cls: type[T],
-        device: CtapHidDevice | CardConnection,
+        device: CtapHidDevice | ExclusiveConnectCardConnection,
     ) -> T: ...
 
     @classmethod
@@ -233,7 +240,7 @@ class TrussedDevice(TrussedBase):
     def _list_pcsc_atr(cls: type[T], atr: List[int]) -> List[T]:
         devices = []
         for r in readers():
-            connection = r.createConnection()
+            connection = ExclusiveConnectCardConnection(r.createConnection())
             try:
                 connection.connect()
             except NoCardException:
