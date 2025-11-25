@@ -118,13 +118,13 @@ class TrussedDevice(TrussedBase):
             p1 = data[0]
         apdu = Iso7816Apdu(0xA0, command, 0, p1, data, le=response_len)
         data, sw1, sw2 = self.device.transmit(list(apdu.to_bytes()))
-        accumulator = data
+        accumulator = bytes(data)
         while True:
             if sw1 == 0x61:
                 data, sw1, sw2 = self.device.transmit(
                     list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
                 )
-                accumulator += data
+                accumulator += bytes(data)
                 continue
             break
         if sw1 != 0x90 or sw2 != 0x00:
@@ -148,13 +148,13 @@ class TrussedDevice(TrussedBase):
             command = list(data)
 
         data, sw1, sw2 = self.device.transmit(command)
-        accumulator = data
+        accumulator = bytes(data)
         while True:
             if sw1 == 0x61:
                 data, sw1, sw2 = self.device.transmit(
                     list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
                 )
-                accumulator += data
+                accumulator += bytes(data)
                 continue
             break
         if sw1 != 0x90 or sw2 != 0x00:
