@@ -81,7 +81,9 @@ class NKPK(TrussedDevice):
 
     @classmethod
     def list_ccid(cls) -> List["NKPK"]:
-        return []
+        return cls._list_pcsc_atr(
+            list(bytes.fromhex("3B8F01805D4E6974726F6B657900000000006A"))
+        )
 
 
 class NKPKBootloader(TrussedBootloaderNrf52):
