@@ -54,6 +54,8 @@ class TrussedDevice(TrussedBase):
             self._validate_vid_pid(device.descriptor.vid, device.descriptor.pid)
             self._path = _device_path_to_str(device.descriptor.path)
             self._logger = logger.getChild(self._path)
+        else:
+            self._logger = logger.getChild(str(device.getReader()))
 
         self.device = device
         self.fido2_certs = fido2_certs
