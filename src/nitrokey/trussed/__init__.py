@@ -23,26 +23,41 @@ from ._utils import Uuid as Uuid  # noqa: F401
 from ._utils import Version as Version  # noqa: F401
 
 
-def list() -> List[TrussedBase]:
-    from nitrokey.nk3 import list as list_nk3
-    from nitrokey.nkpk import list as list_nkpk
-
+def list(*, model: Optional[Model] = None) -> List[TrussedBase]:
     devices: List[TrussedBase] = []
-    devices.extend(list_nk3())
-    devices.extend(list_nkpk())
+
+    if model is None or model == Model.NK3:
+        from nitrokey import nk3
+
+        devices.extend(nk3.list())
+
+    if model is None or model == Model.NKPK:
+        from nitrokey import nkpk
+
+        devices.extend(nkpk.list())
+
     return devices
 
 
-def open(path: str) -> Optional[TrussedBase]:
-    from nitrokey.nk3 import open as open_nk3
-    from nitrokey.nkpk import open as open_nkpk
+def open(path: str, *, model: Optional[Model] = None) -> Optional[TrussedBase]:
+    devices: List[TrussedBase] = []
 
-    nk3 = open_nk3(path)
-    nkpk = open_nkpk(path)
-    if nk3 and nkpk:
+    if model is None or model == Model.NK3:
+        from nitrokey import nk3
+
+        nk3_device = nk3.open(path)
+        if nk3_device is not None:
+            devices.append(nk3_device)
+
+    if model is None or model == Model.NKPK:
+        from nitrokey import nkpk
+
+        nkpk_device = nkpk.open(path)
+        if nkpk_device is not None:
+            devices.append(nkpk_device)
+
+    if len(devices) > 1:
         raise Exception(f"Found multiple devices at path {path}")
-    if nk3:
-        return nk3
-    if nkpk:
-        return nkpk
+    if len(devices) == 1:
+        return devices[0]
     return None

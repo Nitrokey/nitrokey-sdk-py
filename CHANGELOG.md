@@ -2,7 +2,7 @@
 
 ## Unreleased
 
--
+- `nitrokey.trussed`: Add optional `model` argument for `list` and `open` functions.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.4.1...HEAD)
 
