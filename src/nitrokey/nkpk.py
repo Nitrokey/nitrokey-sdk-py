@@ -5,6 +5,7 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
+import builtins
 from typing import List, Optional, Sequence, Union
 
 from fido2.hid import CtapHidDevice
@@ -70,7 +71,9 @@ class NKPK(TrussedDevice):
 
     @classmethod
     def list_ccid(cls) -> List["NKPK"]:
-        return []
+        return cls._list_pcsc_atr(
+            builtins.list(bytes.fromhex("3B8F01805D4E6974726F6B657900000000006A"))
+        )
 
 
 class NKPKBootloader(TrussedBootloaderNrf52):
