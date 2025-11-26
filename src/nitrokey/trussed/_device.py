@@ -110,7 +110,14 @@ class TrussedDevice(TrussedBase):
         assert not isinstance(self.device, CtapHidDevice)
         app = App.ADMIN
         select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
-        data, sw1, sw2 = self.device.transmit(list(select))
+        _, sw1, sw2 = self.device.transmit(list(select))
+        while True:
+            if sw1 == 0x61:
+                _, sw1, sw2 = self.device.transmit(
+                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
+                )
+                continue
+            break
         if sw1 != 0x90 or sw2 != 0x00:
             raise ValueError(
                 f"Failed to select application {app}, got error code: {hex(sw1 << 8 | sw2)}"
@@ -137,7 +144,14 @@ class TrussedDevice(TrussedBase):
     def _call_ccid(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
         assert not isinstance(self.device, CtapHidDevice)
         select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
-        select_data, sw1, sw2 = self.device.transmit(list(select))
+        _, sw1, sw2 = self.device.transmit(list(select))
+        while True:
+            if sw1 == 0x61:
+                _, sw1, sw2 = self.device.transmit(
+                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
+                )
+                continue
+            break
         if sw1 != 0x90 or sw2 != 0x00:
             raise ValueError(
                 f"Failed to select application {app}, got error code: {hex(sw1 << 8 | sw2)}"
