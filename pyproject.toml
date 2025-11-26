@@ -69,6 +69,9 @@ dev-dependencies = [
     "cffi >=1.14.1",
     "typing-extensions >=4.1",
     "urllib3 >= 2",
+
+    # fake-winreg does not work with wrapt v2 so we need to add an additional upper bound
+    "wrapt <2",
 ]
 
 [tool.black]
