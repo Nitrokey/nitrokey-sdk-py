@@ -129,7 +129,7 @@ class TrussedDevice(TrussedBase):
         p1 = 0
         if len(data) >= 1:
             p1 = data[0]
-        apdu = Iso7816Apdu(0xA0, command, 0, p1, data, le=response_len)
+        apdu = Iso7816Apdu(0x00, command, 0, p1, data, le=response_len)
         data, sw1, sw2 = self.device.transmit(list(apdu.to_bytes()))
         accumulator = bytes(data)
         while True:
@@ -171,7 +171,7 @@ class TrussedDevice(TrussedBase):
         command = None
         if app == App.ADMIN or app == App.PROVISIONER:
             command = list(
-                Iso7816Apdu(0xA0, data[0], 0, 0, data[1:], le=response_len).to_bytes()
+                Iso7816Apdu(0x00, data[0], 0, 0, data[1:], le=response_len).to_bytes()
             )
         elif app == App.SECRETS:
             command = list(data)
