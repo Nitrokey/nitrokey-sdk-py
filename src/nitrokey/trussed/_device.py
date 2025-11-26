@@ -109,7 +109,7 @@ class TrussedDevice(TrussedBase):
     ) -> bytes:
         assert not isinstance(self.device, CtapHidDevice)
         app = App.ADMIN
-        select = bytes([0xA0, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
+        select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
         data, sw1, sw2 = self.device.transmit(list(select))
         if sw1 != 0x90 or sw2 != 0x00:
             raise ValueError(
@@ -136,7 +136,7 @@ class TrussedDevice(TrussedBase):
 
     def _call_ccid(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
         assert not isinstance(self.device, CtapHidDevice)
-        select = bytes([0xA0, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
+        select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
         select_data, sw1, sw2 = self.device.transmit(list(select))
         if sw1 != 0x90 or sw2 != 0x00:
             raise ValueError(
