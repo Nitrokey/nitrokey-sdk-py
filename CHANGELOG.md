@@ -2,9 +2,13 @@
 
 ## Unreleased
 
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.4.2...HEAD)
+
+## [v0.4.2](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.4.2) (2025-11-26)
+
 - `nitrokey.trussed`: Add optional `model` argument for `list` and `open` functions.
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.4.1...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.4.1...v0.4.2)
 
 ## [v0.4.1](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.4.1) (2025-08-21)
 
