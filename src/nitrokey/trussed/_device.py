@@ -186,6 +186,12 @@ class TrussedDevice(TrussedBase):
                 accumulator += bytes(data)
                 continue
             break
+
+        if app == App.SECRETS:
+            accumulator = bytes([sw1, sw2]) + accumulator
+            # Let the secret app handle the error
+            return accumulator
+
         if sw1 != 0x90 or sw2 != 0x00:
             raise ValueError(
                 f"Failed to run command, got error code: {hex(sw1 << 8 | sw2)}"
