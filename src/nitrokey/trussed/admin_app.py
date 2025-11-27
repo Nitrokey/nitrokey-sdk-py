@@ -7,6 +7,8 @@ from fido2 import cbor
 from fido2.ctap import CtapError
 from smartcard.Exceptions import CardConnectionException
 
+from nitrokey.trussed._device import PcscError
+
 from . import App, TimeoutException, TrussedDevice, Uuid, Version
 
 RNG_LEN = 57
@@ -237,6 +239,14 @@ class AdminApp:
                         raise TimeoutException() from e
                     else:
                         raise e
+                except PcscError as e:
+                    # The admin app returns ConditionsOfUseNotSatisfied if the user confirmation
+                    # request times out
+                    if e.sw1 == 0x69 and e.sw2 == 0x85:
+                        raise TimeoutException() from None
+                    else:
+                        raise e
+
         except (OSError, CardConnectionException) as e:
             # OS error is expected as the device does not respond during the reboot
             self.device._logger.debug("ignoring OSError after reboot", exc_info=e)

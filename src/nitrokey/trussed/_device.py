@@ -26,6 +26,13 @@ T = TypeVar("T", bound="TrussedDevice")
 logger = logging.getLogger(__name__)
 
 
+class PcscError(Exception):
+    def __init__(self, sw1: int, sw2: int) -> None:
+        self.sw1 = sw1
+        self.sw2 = sw2
+        super().__init__(f"Got error code {bytes([sw1, sw2]).hex()}")
+
+
 @enum.unique
 class App(Enum):
     """Vendor-specific CTAPHID commands for Trussed apps."""
@@ -119,9 +126,7 @@ class TrussedDevice(TrussedBase):
                 continue
             break
         if sw1 != 0x90 or sw2 != 0x00:
-            raise ValueError(
-                f"Failed to select application {app}, got error code: {hex(sw1 << 8 | sw2)}"
-            )
+            raise PcscError(sw1, sw2)
         p1 = 0
         if len(data) >= 1:
             p1 = data[0]
@@ -137,7 +142,7 @@ class TrussedDevice(TrussedBase):
                 continue
             break
         if sw1 != 0x90 or sw2 != 0x00:
-            raise ValueError(f"Failed to run command, got error code: {hex(sw1 << 8 | sw2)}")
+            raise PcscError(sw1, sw2)
 
         return accumulator
 
@@ -153,9 +158,7 @@ class TrussedDevice(TrussedBase):
                 continue
             break
         if sw1 != 0x90 or sw2 != 0x00:
-            raise ValueError(
-                f"Failed to select application {app}, got error code: {hex(sw1 << 8 | sw2)}"
-            )
+            raise PcscError(sw1, sw2)
 
         command = None
         if app == App.ADMIN or app == App.PROVISIONER:
@@ -180,7 +183,7 @@ class TrussedDevice(TrussedBase):
             return accumulator
 
         if sw1 != 0x90 or sw2 != 0x00:
-            raise ValueError(f"Failed to run command, got error code: {hex(sw1 << 8 | sw2)}")
+            raise PcscError(sw1, sw2)
 
         return accumulator
 
