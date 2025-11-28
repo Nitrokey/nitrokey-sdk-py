@@ -11,19 +11,16 @@ import platform
 import sys
 from abc import abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional, Sequence, TypeVar, Union
+from typing import List, Optional, Sequence, TypeVar, Union
 
 from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
-if TYPE_CHECKING:
-    try:
-        from smartcard.ExclusiveConnectCardConnection import (
-            ExclusiveConnectCardConnection,
-        )
-    except ModuleNotFoundError:
+try:
+    from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
+except ModuleNotFoundError:
 
-        class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
-            pass
+    class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
+        pass
 
 
 from ._base import TrussedBase
