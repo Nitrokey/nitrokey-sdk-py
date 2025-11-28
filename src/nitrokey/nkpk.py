@@ -6,19 +6,16 @@
 # copied, modified, or distributed except according to those terms.
 
 import builtins
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union
+from typing import List, Optional, Sequence, Union
 
 from fido2.hid import CtapHidDevice
 
-if TYPE_CHECKING:
-    try:
-        from smartcard.ExclusiveConnectCardConnection import (
-            ExclusiveConnectCardConnection,
-        )
-    except ModuleNotFoundError:
+try:
+    from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
+except ModuleNotFoundError:
 
-        class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
-            pass
+    class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
+        pass
 
 
 from nitrokey import _VID_NITROKEY
