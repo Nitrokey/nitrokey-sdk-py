@@ -31,7 +31,6 @@ dependencies = [
     # nrf52
     "protobuf >=5.26, <7",
     "pyserial >=3.5, <4",
-    "pyscard >=2, <3"
 ]
 
 [project.urls]
@@ -41,6 +40,9 @@ repository = "https://github.com/Nitrokey/nitrokey-sdk-py"
 classifiers = [
     "Intended Audience :: Developers",
 ]
+
+[project.optional-dependencies]
+pcsc = ["pyscard >=2, <3"]
 
 [tool.poetry.group.dev]
 optional = true

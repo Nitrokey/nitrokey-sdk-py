@@ -5,10 +5,20 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from fido2.hid import CtapHidDevice
-from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
+
+if TYPE_CHECKING:
+    try:
+        from smartcard.ExclusiveConnectCardConnection import (
+            ExclusiveConnectCardConnection,
+        )
+    except ModuleNotFoundError:
+
+        class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
+            pass
+
 
 from nitrokey import _VID_NITROKEY
 from nitrokey.trussed import Fido2Certs, Model, TrussedDevice, Version
