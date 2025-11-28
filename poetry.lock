@@ -1156,9 +1156,10 @@ windows-terminal = ["colorama (>=0.4.6)"]
 name = "pyscard"
 version = "2.3.1"
 description = "Smartcard module for Python."
-optional = false
+optional = true
 python-versions = ">=3.9"
 groups = ["main"]
+markers = "extra == \"pcsc\""
 files = [
     {file = "pyscard-2.3.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:5bd277142644441cba8fe71bc991fe83108147f3ba22c01e8b9a5a3f41a31f69"},
     {file = "pyscard-2.3.1-cp310-cp310-win32.whl", hash = "sha256:717ea958ee77d7d4514ff0a6eb238082f9437e7882479ee6f742bb9db54419d4"},
@@ -1784,7 +1785,10 @@ files = [
     {file = "wrapt-1.17.3.tar.gz", hash = "sha256:f66eb08feaa410fe4eebd17f2a2c8e2e46d3476e9f8c783daa8e09e0faa666d0"},
 ]
 
+[extras]
+pcsc = ["pyscard"]
+
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10, <4"
-content-hash = "12c0835b630ab71eebf15e88354aad4f71e68c04cbb82258667d2f0eb6a01212"
+content-hash = "bfb12355714db86ccf59dd456bf709ef40197aff9f11a0f7b6dde587b4b0cbe9"

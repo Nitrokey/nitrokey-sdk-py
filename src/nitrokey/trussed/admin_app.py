@@ -5,7 +5,14 @@ from typing import Optional
 
 from fido2 import cbor
 from fido2.ctap import CtapError
-from smartcard.Exceptions import CardConnectionException
+
+try:
+    from smartcard.Exceptions import CardConnectionException
+except ImportError:
+
+    class CardConnectionException(Exception):  # type: ignore[no-redef]
+        pass
+
 
 from nitrokey.trussed._device import PcscError
 

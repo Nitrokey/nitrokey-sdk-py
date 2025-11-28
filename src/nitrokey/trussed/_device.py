@@ -14,9 +14,14 @@ from enum import Enum
 from typing import List, Optional, Sequence, TypeVar, Union
 
 from fido2.hid import CtapHidDevice, list_descriptors, open_device
-from smartcard.Exceptions import NoCardException
-from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
-from smartcard.System import readers
+
+try:
+    from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
+except ModuleNotFoundError:
+
+    class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
+        pass
+
 
 from ._base import TrussedBase
 from ._utils import Fido2Certs, Iso7816Apdu, Uuid
@@ -240,20 +245,27 @@ class TrussedDevice(TrussedBase):
 
     @classmethod
     def _list_pcsc_atr(cls: type[T], atr: List[int]) -> List[T]:
-        devices = []
-        for r in readers():
-            connection = ExclusiveConnectCardConnection(r.createConnection())
-            try:
-                connection.connect()
-            except NoCardException:
-                continue
-            if atr != connection.getATR():
-                connection.disconnect()
-                connection.release()
-                continue
-            devices.append(cls.from_device(connection))
+        try:
+            from smartcard.Exceptions import NoCardException
+            from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
+            from smartcard.System import readers
 
-        return devices
+            devices = []
+            for r in readers():
+                connection = ExclusiveConnectCardConnection(r.createConnection())
+                try:
+                    connection.connect()
+                except NoCardException:
+                    continue
+                if atr != connection.getATR():
+                    connection.disconnect()
+                    connection.release()
+                    continue
+                devices.append(cls.from_device(connection))
+
+            return devices
+        except ImportError:
+            return []
 
 
 def _device_path_to_str(path: Union[bytes, str]) -> str:
