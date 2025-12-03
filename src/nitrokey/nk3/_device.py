@@ -9,19 +9,8 @@ from typing import List
 
 from fido2.hid import CtapHidDevice
 
-try:
-    from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
-    from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
-except ModuleNotFoundError:
-
-    class ExclusiveTransmitCardConnection:  # type: ignore[no-redef]
-        pass
-
-    class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
-        pass
-
-
 from nitrokey import _VID_NITROKEY
+from nitrokey._smartcard import ExclusiveConnectCardConnection, ExclusiveTransmitCardConnection
 from nitrokey.trussed import Fido2Certs, Model, TrussedDevice, Version
 
 FIDO2_CERTS = [

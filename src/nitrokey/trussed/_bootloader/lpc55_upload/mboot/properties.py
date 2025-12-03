@@ -470,10 +470,10 @@ class AvailableCommandsValue(PropertyValueBase):
     __slots__ = ("value",)
 
     @property
-    def tags(self) -> List[str]:
+    def tags(self) -> List[int]:
         """List of tags representing Available commands."""
         return [
-            cmd_tag.tag  # type: ignore
+            cmd_tag.tag
             for cmd_tag in CommandTag
             if cmd_tag.tag > 0 and (1 << cmd_tag.tag - 1) & self.value
         ]
@@ -492,11 +492,13 @@ class AvailableCommandsValue(PropertyValueBase):
 
     def to_str(self) -> str:
         """Get stringified property representation."""
-        return [
-            cmd_tag.label  # type: ignore
-            for cmd_tag in CommandTag
-            if cmd_tag.tag > 0 and (1 << cmd_tag.tag - 1) & self.value
-        ]
+        return ", ".join(
+            [
+                cmd_tag.label
+                for cmd_tag in CommandTag
+                if cmd_tag.tag > 0 and (1 << cmd_tag.tag - 1) & self.value
+            ]
+        )
 
 
 class IrqNotifierPinValue(PropertyValueBase):

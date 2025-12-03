@@ -53,6 +53,7 @@ mypy = "^1.4"
 rstcheck = { version = "^6", extras = ["sphinx"] }
 ruff = "^0.14"
 sphinx = "^7"
+ty = "^0.0.16"
 types-protobuf = ">=5.26, <7"
 types-requests = "^2.16"
 typing-extensions = "^4.1"
@@ -64,6 +65,7 @@ dev-dependencies = [
     # These dependencies are required for running the type checks.
     "fake-winreg >=1.6, <2",
     "mypy >=1.4, <2",
+    "ty >=0.0.16, <0.0.17",
     "types-protobuf >=5.26, <7",
     "types-requests >=2.16, <3",
 
@@ -102,3 +104,10 @@ split-on-trailing-comma = false
 
 [tool.ruff.lint.mccabe]
 max-complexity = 30
+
+[tool.ty.environment]
+extra-paths = ["stubs"]
+
+[tool.ty.rules]
+# some type: ignore comments are only needed for mypy so ty should not report them as unused
+unused-type-ignore-comment = "ignore"

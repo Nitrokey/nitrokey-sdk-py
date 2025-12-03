@@ -100,7 +100,7 @@ class TrussedBootloaderLpc55(TrussedBootloader):
             try:
                 devices.append(cls(device))
             except ValueError:
-                logger.warn(
+                logger.warning(
                     f"Invalid Nitrokey 3 LPC55 bootloader returned by enumeration: {device}"
                 )
         return devices
@@ -109,16 +109,16 @@ class TrussedBootloaderLpc55(TrussedBootloader):
     def _open(cls: type[T], path: str) -> Optional[T]:
         devices = UsbDevice.enumerate(path=path)
         if len(devices) == 0:
-            logger.warn(f"No HID device at {path}")
+            logger.warning(f"No HID device at {path}")
             return None
         if len(devices) > 1:
-            logger.warn(f"Multiple HID devices at {path}: {devices}")
+            logger.warning(f"Multiple HID devices at {path}: {devices}")
             return None
 
         try:
             return cls(devices[0])
         except ValueError:
-            logger.warn(f"No Nitrokey 3 bootloader at path {path}", exc_info=sys.exc_info())
+            logger.warning(f"No Nitrokey 3 bootloader at path {path}", exc_info=sys.exc_info())
             return None
 
 

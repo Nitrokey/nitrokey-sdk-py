@@ -6,6 +6,7 @@ LINT_DIRS := src tests
 PYTHON ?= poetry run python
 MYPY ?= poetry run mypy
 RUFF ?= poetry run ruff
+TY ?= poetry run ty
 
 .PHONY: install
 install:
@@ -36,6 +37,7 @@ check-style:
 
 .PHONY: check-typing
 check-typing:
+	$(TY) check
 	$(MYPY) $(LINT_DIRS)
 
 .PHONY: check-docs

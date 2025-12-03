@@ -141,25 +141,25 @@ class TrussedBootloaderNrf52(TrussedBootloader):
     def uuid(self) -> Optional[Uuid]:
         return Uuid(self._uuid)
 
-    def update(self, data: bytes, callback: Optional[ProgressCallback] = None) -> None:
+    def update(self, image: bytes, callback: Optional[ProgressCallback] = None) -> None:
         # based on https://github.com/NordicSemiconductor/pc-nrfutil/blob/1caa347b1cca3896f4695823f48abba15fbef76b/nordicsemi/dfu/dfu.py
         # we have to implement this ourselves because we want to read the files
         # from memory, not from the filesystem
 
-        image = Image.parse(data, self._signature_keys)
+        parsed_image = Image.parse(image, self._signature_keys)
 
         time.sleep(3)
 
         dfu = DfuTransportSerial(self.path)
 
         if callback:
-            total = len(image.firmware_bin)
+            total = len(parsed_image.firmware_bin)
             callback(0, total)
             dfu.register_events_callback(DfuEvent.PROGRESS_EVENT, CallbackWrapper(callback, total))
 
         dfu.open()
-        dfu.send_init_packet(image.firmware_dat)
-        dfu.send_firmware(image.firmware_bin)
+        dfu.send_init_packet(parsed_image.firmware_dat)
+        dfu.send_firmware(parsed_image.firmware_bin)
         dfu.close()
 
     @classmethod
@@ -192,7 +192,9 @@ def _list_ports(vid: int, pid: int) -> list[tuple[str, int]]:
         product_id = int(device.product_id, base=16)
         assert device.com_ports
         if len(device.com_ports) > 1:
-            logger.warn(f"Nitrokey 3 NRF52 bootloader has multiple com ports: {device.com_ports}")
+            logger.warning(
+                f"Nitrokey 3 NRF52 bootloader has multiple com ports: {device.com_ports}"
+            )
         if vendor_id == vid and product_id == pid:
             port = device.com_ports[0]
             serial = int(device.serial_number, base=16)
