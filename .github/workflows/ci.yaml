@@ -8,6 +8,7 @@ on:
 env:
   REQUIRED_PACKAGES: make
   POETRY_SPEC: poetry >=2, <3
+  TY_SPEC: ty ==0.0.1a28
 
 jobs:
   format-code:
@@ -70,6 +71,23 @@ jobs:
         run: make install
       - name: Check code static typing
         run: make check-typing
+  lint-typing-ty:
+    name: Check static typing with ty
+    runs-on: ubuntu-latest
+    container: python:3.10-slim
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install required packages
+        run: apt update && apt install -y ${REQUIRED_PACKAGES}
+      - name: Install Poetry
+        run: pip install "${POETRY_SPEC}"
+      - name: Create virtual environment
+        run: make install
+      - name: Install ty
+        run: poetry add "${TY_SPEC}"
+      - name: Check code static typing
+        run: poetry run ty check
   lint-poetry:
     name: Check poetry configuration
     runs-on: ubuntu-latest
