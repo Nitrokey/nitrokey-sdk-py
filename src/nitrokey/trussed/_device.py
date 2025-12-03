@@ -225,12 +225,12 @@ class TrussedDevice(TrussedBase):
             else:
                 device = open_device(path)
         except Exception:
-            logger.warn(f"No CTAPHID device at path {path}", exc_info=sys.exc_info())
+            logger.warning(f"No CTAPHID device at path {path}", exc_info=sys.exc_info())
             return None
         try:
             return cls.from_device(device)
         except ValueError:
-            logger.warn(f"No Nitrokey device at path {path}", exc_info=sys.exc_info())
+            logger.warning(f"No Nitrokey device at path {path}", exc_info=sys.exc_info())
             return None
 
     @classmethod
