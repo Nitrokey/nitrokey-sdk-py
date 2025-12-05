@@ -130,8 +130,8 @@ class _Migration(enum.Enum):
         if variant == Variant.NRF52:
             if (
                 current is None
-                or current <= Version(1, 2, 2)
-                and new >= Version(1, 3, 0)
+                or current <= Version(1, 2, 2)  # ty: ignore[unsupported-operator]
+                and new >= Version(1, 3, 0)  # ty: ignore[unsupported-operator]
             ):
                 migrations.add(cls.NRF_IFS_MIGRATION)
 
@@ -139,7 +139,7 @@ class _Migration(enum.Enum):
         if (
             current is not None
             and current < ifs_migration_v2
-            and new >= ifs_migration_v2
+            and new >= ifs_migration_v2  # ty: ignore[unsupported-operator]
         ):
             migrations.add(cls.IFS_MIGRATION_V2)
 

@@ -232,7 +232,9 @@ class Fido2Certs:
 
     @staticmethod
     def get(certs: Sequence["Fido2Certs"], version: Version) -> Optional["Fido2Certs"]:
-        matching_certs = [c for c in certs if version >= c.start]
+        matching_certs = [
+            c for c in certs if version >= c.start  # ty: ignore[unsupported-operator]
+        ]
         if matching_certs:
             return max(matching_certs, key=lambda c: c.start)
         else:

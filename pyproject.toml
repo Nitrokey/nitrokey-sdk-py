@@ -90,3 +90,6 @@ strict = true
 [tool.rstcheck]
 ignore_directives = ["autoclass", "autofunction", "automodule"]
 ignore_substitutions = ["nitrokey_sdk_version"]
+
+[tool.ty.environment]
+extra-paths = ["stubs"]
