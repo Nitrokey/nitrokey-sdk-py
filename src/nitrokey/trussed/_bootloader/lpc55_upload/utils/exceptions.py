@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """Module provides exceptions for SPSDK utilities."""
+
 from ..exceptions import SPSDKError
 
 

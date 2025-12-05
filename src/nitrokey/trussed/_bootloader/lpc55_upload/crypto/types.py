@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """Based crypto classes."""
+
 from typing import Dict
 
 from cryptography import utils
@@ -56,11 +57,7 @@ class SPSDKEncoding(utils.Enum):
     @staticmethod
     def all() -> Dict[str, "SPSDKEncoding"]:
         """Get all supported encodings."""
-        return {
-            "NXP": SPSDKEncoding.NXP,
-            "PEM": SPSDKEncoding.PEM,
-            "DER": SPSDKEncoding.DER,
-        }
+        return {"NXP": SPSDKEncoding.NXP, "PEM": SPSDKEncoding.PEM, "DER": SPSDKEncoding.DER}
 
 
 SPSDKExtensions = Extensions

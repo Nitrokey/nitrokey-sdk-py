@@ -131,9 +131,7 @@ class Manifest:
         :return: Manifest
         """
         self.softdevice_bootloader = (
-            SoftdeviceBootloaderFirmware(**softdevice_bootloader)
-            if softdevice_bootloader
-            else None
+            SoftdeviceBootloaderFirmware(**softdevice_bootloader) if softdevice_bootloader else None
         )
 
         self.softdevice = Firmware(**softdevice) if softdevice else None

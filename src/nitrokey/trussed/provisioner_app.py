@@ -25,19 +25,14 @@ class ProvisionerApp:
 
         try:
             self._call(ProvisionerCommand.GET_UUID)
-        except Exception:
-            raise RuntimeError("Provisioner application not available")
+        except Exception as e:
+            raise RuntimeError("Provisioner application not available") from e
 
     def _call(
-        self,
-        command: ProvisionerCommand,
-        response_len: Optional[int] = None,
-        data: bytes = b"",
+        self, command: ProvisionerCommand, response_len: Optional[int] = None, data: bytes = b""
     ) -> bytes:
         return self.device._call_app(
-            App.PROVISIONER,
-            response_len=response_len,
-            data=command.value.to_bytes(1, "big") + data,
+            App.PROVISIONER, response_len=response_len, data=command.value.to_bytes(1, "big") + data
         )
 
     def _select(self, buffer: Buffer) -> None:

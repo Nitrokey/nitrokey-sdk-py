@@ -57,10 +57,7 @@ class RKHTv1(RKHT):
     RKHT_SIZE = 4
     RKH_SIZE = 32
 
-    def __init__(
-        self,
-        rkh_list: List[bytes],
-    ) -> None:
+    def __init__(self, rkh_list: List[bytes]) -> None:
         """Initialization of Root Key Hash Table class.
 
         :param rkh_list: List of Root Key Hashes

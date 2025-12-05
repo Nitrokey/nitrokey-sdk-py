@@ -136,7 +136,7 @@ class DFUAdapter:
                 "Writing to serial port failed: " + str(e) + ". "
                 "If MSD is enabled on the target device, try to disable it ref. "
                 "https://wiki.segger.com/index.php?title=J-Link-OB_SAM3U"
-            )
+            ) from e
 
     def get_message(self) -> Optional[list[int]]:
         current_state = Slip.SLIP_STATE_DECODING
@@ -160,7 +160,6 @@ class DFUAdapter:
 
 
 class DfuTransportSerial(DfuTransport):
-
     DEFAULT_BAUD_RATE = 115200
     DEFAULT_FLOW_CONTROL = True
     DEFAULT_TIMEOUT = 30.0  # Timeout time for board response
@@ -190,7 +189,6 @@ class DfuTransportSerial(DfuTransport):
         prn: int = DEFAULT_PRN,
         do_ping: bool = DEFAULT_DO_PING,
     ) -> None:
-
         super().__init__()
         self.com_port = com_port
         self.baud_rate = baud_rate
@@ -218,16 +216,16 @@ class DfuTransportSerial(DfuTransport):
             self.dfu_adapter = DFUAdapter(self.serial_port)
         except OSError as e:
             raise NordicSemiException(
-                "Serial port could not be opened on {0}"
-                ". Reason: {1}".format(self.com_port, e.strerror)
-            )
+                "Serial port could not be opened on {0}. Reason: {1}".format(
+                    self.com_port, e.strerror
+                )
+            ) from e
 
         if self.do_ping:
             ping_success = False
             start = datetime.now()
             while (
-                datetime.now() - start < timedelta(seconds=self.timeout)
-                and ping_success is False
+                datetime.now() - start < timedelta(seconds=self.timeout) and ping_success is False
             ):
                 if self.__ping() is True:
                     ping_success = True
@@ -248,9 +246,7 @@ class DfuTransportSerial(DfuTransport):
                 # There is no init packet or present init packet is too long.
                 return False
 
-            expected_crc = (
-                binascii.crc32(init_packet[: response["offset"]]) & 0xFFFFFFFF
-            )
+            expected_crc = binascii.crc32(init_packet[: response["offset"]]) & 0xFFFFFFFF
 
             if expected_crc != response["crc"]:
                 # Present init packet is invalid.
@@ -280,8 +276,8 @@ class DfuTransportSerial(DfuTransport):
             self.__create_command(len(init_packet))
             self.__stream_data(data=init_packet)
             self.__execute()
-        except ValidationException:
-            raise NordicSemiException("Failed to send init packet")
+        except ValidationException as e:
+            raise NordicSemiException("Failed to send init packet") from e
 
     def send_firmware(self, firmware: bytes) -> None:
         def try_to_recover() -> None:
@@ -294,21 +290,15 @@ class DfuTransportSerial(DfuTransport):
 
             if expected_crc != response["crc"]:
                 # Invalid CRC. Remove corrupted data.
-                response["offset"] -= (
-                    remainder if remainder != 0 else response["max_size"]
-                )
-                response["crc"] = (
-                    binascii.crc32(firmware[: response["offset"]]) & 0xFFFFFFFF
-                )
+                response["offset"] -= remainder if remainder != 0 else response["max_size"]
+                response["crc"] = binascii.crc32(firmware[: response["offset"]]) & 0xFFFFFFFF
                 return
 
             if (remainder != 0) and (response["offset"] != len(firmware)):
                 # Send rest of the page.
                 try:
                     to_send = firmware[
-                        response["offset"] : response["offset"]
-                        + response["max_size"]
-                        - remainder
+                        response["offset"] : response["offset"] + response["max_size"] - remainder
                     ]
                     response["crc"] = self.__stream_data(
                         data=to_send, crc=response["crc"], offset=response["offset"]
@@ -317,15 +307,11 @@ class DfuTransportSerial(DfuTransport):
                 except ValidationException:
                     # Remove corrupted data.
                     response["offset"] -= remainder
-                    response["crc"] = (
-                        binascii.crc32(firmware[: response["offset"]]) & 0xFFFFFFFF
-                    )
+                    response["crc"] = binascii.crc32(firmware[: response["offset"]]) & 0xFFFFFFFF
                     return
 
             self.__execute()
-            self._send_event(
-                event_type=DfuEvent.PROGRESS_EVENT, progress=response["offset"]
-            )
+            self._send_event(event_type=DfuEvent.PROGRESS_EVENT, progress=response["offset"])
 
         response = self.__select_data()
         try_to_recover()
@@ -333,12 +319,10 @@ class DfuTransportSerial(DfuTransport):
             data = firmware[i : i + response["max_size"]]
             try:
                 self.__create_data(len(data))
-                response["crc"] = self.__stream_data(
-                    data=data, crc=response["crc"], offset=i
-                )
+                response["crc"] = self.__stream_data(data=data, crc=response["crc"], offset=i)
                 self.__execute()
-            except ValidationException:
-                raise NordicSemiException("Failed to send firmware")
+            except ValidationException as e:
+                raise NordicSemiException("Failed to send firmware") from e
 
             self._send_event(event_type=DfuEvent.PROGRESS_EVENT, progress=len(data))
 
@@ -357,9 +341,7 @@ class DfuTransportSerial(DfuTransport):
                     "Serial: Device is either not in bootloader mode, or using an unsupported bootloader."
                 )
 
-    def __is_device_in_bootloader_mode(
-        self, device: Optional[EnumeratedDevice]
-    ) -> bool:
+    def __is_device_in_bootloader_mode(self, device: Optional[EnumeratedDevice]) -> bool:
         if not device:
             return False
 
@@ -367,17 +349,12 @@ class DfuTransportSerial(DfuTransport):
         #  Return true if nrf bootloader or Jlink interface detected.
         return (
             (
-                device.vendor_id.lower() == "1915"
-                and device.product_id.lower() == "521f"
+                device.vendor_id.lower() == "1915" and device.product_id.lower() == "521f"
             )  # nRF52 SDFU USB
             or (
-                device.vendor_id.lower() == "1366"
-                and device.product_id.lower() == "0105"
+                device.vendor_id.lower() == "1366" and device.product_id.lower() == "0105"
             )  # JLink CDC UART Port
-            or (
-                device.vendor_id.lower() == "1366"
-                and device.product_id.lower() == "1015"
-            )
+            or (device.vendor_id.lower() == "1366" and device.product_id.lower() == "1015")
         )  # JLink CDC UART Port (MSD)
 
     def __set_prn(self) -> None:
@@ -400,12 +377,8 @@ class DfuTransportSerial(DfuTransport):
         assert self.dfu_adapter
         self.ping_id = (self.ping_id + 1) % 256
 
-        self.dfu_adapter.send_message(
-            [DfuTransportSerial.OP_CODE["Ping"], self.ping_id]
-        )
-        resp = (
-            self.dfu_adapter.get_message()
-        )  # Receive raw response to check return code
+        self.dfu_adapter.send_message([DfuTransportSerial.OP_CODE["Ping"], self.ping_id])
+        resp = self.dfu_adapter.get_message()  # Receive raw response to check return code
 
         if not resp:
             logger.debug("Serial: No ping response")
@@ -476,9 +449,7 @@ class DfuTransportSerial(DfuTransport):
     def __select_object(self, object_type: int) -> dict[str, int]:
         assert self.dfu_adapter
         logger.debug("Serial: Selecting Object: type:{}".format(object_type))
-        self.dfu_adapter.send_message(
-            [DfuTransportSerial.OP_CODE["ReadObject"], object_type]
-        )
+        self.dfu_adapter.send_message([DfuTransportSerial.OP_CODE["ReadObject"], object_type])
 
         response = self.__get_response(DfuTransportSerial.OP_CODE["ReadObject"])
         assert response is not None
@@ -523,10 +494,7 @@ class DfuTransportSerial(DfuTransport):
             # here the maximum data size is self.mtu/2,
             # due to the slip encoding which at maximum doubles the size
             to_transmit = data[i : i + (self.mtu - 1) // 2 - 1]
-            to_transmit = (
-                struct.pack("B", DfuTransportSerial.OP_CODE["WriteObject"])
-                + to_transmit
-            )
+            to_transmit = struct.pack("B", DfuTransportSerial.OP_CODE["WriteObject"]) + to_transmit
 
             self.dfu_adapter.send_message(list(to_transmit))
             crc = binascii.crc32(to_transmit[1:], crc) & 0xFFFFFFFF
@@ -542,9 +510,7 @@ class DfuTransportSerial(DfuTransport):
 
     def __get_response(self, operation: int) -> Optional[list[int]]:
         def get_dict_key(dictionary: dict[str, int], value: int) -> Optional[str]:
-            return next(
-                (key for key, val in list(dictionary.items()) if val == value), None
-            )
+            return next((key for key, val in list(dictionary.items()) if val == value), None)
 
         assert self.dfu_adapter
         resp = self.dfu_adapter.get_message()
@@ -569,9 +535,7 @@ class DfuTransportSerial(DfuTransport):
                 data = DfuTransport.EXT_ERROR_CODE[resp[3]]
             except IndexError:
                 data = "Unsupported extended error type {}".format(resp[3])
-            raise NordicSemiException(
-                "Extended Error 0x{:02X}: {}".format(resp[3], data)
-            )
+            raise NordicSemiException("Extended Error 0x{:02X}: {}".format(resp[3], data))
         else:
             raise NordicSemiException(
                 "Response Code {}".format(get_dict_key(DfuTransport.RES_CODE, resp[2]))

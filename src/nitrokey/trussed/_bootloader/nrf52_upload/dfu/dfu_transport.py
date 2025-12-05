@@ -147,9 +147,7 @@ class DfuTransport(ABC):
         """
         pass
 
-    def register_events_callback(
-        self, event_type: int, callback: Callable[..., None]
-    ) -> None:
+    def register_events_callback(self, event_type: int, callback: Callable[..., None]) -> None:
         """
         Register a callback.
 

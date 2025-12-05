@@ -37,10 +37,7 @@ class PublicKey(abc.ABC):
 
     @abc.abstractmethod
     def verify_signature(
-        self,
-        signature: bytes,
-        data: bytes,
-        algorithm: EnumHashAlgorithm = EnumHashAlgorithm.SHA256,
+        self, signature: bytes, data: bytes, algorithm: EnumHashAlgorithm = EnumHashAlgorithm.SHA256
     ) -> bool:
         """Verify input data.
 
@@ -58,9 +55,7 @@ class PublicKey(abc.ABC):
         :return: Byte representation of key
         """
 
-    def key_hash(
-        self, algorithm: EnumHashAlgorithm = EnumHashAlgorithm.SHA256
-    ) -> bytes:
+    def key_hash(self, algorithm: EnumHashAlgorithm = EnumHashAlgorithm.SHA256) -> bytes:
         """Get key hash.
 
         :param algorithm: Used hash algorithm, defaults to sha256
@@ -70,10 +65,7 @@ class PublicKey(abc.ABC):
 
     def __eq__(self, obj: Any) -> bool:
         """Check object equality."""
-        return (
-            isinstance(obj, self.__class__)
-            and self.public_numbers == obj.public_numbers
-        )
+        return isinstance(obj, self.__class__) and self.public_numbers == obj.public_numbers
 
     def __ne__(self, obj: Any) -> bool:
         return not self.__eq__(obj)
@@ -174,10 +166,7 @@ class PublicKeyRsa(PublicKey):
         )
 
     def verify_signature(
-        self,
-        signature: bytes,
-        data: bytes,
-        algorithm: EnumHashAlgorithm = EnumHashAlgorithm.SHA256,
+        self, signature: bytes, data: bytes, algorithm: EnumHashAlgorithm = EnumHashAlgorithm.SHA256
     ) -> bool:
         """Verify input data.
 
@@ -200,10 +189,7 @@ class PublicKeyRsa(PublicKey):
 
     def __eq__(self, obj: Any) -> bool:
         """Check object equality."""
-        return (
-            isinstance(obj, self.__class__)
-            and self.public_numbers == obj.public_numbers
-        )
+        return isinstance(obj, self.__class__) and self.public_numbers == obj.public_numbers
 
     def __repr__(self) -> str:
         return f"RSA{self.key_size} Public Key"

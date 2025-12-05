@@ -81,11 +81,7 @@ class PasswordSafeEntry:
 
     def tlv_encode(self) -> list[tlv8.Entry]:
         entries = [
-            (
-                tlv8.Entry(Tag.PwsLogin.value, self.login)
-                if self.login is not None
-                else None
-            ),
+            (tlv8.Entry(Tag.PwsLogin.value, self.login) if self.login is not None else None),
             (
                 tlv8.Entry(Tag.PwsPassword.value, self.password)
                 if self.password is not None
@@ -288,10 +284,7 @@ class Algorithm(Enum):
     Sha512 = 0x03
 
 
-ALGORITHM_TO_KIND = {
-    "SHA1": Algorithm.Sha1,
-    "SHA256": Algorithm.Sha256,
-}
+ALGORITHM_TO_KIND = {"SHA1": Algorithm.Sha1, "SHA256": Algorithm.Sha256}
 
 
 class SecretsApp:
@@ -403,9 +396,7 @@ class SecretsApp:
         return data_final
 
     @classmethod
-    def _encode_command(
-        cls, command: typing.Union[Instruction, CCIDInstruction]
-    ) -> bytes:
+    def _encode_command(cls, command: typing.Union[Instruction, CCIDInstruction]) -> bytes:
         p1 = 0
         p2 = 0
         if command == Instruction.Reset:
@@ -469,9 +460,7 @@ class SecretsApp:
         return res
 
     def get_credential(self, cred_id: bytes) -> PasswordSafeEntry:
-        structure = [
-            tlv8.Entry(Tag.CredentialId.value, cred_id),
-        ]
+        structure = [tlv8.Entry(Tag.CredentialId.value, cred_id)]
         raw_res = self._send_receive(Instruction.GetCredential, structure=structure)
         resd: tlv8.EntryList = tlv8.decode(raw_res)
         res = {}
@@ -528,16 +517,8 @@ class SecretsApp:
                 else None
             ),
             tlv8.Entry(Tag.PwsLogin.value, login) if login is not None else None,
-            (
-                tlv8.Entry(Tag.PwsPassword.value, password)
-                if password is not None
-                else None
-            ),
-            (
-                tlv8.Entry(Tag.PwsMetadata.value, metadata)
-                if metadata is not None
-                else None
-            ),
+            (tlv8.Entry(Tag.PwsPassword.value, password) if password is not None else None),
+            (tlv8.Entry(Tag.PwsMetadata.value, metadata) if metadata is not None else None),
         ]
         structure = list(filter(lambda x: x is not None, structure))
         self._send_receive(Instruction.UpdateCredential, structure=structure)
@@ -548,9 +529,7 @@ class SecretsApp:
         :param credid: Credential ID
         """
         self.logfn(f"Sending delete request for {cred_id!r}")
-        structure = [
-            tlv8.Entry(Tag.CredentialId.value, cred_id),
-        ]
+        structure = [tlv8.Entry(Tag.CredentialId.value, cred_id)]
         self._send_receive(Instruction.Delete, structure)
 
     def register_yk_hmac(self, slot: int, secret: bytes) -> None:
@@ -560,11 +539,7 @@ class SecretsApp:
         @param secret: the secret
         """
         assert slot in [1, 2]
-        self.register(
-            f"HmacSlot{slot}".encode(),
-            secret,
-            kind=Kind.Hmac,
-        )
+        self.register(f"HmacSlot{slot}".encode(), secret, kind=Kind.Hmac)
 
     def register(
         self,
@@ -598,9 +573,7 @@ class SecretsApp:
         if initial_counter_value > 0xFFFFFFFF:
             raise Exception("Initial counter value must be smaller than 4 bytes")
         if algo == Algorithm.Sha512:
-            raise NotImplementedError(
-                "This hash algorithm is not supported by the firmware"
-            )
+            raise NotImplementedError("This hash algorithm is not supported by the firmware")
 
         self.logfn(
             f"Setting new credential: {credid!r}, {kind}, {algo}, counter: {initial_counter_value}, {touch_button_required=}, {pin_based_encryption=}"
@@ -609,14 +582,10 @@ class SecretsApp:
         structure: list[Optional[Union[tlv8.Entry, RawBytes]]] = [
             tlv8.Entry(Tag.CredentialId.value, credid),
             # header (2) + secret (N)
-            tlv8.Entry(
-                Tag.Key.value, bytes([kind.value | algo.value, digits]) + secret
-            ),
+            tlv8.Entry(Tag.Key.value, bytes([kind.value | algo.value, digits]) + secret),
             self.encode_properties_to_send(touch_button_required, pin_based_encryption),
             (
-                tlv8.Entry(
-                    Tag.InitialCounter.value, initial_counter_value.to_bytes(4, "big")
-                )
+                tlv8.Entry(Tag.InitialCounter.value, initial_counter_value.to_bytes(4, "big"))
                 if kind in [Kind.Hotp, Kind.HotpReverse]
                 else None
             ),
@@ -640,8 +609,7 @@ class SecretsApp:
         structure = [
             Tag.Properties.value,
             1 if tlv else None,
-            (0x02 if touch_button_required else 0x00)
-            | (0x04 if pin_based_encryption else 0x00),
+            (0x02 if touch_button_required else 0x00) | (0x04 if pin_based_encryption else 0x00),
         ]
         structure = list(filter(lambda x: x is not None, structure))
         return RawBytes(structure)  # type: ignore[arg-type]
@@ -657,9 +625,7 @@ class SecretsApp:
         """
         if challenge is None:
             challenge = 0
-        self.logfn(
-            f"Sending calculate request for {cred_id!r} and challenge {challenge!r}"
-        )
+        self.logfn(f"Sending calculate request for {cred_id!r} and challenge {challenge!r}")
         structure = [
             tlv8.Entry(Tag.CredentialId.value, cred_id),
             tlv8.Entry(Tag.Challenge.value, pack(">Q", challenge)),
@@ -735,9 +701,7 @@ class SecretsApp:
         """
         Clear the passphrase used to authenticate to other commands.
         """
-        structure = [
-            tlv8.Entry(Tag.Key.value, bytes()),
-        ]
+        structure = [tlv8.Entry(Tag.Key.value, bytes())]
         self._send_receive(Instruction.SetCode, structure=structure)
 
     def validate(self, passphrase: str) -> None:
@@ -802,9 +766,7 @@ class SecretsApp:
         return r
 
     def set_pin_raw(self, password: str) -> None:
-        structure = [
-            tlv8.Entry(Tag.Password.value, password),
-        ]
+        structure = [tlv8.Entry(Tag.Password.value, password)]
         self._send_receive(Instruction.SetPIN, structure=structure)
 
     def change_pin_raw(self, password: str, new_password: str) -> None:
@@ -815,15 +777,11 @@ class SecretsApp:
         self._send_receive(Instruction.ChangePIN, structure=structure)
 
     def verify_pin_raw(self, password: str) -> None:
-        structure = [
-            tlv8.Entry(Tag.Password.value, password),
-        ]
+        structure = [tlv8.Entry(Tag.Password.value, password)]
         self._send_receive(Instruction.VerifyPIN, structure=structure)
 
     def get_feature_status_cached(self) -> SelectResponse:
-        self._cache_status = (
-            self.select() if self._cache_status is None else self._cache_status
-        )
+        self._cache_status = self.select() if self._cache_status is None else self._cache_status
         return self._cache_status
 
     def feature_active_PIN_authentication(self) -> bool:
@@ -863,12 +821,7 @@ class SecretsApp:
         return current >= semver_req_version
 
 
-def _iso7816_compose(
-    ins: int,
-    p1: int,
-    p2: int,
-    data: bytes = b"",
-) -> bytes:
+def _iso7816_compose(ins: int, p1: int, p2: int, data: bytes = b"") -> bytes:
     cls = 0
     data_len = len(data)
     if data_len == 0:

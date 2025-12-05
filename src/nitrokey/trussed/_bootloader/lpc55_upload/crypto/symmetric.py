@@ -7,7 +7,6 @@
 
 """OpenSSL implementation for symmetric key encryption."""
 
-
 # Used security modules
 from typing import Optional
 

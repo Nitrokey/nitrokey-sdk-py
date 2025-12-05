@@ -2,3 +2,4 @@
 _build
 dist
 uv.lock
+variables.mk

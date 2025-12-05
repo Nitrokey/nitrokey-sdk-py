@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """Low level Hid device."""
+
 import logging
 import warnings
 from typing import TYPE_CHECKING, List, Optional
@@ -78,9 +79,7 @@ class UsbDevice(DeviceBase):
             self._device.open_path(self.path)
         except Exception as error:
             self._device = None
-            raise SPSDKConnectionError(
-                f"Unable to open device '{str(self)}'"
-            ) from error
+            raise SPSDKConnectionError(f"Unable to open device '{str(self)}'") from error
 
     def close(self) -> None:
         """Close the interface.
@@ -94,9 +93,7 @@ class UsbDevice(DeviceBase):
                 self._device.close()
                 self._device = None
             except Exception as error:
-                raise SPSDKConnectionError(
-                    f"Unable to close device '{str(self)}'"
-                ) from error
+                raise SPSDKConnectionError(f"Unable to close device '{str(self)}'") from error
 
     def read(self, length: int, timeout: Optional[int] = None) -> bytes:
         """Read data on the IN endpoint associated to the HID interface.
@@ -140,27 +137,21 @@ class UsbDevice(DeviceBase):
 
     def __str__(self) -> str:
         """Return information about the USB interface."""
-        return (
-            f"{self.product_name:s} (0x{self.vid:04X}, 0x{self.pid:04X})"
-            f"path={self.path!r}"
-        )
+        return f"{self.product_name:s} (0x{self.vid:04X}, 0x{self.pid:04X})path={self.path!r}"
 
     def __hash__(self) -> int:
         return hash(self.path)
 
     @classmethod
     def enumerate(
-        cls,
-        vid: Optional[int] = None,
-        pid: Optional[int] = None,
-        path: Optional[str] = None,
+        cls, vid: Optional[int] = None, pid: Optional[int] = None, path: Optional[str] = None
     ) -> List["UsbDevice"]:
         """Get list of all connected devices which matches device_id."""
         try:
             import hid
         except ImportError as err:
             logger.warning("Failed to import hid module", exc_info=True)
-            warnings.warn(
+            warnings.warn(  # noqa: B028
                 f"Failed to list LPC55 bootloaders due to a missing library: {err}",
                 category=RuntimeWarning,
             )

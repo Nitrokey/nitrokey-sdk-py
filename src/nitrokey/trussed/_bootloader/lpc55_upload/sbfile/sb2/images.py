@@ -26,13 +26,7 @@ class SBV2xAdvancedParams:
     These parameters are used for the tests; for production, use can use default values (random keys + current time)
     """
 
-    def __init__(
-        self,
-        dek: bytes,
-        mac: bytes,
-        nonce: bytes,
-        timestamp: datetime,
-    ):
+    def __init__(self, dek: bytes, mac: bytes, nonce: bytes, timestamp: datetime):
         """Initialize SBV2xAdvancedParams.
 
         :param dek: DEK key
@@ -269,11 +263,7 @@ class BootImageV21(BaseClass):
     # pylint: disable=too-many-locals
     @classmethod
     def parse(
-        cls,
-        data: bytes,
-        offset: int = 0,
-        kek: bytes = bytes(),
-        plain_sections: bool = False,
+        cls, data: bytes, offset: int = 0, kek: bytes = bytes(), plain_sections: bool = False
     ) -> "BootImageV21":
         """Parse image from bytes.
 
