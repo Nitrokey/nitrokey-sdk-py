@@ -15,9 +15,7 @@ from nitrokey.trussed import Fido2Certs, Model, TrussedDevice, Version
 FIDO2_CERTS = [
     Fido2Certs(
         start=Version(0, 1, 0),
-        hashes=[
-            "ad8fd1d16f59104b9e06ef323cc03f777ed5303cd421a101c9cb00bb3fdf722d",
-        ],
+        hashes=["ad8fd1d16f59104b9e06ef323cc03f777ed5303cd421a101c9cb00bb3fdf722d"],
     ),
     Fido2Certs(
         start=Version(1, 0, 3),

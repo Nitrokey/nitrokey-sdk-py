@@ -82,15 +82,10 @@ class TrussedBootloaderLpc55(TrussedBootloader):
         return Uuid(int.from_bytes(right_endian, byteorder="big"))
 
     def update(
-        self,
-        image: bytes,
-        callback: Optional[ProgressCallback] = None,
-        check_errors: bool = False,
+        self, image: bytes, callback: Optional[ProgressCallback] = None, check_errors: bool = False
     ) -> None:
         success = self.device.receive_sb_file(
-            image,
-            progress_callback=callback,
-            check_errors=check_errors,
+            image, progress_callback=callback, check_errors=check_errors
         )
         logger.debug(f"Firmware update finished with status {self.status}")
         if success:
@@ -123,18 +118,14 @@ class TrussedBootloaderLpc55(TrussedBootloader):
         try:
             return cls(devices[0])
         except ValueError:
-            logger.warn(
-                f"No Nitrokey 3 bootloader at path {path}", exc_info=sys.exc_info()
-            )
+            logger.warn(f"No Nitrokey 3 bootloader at path {path}", exc_info=sys.exc_info())
             return None
 
 
 def parse_firmware_image(data: bytes) -> FirmwareMetadata:
     image = BootImageV21.parse(data, kek=KEK)
     bcd_version = image.header.product_version
-    version = Version(
-        major=bcd_version.major, minor=bcd_version.minor, patch=bcd_version.service
-    )
+    version = Version(major=bcd_version.major, minor=bcd_version.minor, patch=bcd_version.service)
     metadata = FirmwareMetadata(version=version)
     if image.cert_block:
         if image.cert_block.rkth == RKTH:

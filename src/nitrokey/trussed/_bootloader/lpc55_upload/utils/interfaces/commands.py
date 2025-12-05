@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """Generic commands implementation."""
+
 from abc import ABC, abstractmethod
 
 

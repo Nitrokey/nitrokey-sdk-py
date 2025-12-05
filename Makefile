@@ -1,8 +1,11 @@
+-include variables.mk
+
 FORMAT_DIRS := src stubs tests
 LINT_DIRS := src tests
 
 PYTHON ?= poetry run python
 MYPY ?= poetry run mypy
+RUFF ?= poetry run ruff
 
 .PHONY: install
 install:
@@ -17,15 +20,11 @@ update:
 	poetry update --with dev
 
 .PHONY: check
-check: check-format check-import-sorting check-poetry check-style check-typing check-docs
+check: check-format check-poetry check-style check-typing check-docs
 
 .PHONY: check-format
 check-format:
-	poetry run black --check $(FORMAT_DIRS)
-
-.PHONY: check-import-sorting
-check-import-sorting:
-	poetry run isort --check-only $(FORMAT_DIRS)
+	$(RUFF) format --check $(FORMAT_DIRS)
 
 .PHONY: check-poetry
 check-poetry:
@@ -33,7 +32,7 @@ check-poetry:
 
 .PHONY: check-style
 check-style:
-	poetry run flake8 $(LINT_DIRS)
+	$(RUFF) check $(LINT_DIRS)
 
 .PHONY: check-typing
 check-typing:

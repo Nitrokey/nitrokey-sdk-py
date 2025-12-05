@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """Protocol base."""
+
 from abc import ABC, abstractmethod
 from types import TracebackType
 from typing import TYPE_CHECKING, Optional, Type, Union

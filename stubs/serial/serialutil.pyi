@@ -2,11 +2,7 @@ from typing import Optional, Union
 
 class SerialBase:
     def __init__(
-        self,
-        port: Optional[str],
-        baudrate: int,
-        rtscts: Union[bool, int],
-        timeout: Optional[float],
+        self, port: Optional[str], baudrate: int, rtscts: Union[bool, int], timeout: Optional[float]
     ) -> None: ...
     def close(self) -> None: ...
     def read(self, length: int = 1) -> bytes: ...

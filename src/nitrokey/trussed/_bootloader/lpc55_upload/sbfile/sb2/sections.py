@@ -13,13 +13,7 @@ from ...crypto.hmac import hmac_sha256
 from ...crypto.symmetric import Counter, aes_ctr_decrypt
 from ...exceptions import SPSDKError
 from ...utils.abstract import BaseClass
-from .commands import (
-    CmdBaseClass,
-    CmdHeader,
-    EnumCmdTag,
-    EnumSectionFlag,
-    parse_command,
-)
+from .commands import CmdBaseClass, CmdHeader, EnumCmdTag, EnumSectionFlag, parse_command
 
 ########################################################################################################################
 # Boot Image Sections
@@ -61,9 +55,7 @@ class BootSectionV2(BaseClass):
             raw_size += cmd.raw_size
         if raw_size > 0:
             block_count = (raw_size + 15) // 16
-            hmac_count = (
-                self._hmac_count if block_count >= self._hmac_count else block_count
-            )
+            hmac_count = self._hmac_count if block_count >= self._hmac_count else block_count
         return hmac_count
 
     @property
@@ -125,13 +117,7 @@ class BootSectionV2(BaseClass):
     # pylint: disable=too-many-locals
     @classmethod
     def parse(
-        cls,
-        data: bytes,
-        offset: int,
-        plain_sect: bool,
-        dek: bytes,
-        mac: bytes,
-        counter: Counter,
+        cls, data: bytes, offset: int, plain_sect: bool, dek: bytes, mac: bytes, counter: Counter
     ) -> "BootSectionV2":
         """Parse Boot Section from bytes.
 
@@ -152,9 +138,7 @@ class BootSectionV2(BaseClass):
             raise SPSDKError("Invalid type of counter")
         # Get Header specific data
         header_encrypted = data[offset : offset + CmdHeader.SIZE]
-        header_hmac_data = data[
-            offset + CmdHeader.SIZE : offset + CmdHeader.SIZE + cls.HMAC_SIZE
-        ]
+        header_hmac_data = data[offset + CmdHeader.SIZE : offset + CmdHeader.SIZE + cls.HMAC_SIZE]
         offset += CmdHeader.SIZE + cls.HMAC_SIZE
         # Check header HMAC
         if header_hmac_data != hmac_sha256(mac, header_encrypted):
@@ -189,9 +173,7 @@ class BootSectionV2(BaseClass):
         for hmac_index in range(0, len(encrypted_commands), 16):
             encr_block = encrypted_commands[hmac_index : hmac_index + 16]
             decrypted_block = (
-                encr_block
-                if plain_sect
-                else aes_ctr_decrypt(dek, encr_block, counter.value)
+                encr_block if plain_sect else aes_ctr_decrypt(dek, encr_block, counter.value)
             )
             decrypted_commands += decrypted_block
             counter.increment()

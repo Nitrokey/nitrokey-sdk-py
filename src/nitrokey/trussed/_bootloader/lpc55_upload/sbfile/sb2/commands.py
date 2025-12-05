@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """Commands used by SBFile module."""
+
 import math
 from abc import abstractmethod
 from struct import calcsize, pack, unpack_from
@@ -55,11 +56,7 @@ class EnumCmdTag(SpsdkEnum):
         "WR_KEYSTORE_TO_NV",
         "Restore key-store restore to non-volatile memory",
     )
-    WR_KEYSTORE_FROM_NV = (
-        0xD,
-        "WR_KEYSTORE_FROM_NV",
-        "Backup key-store from non-volatile memory",
-    )
+    WR_KEYSTORE_FROM_NV = (0xD, "WR_KEYSTORE_FROM_NV", "Backup key-store from non-volatile memory")
 
 
 class EnumSectionFlag(SpsdkEnum):
@@ -103,9 +100,7 @@ class CmdHeader(BaseClass):
 
     def __str__(self) -> str:
         tag = (
-            EnumCmdTag.get_label(self.tag)
-            if self.tag in EnumCmdTag.tags()
-            else f"0x{self.tag:02X}"
+            EnumCmdTag.get_label(self.tag) if self.tag in EnumCmdTag.tags() else f"0x{self.tag:02X}"
         )
         return (
             f"tag={tag}, flags=0x{self.flags:04X}, "
@@ -118,9 +113,7 @@ class CmdHeader(BaseClass):
         :param crc: value to be used
         :return: binary representation of the header
         """
-        return pack(
-            self.FORMAT, crc, self.tag, self.flags, self.address, self.count, self.data
-        )
+        return pack(self.FORMAT, crc, self.tag, self.flags, self.address, self.count, self.data)
 
     @classmethod
     def parse(cls, data: bytes) -> "Self":
@@ -134,9 +127,7 @@ class CmdHeader(BaseClass):
         if calcsize(cls.FORMAT) > len(data):
             raise SPSDKError("Incorrect size")
         obj = cls(EnumCmdTag.NOP.tag)
-        (crc, obj.tag, obj.flags, obj.address, obj.count, obj.data) = unpack_from(
-            cls.FORMAT, data
-        )
+        (crc, obj.tag, obj.flags, obj.address, obj.count, obj.data) = unpack_from(cls.FORMAT, data)
         if crc != obj.crc:
             raise SPSDKError("CRC does not match")
         return obj
@@ -172,9 +163,7 @@ class CmdBaseClass(BaseClass):
         return CmdHeader.SIZE  # this is default implementation
 
     def __repr__(self) -> str:
-        return "Command: " + str(
-            self._header
-        )  # default implementation: use command name
+        return "Command: " + str(self._header)  # default implementation: use command name
 
     def __str__(self) -> str:
         """Return text info about the instance."""
@@ -321,12 +310,8 @@ class CmdLoad(CmdBaseClass):
         crc32_function = mkPredefinedCrcFun("crc-32-mpeg")
         if header.data != crc32_function(cmd_data, 0xFFFFFFFF):
             raise SPSDKError("Invalid CRC in the command header")
-        device_id = (
-            header.flags & cls.ROM_MEM_DEVICE_ID_MASK
-        ) >> cls.ROM_MEM_DEVICE_ID_SHIFT
-        group_id = (
-            header.flags & cls.ROM_MEM_GROUP_ID_MASK
-        ) >> cls.ROM_MEM_GROUP_ID_SHIFT
+        device_id = (header.flags & cls.ROM_MEM_DEVICE_ID_MASK) >> cls.ROM_MEM_DEVICE_ID_SHIFT
+        group_id = (header.flags & cls.ROM_MEM_GROUP_ID_MASK) >> cls.ROM_MEM_GROUP_ID_SHIFT
         mem_id = get_memory_id(device_id, group_id)
         obj = cls(header.address, cmd_data, mem_id)
         obj.header.data = header.data
@@ -361,9 +346,7 @@ class CmdFill(CmdBaseClass):
             size += CmdHeader.SIZE - (size % CmdHeader.SIZE)
         return size
 
-    def __init__(
-        self, address: int, pattern: int, length: Optional[int] = None
-    ) -> None:
+    def __init__(self, address: int, pattern: int, length: Optional[int] = None) -> None:
         """Initialize Command Fill.
 
         :param address: to write data
@@ -465,9 +448,7 @@ class CmdJump(CmdBaseClass):
             self._header.flags = 2
             self._header.count = value
 
-    def __init__(
-        self, address: int = 0, argument: int = 0, spreg: Optional[int] = None
-    ) -> None:
+    def __init__(self, address: int = 0, argument: int = 0, spreg: Optional[int] = None) -> None:
         """Initialize Command Jump."""
         super().__init__(EnumCmdTag.JUMP)
         self.address = address
@@ -581,9 +562,7 @@ class CmdErase(CmdBaseClass):
         """Set command's flag."""
         self._header.flags = value
 
-    def __init__(
-        self, address: int = 0, length: int = 0, flags: int = 0, mem_id: int = 0
-    ) -> None:
+    def __init__(self, address: int = 0, length: int = 0, flags: int = 0, mem_id: int = 0) -> None:
         """Initialize Command Erase."""
         super().__init__(EnumCmdTag.ERASE)
         self.address = address
@@ -619,12 +598,8 @@ class CmdErase(CmdBaseClass):
         header = CmdHeader.parse(data)
         if header.tag != EnumCmdTag.ERASE:
             raise SPSDKError("Invalid header tag")
-        device_id = (
-            header.flags & cls.ROM_MEM_DEVICE_ID_MASK
-        ) >> cls.ROM_MEM_DEVICE_ID_SHIFT
-        group_id = (
-            header.flags & cls.ROM_MEM_GROUP_ID_MASK
-        ) >> cls.ROM_MEM_GROUP_ID_SHIFT
+        device_id = (header.flags & cls.ROM_MEM_DEVICE_ID_MASK) >> cls.ROM_MEM_DEVICE_ID_SHIFT
+        group_id = (header.flags & cls.ROM_MEM_GROUP_ID_MASK) >> cls.ROM_MEM_GROUP_ID_SHIFT
         mem_id = get_memory_id(device_id, group_id)
         return cls(header.address, header.count, header.flags, mem_id)
 
@@ -723,12 +698,8 @@ class CmdMemEnable(CmdBaseClass):
         header = CmdHeader.parse(data)
         if header.tag != EnumCmdTag.MEM_ENABLE:
             raise SPSDKError("Invalid header tag")
-        device_id = (
-            header.flags & cls.ROM_MEM_DEVICE_ID_MASK
-        ) >> cls.ROM_MEM_DEVICE_ID_SHIFT
-        group_id = (
-            header.flags & cls.ROM_MEM_GROUP_ID_MASK
-        ) >> cls.ROM_MEM_GROUP_ID_SHIFT
+        device_id = (header.flags & cls.ROM_MEM_DEVICE_ID_MASK) >> cls.ROM_MEM_DEVICE_ID_SHIFT
+        group_id = (header.flags & cls.ROM_MEM_GROUP_ID_MASK) >> cls.ROM_MEM_GROUP_ID_SHIFT
         mem_id = get_memory_id(device_id, group_id)
         return cls(header.address, header.count, mem_id)
 
@@ -796,12 +767,7 @@ class CmdProg(CmdBaseClass):
         self._header.data = value
 
     def __init__(
-        self,
-        address: int,
-        mem_id: int,
-        data_word1: int,
-        data_word2: int = 0,
-        flags: int = 0,
+        self, address: int, mem_id: int, data_word1: int, data_word2: int = 0, flags: int = 0
     ) -> None:
         """Initialize CMD Prog."""
         super().__init__(EnumCmdTag.PROG)
@@ -841,9 +807,7 @@ class CmdProg(CmdBaseClass):
         header = CmdHeader.parse(data)
         if header.tag != EnumCmdTag.PROG:
             raise SPSDKError("Invalid header tag")
-        mem_id = (
-            header.flags & cls.ROM_MEM_DEVICE_ID_MASK
-        ) >> cls.ROM_MEM_DEVICE_ID_SHIFT
+        mem_id = (header.flags & cls.ROM_MEM_DEVICE_ID_MASK) >> cls.ROM_MEM_DEVICE_ID_SHIFT
         return cls(header.address, mem_id, header.count, header.data, header.flags)
 
 
@@ -938,8 +902,7 @@ class CmdKeyStoreBackupRestore(CmdBaseClass):
         if controller_id.tag < 0 or controller_id.tag > 0xFF:
             raise SPSDKError("Invalid ID of memory")
         self.header.flags = (self.header.flags & ~self.ROM_MEM_DEVICE_ID_MASK) | (
-            (controller_id.tag << self.ROM_MEM_DEVICE_ID_SHIFT)
-            & self.ROM_MEM_DEVICE_ID_MASK
+            (controller_id.tag << self.ROM_MEM_DEVICE_ID_SHIFT) & self.ROM_MEM_DEVICE_ID_MASK
         )
         self.header.count = (
             4  # this is useless, but it is kept for backward compatibility with elftosb
@@ -953,9 +916,7 @@ class CmdKeyStoreBackupRestore(CmdBaseClass):
     @property
     def controller_id(self) -> int:
         """Return controller ID of the memory to backup key-store or source memory to load key-store back."""
-        return (
-            self.header.flags & self.ROM_MEM_DEVICE_ID_MASK
-        ) >> self.ROM_MEM_DEVICE_ID_SHIFT
+        return (self.header.flags & self.ROM_MEM_DEVICE_ID_MASK) >> self.ROM_MEM_DEVICE_ID_SHIFT
 
     @classmethod
     def parse(cls, data: bytes) -> "Self":
@@ -969,9 +930,7 @@ class CmdKeyStoreBackupRestore(CmdBaseClass):
         if header.tag != cls.cmd_id():
             raise SPSDKError("Invalid header tag")
         address = header.address
-        controller_id = (
-            header.flags & cls.ROM_MEM_DEVICE_ID_MASK
-        ) >> cls.ROM_MEM_DEVICE_ID_SHIFT
+        controller_id = (header.flags & cls.ROM_MEM_DEVICE_ID_MASK) >> cls.ROM_MEM_DEVICE_ID_SHIFT
         return cls(address, ExtMemId.from_tag(controller_id))
 
 

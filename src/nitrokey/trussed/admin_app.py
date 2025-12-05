@@ -198,18 +198,12 @@ class AdminApp:
         self.device = device
 
     def _call(
-        self,
-        command: AdminCommand,
-        response_len: Optional[int] = None,
-        data: bytes = b"",
+        self, command: AdminCommand, response_len: Optional[int] = None, data: bytes = b""
     ) -> Optional[bytes]:
         try:
             if command.is_legacy_command():
                 return self.device._call(
-                    command.value,
-                    command.name,
-                    response_len=response_len,
-                    data=data,
+                    command.value, command.name, response_len=response_len, data=data
                 )
             else:
                 return self.device._call_app(
@@ -239,7 +233,7 @@ class AdminApp:
                     # The admin app returns an Invalid Length error if the user confirmation
                     # request times out
                     if e.code == CtapError.ERR.INVALID_LENGTH:
-                        raise TimeoutException()
+                        raise TimeoutException() from e
                     else:
                         raise e
         except OSError as e:
@@ -315,19 +309,9 @@ class AdminApp:
         if not reply:
             return [
                 ConfigField(
-                    "fido.disable_skip_up_timeout",
-                    False,
-                    False,
-                    False,
-                    ConfigFieldType.BOOL,
+                    "fido.disable_skip_up_timeout", False, False, False, ConfigFieldType.BOOL
                 ),
-                ConfigField(
-                    "opcard.use_se050_backend",
-                    True,
-                    True,
-                    True,
-                    ConfigFieldType.BOOL,
-                ),
+                ConfigField("opcard.use_se050_backend", True, True, True, ConfigFieldType.BOOL),
             ]
         parsed = cbor.decode(reply)
         assert isinstance(parsed, list)
@@ -338,15 +322,7 @@ class AdminApp:
             if ty is None:
                 ty = ConfigFieldType.BOOL
 
-            ret.append(
-                ConfigField(
-                    field["n"],
-                    field["c"],
-                    field["r"],
-                    field["d"],
-                    ty,
-                )
-            )
+            ret.append(ConfigField(field["n"], field["c"], field["r"], field["d"], ty))
         return ret
 
     def factory_reset(self) -> bool:
@@ -364,12 +340,8 @@ class AdminApp:
 
     def factory_reset_app(self, application: str) -> bool:
         reply = self._call(
-            AdminCommand.FACTORY_RESET_APP,
-            data=application.encode("ascii"),
-            response_len=1,
+            AdminCommand.FACTORY_RESET_APP, data=application.encode("ascii"), response_len=1
         )
         if reply:
-            FactoryResetStatus.check(
-                reply[0], "Failed to factory reset the application"
-            )
+            FactoryResetStatus.check(reply[0], "Failed to factory reset the application")
         return reply is not None

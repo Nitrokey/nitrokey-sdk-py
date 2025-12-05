@@ -31,9 +31,7 @@ from .nrf52_upload.lister.device_lister import DeviceLister
 logger = logging.getLogger(__name__)
 
 MANIFEST_FILENAME = "manifest.json"
-FILENAME_PATTERN = re.compile(
-    "(firmware|alpha)-(nk3..|nkpk)-nrf52-(?P<version>.*)\\.zip$"
-)
+FILENAME_PATTERN = re.compile("(firmware|alpha)-(nk3..|nkpk)-nrf52-(?P<version>.*)\\.zip$")
 
 T = TypeVar("T", bound="TrussedBootloaderNrf52")
 
@@ -84,13 +82,9 @@ class Image:
             if not manifest.application:
                 raise Exception("Missing application in firmware package manifest")
             if not manifest.application.dat_file:
-                raise Exception(
-                    "Missing dat file for application in firmware package manifest"
-                )
+                raise Exception("Missing dat file for application in firmware package manifest")
             if not manifest.application.bin_file:
-                raise Exception(
-                    "Missing bin file for application in firmware package manifest"
-                )
+                raise Exception("Missing bin file for application in firmware package manifest")
             with pkg.open(manifest.application.dat_file, "r") as f:
                 firmware_dat = f.read()
             with pkg.open(manifest.application.bin_file, "r") as f:
@@ -106,11 +100,7 @@ class Image:
         if hash != init_packet.init_command.hash.hash:
             raise Exception("Invalid hash for firmware image")
 
-        image = cls(
-            init_packet=init_packet,
-            firmware_dat=firmware_dat,
-            firmware_bin=firmware_bin,
-        )
+        image = cls(init_packet=init_packet, firmware_dat=firmware_dat, firmware_bin=firmware_bin)
 
         if init_packet.packet.signed_command:
             image.is_signed = True
@@ -165,10 +155,7 @@ class TrussedBootloaderNrf52(TrussedBootloader):
         if callback:
             total = len(image.firmware_bin)
             callback(0, total)
-            dfu.register_events_callback(
-                DfuEvent.PROGRESS_EVENT,
-                CallbackWrapper(callback, total),
-            )
+            dfu.register_events_callback(DfuEvent.PROGRESS_EVENT, CallbackWrapper(callback, total))
 
         dfu.open()
         dfu.send_init_packet(image.firmware_dat)
@@ -205,9 +192,7 @@ def _list_ports(vid: int, pid: int) -> list[tuple[str, int]]:
         product_id = int(device.product_id, base=16)
         assert device.com_ports
         if len(device.com_ports) > 1:
-            logger.warn(
-                f"Nitrokey 3 NRF52 bootloader has multiple com ports: {device.com_ports}"
-            )
+            logger.warn(f"Nitrokey 3 NRF52 bootloader has multiple com ports: {device.com_ports}")
         if vendor_id == vid and product_id == pid:
             port = device.com_ports[0]
             serial = int(device.serial_number, base=16)
@@ -226,9 +211,7 @@ def parse_firmware_image(data: bytes, keys: Sequence[SignatureKey]) -> FirmwareM
     metadata = FirmwareMetadata(version=version)
 
     if image.is_signed:
-        metadata.signed_by = (
-            image.signature_key.name if image.signature_key else "unknown"
-        )
+        metadata.signed_by = image.signature_key.name if image.signature_key else "unknown"
         if image.signature_key:
             metadata.signed_by_nitrokey = image.signature_key.is_official
 

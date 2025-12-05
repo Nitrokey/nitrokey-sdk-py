@@ -28,9 +28,7 @@ from nitrokey.trussed._bootloader import (
     get_model_data,
     validate_firmware_image,
 )
-from nitrokey.trussed._bootloader.lpc55_upload.mboot.exceptions import (
-    McuBootConnectionError,
-)
+from nitrokey.trussed._bootloader.lpc55_upload.mboot.exceptions import McuBootConnectionError
 from nitrokey.trussed._device import TrussedDevice
 from nitrokey.trussed.admin_app import BootMode, Status
 from nitrokey.trussed.admin_app import Variant as AdminAppVariant
@@ -128,19 +126,11 @@ class _Migration(enum.Enum):
         migrations = set()
 
         if variant == Variant.NRF52:
-            if (
-                current is None
-                or current <= Version(1, 2, 2)
-                and new >= Version(1, 3, 0)
-            ):
+            if current is None or current <= Version(1, 2, 2) and new >= Version(1, 3, 0):
                 migrations.add(cls.NRF_IFS_MIGRATION)
 
         ifs_migration_v2 = Version(1, 8, 2)
-        if (
-            current is not None
-            and current < ifs_migration_v2
-            and new >= ifs_migration_v2
-        ):
+        if current is not None and current < ifs_migration_v2 and new >= ifs_migration_v2:
             migrations.add(cls.IFS_MIGRATION_V2)
 
         return frozenset(migrations)
@@ -203,9 +193,7 @@ class UpdateUi(ABC):
         pass
 
     @abstractmethod
-    def abort_pynitrokey_version(
-        self, current: Version, required: Version
-    ) -> Exception:
+    def abort_pynitrokey_version(self, current: Version, required: Version) -> Exception:
         pass
 
     @abstractmethod
@@ -342,24 +330,18 @@ class Updater:
                     model,
                 )
             except Exception as e:
-                raise self.ui.error("Failed to validate firmware image", e)
+                raise self.ui.error("Failed to validate firmware image", e) from e
 
             if migrations is None:
                 migrations = self._check_migrations(
-                    model,
-                    bootloader.variant,
-                    current_version,
-                    container.version,
-                    status,
+                    model, bootloader.variant, current_version, container.version, status
                 )
 
             self._perform_update(bootloader, container)
 
         wait_retries = _get_finalization_wait_retries(migrations)
         with self.ui.finalization_progress_bar() as callback:
-            with self.device_handler.await_device(
-                model, wait_retries, callback
-            ) as device:
+            with self.device_handler.await_device(model, wait_retries, callback) as device:
                 version = device.admin.version()
                 if version != container.version:
                     raise self.ui.error(
@@ -381,7 +363,7 @@ class Updater:
             try:
                 container = FirmwareContainer.parse(image, model)
             except Exception as e:
-                raise self.ui.error("Failed to parse firmware container", e)
+                raise self.ui.error("Failed to parse firmware container", e) from e
             self._validate_version(current_version, container.version)
             return container
         else:
@@ -391,18 +373,18 @@ class Updater:
                     logger.info(f"Downloading firmare version {version}")
                     release = repository.get_release(version)
                 except Exception as e:
-                    raise self.ui.error(f"Failed to get firmware release {version}", e)
+                    raise self.ui.error(f"Failed to get firmware release {version}", e) from e
             else:
                 try:
                     release = repository.get_latest_release()
                     logger.info(f"Latest firmware version: {release}")
                 except Exception as e:
-                    raise self.ui.error("Failed to find latest firmware release", e)
+                    raise self.ui.error("Failed to find latest firmware release", e) from e
 
             try:
                 release_version = Version.from_v_str(release.tag)
             except ValueError as e:
-                raise self.ui.error("Failed to parse version from release tag", e)
+                raise self.ui.error("Failed to parse version from release tag", e) from e
             self._validate_version(current_version, release_version)
             self.ui.confirm_download(current_version, release_version)
             return self._download_update(model, release)
@@ -411,10 +393,7 @@ class Updater:
         try:
             update = get_firmware_update(model, release)
         except Exception as e:
-            raise self.ui.error(
-                f"Failed to find firmware image for release {release}",
-                e,
-            )
+            raise self.ui.error(f"Failed to find firmware image for release {release}", e) from e
 
         try:
             logger.info(f"Trying to download firmware update from URL: {update.url}")
@@ -422,16 +401,12 @@ class Updater:
             with self.ui.download_progress_bar(update.tag) as callback:
                 data = update.read(callback=callback)
         except Exception as e:
-            raise self.ui.error(
-                f"Failed to download latest firmware update {update.tag}", e
-            )
+            raise self.ui.error(f"Failed to download latest firmware update {update.tag}", e) from e
 
         try:
             container = FirmwareContainer.parse(BytesIO(data), model)
         except Exception as e:
-            raise self.ui.error(
-                f"Failed to parse firmware container for {update.tag}", e
-            )
+            raise self.ui.error(f"Failed to parse firmware container for {update.tag}", e) from e
 
         release_version = Version.from_v_str(release.tag)
         if release_version != container.version:
@@ -447,8 +422,8 @@ class Updater:
         if container.sdk:
             try:
                 sdk_version = Version.from_str(importlib.metadata.version("nitrokey"))
-            except PackageNotFoundError:
-                raise self.ui.error("Failed to determine the Nitrokey SDK version")
+            except PackageNotFoundError as e:
+                raise self.ui.error("Failed to determine the Nitrokey SDK version") from e
 
             if container.sdk > sdk_version:
                 logger.warning(
@@ -471,11 +446,7 @@ class Updater:
                         current=pynitrokey_version, required=container.pynitrokey
                     )
 
-    def _validate_version(
-        self,
-        current_version: Optional[Version],
-        new_version: Version,
-    ) -> None:
+    def _validate_version(self, current_version: Optional[Version], new_version: Version) -> None:
         logger.info(f"Current firmware version: {current_version}")
         logger.info(f"Updated firmware version: {new_version}")
 
@@ -496,10 +467,8 @@ class Updater:
             self.ui.request_bootloader_confirmation()
             try:
                 device.admin.reboot(BootMode.BOOTROM)
-            except TimeoutException:
-                raise self.ui.abort(
-                    "The reboot was not confirmed with the touch button"
-                )
+            except TimeoutException as e:
+                raise self.ui.abort("The reboot was not confirmed with the touch button") from e
 
             # needed for udev to properly handle new device
             time.sleep(1)
@@ -512,7 +481,7 @@ class Updater:
                 try:
                     with self.device_handler.await_bootloader(model) as bootloader:
                         # noop to test communication
-                        bootloader.uuid
+                        _ = bootloader.uuid
                         yield bootloader
                         break
                 except McuBootConnectionError as e:
@@ -538,13 +507,10 @@ class Updater:
     ) -> frozenset["_Migration"]:
         try:
             migrations = _Migration.get(
-                model=model,
-                variant=variant,
-                current=current_version,
-                new=new_version,
+                model=model, variant=variant, current=current_version, new=new_version
             )
         except ValueError as e:
-            raise self.ui.error(str(e))
+            raise self.ui.error(str(e)) from e
 
         txt = _get_extra_information(migrations)
         if len(txt) > 0:
@@ -556,14 +522,12 @@ class Updater:
 
         return migrations
 
-    def _perform_update(
-        self, device: TrussedBootloader, container: FirmwareContainer
-    ) -> None:
+    def _perform_update(self, device: TrussedBootloader, container: FirmwareContainer) -> None:
         logger.debug("Starting firmware update")
         image = container.images[device.variant]
         with self.ui.update_progress_bar() as callback:
             try:
                 device.update(image, callback=callback)
             except Exception as e:
-                raise self.ui.error("Failed to perform firmware update", e)
+                raise self.ui.error("Failed to perform firmware update", e) from e
         logger.debug("Firmware update finished successfully")
