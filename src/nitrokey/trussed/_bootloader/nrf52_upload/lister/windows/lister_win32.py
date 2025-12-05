@@ -134,9 +134,7 @@ def get_serial_serial_no(
         0,
     )
 
-    hkey_path = "SYSTEM\\CurrentControlSet\\Enum\\USB\\VID_{}&PID_{}".format(
-        vendor_id, product_id
-    )
+    hkey_path = "SYSTEM\\CurrentControlSet\\Enum\\USB\\VID_{}&PID_{}".format(vendor_id, product_id)
     try:
         vendor_product_hkey = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, hkey_path)
     except EnvironmentError:
@@ -205,9 +203,7 @@ def com_port_is_open(port: str) -> bool:
     return False
 
 
-def list_all_com_ports(
-    vendor_id: str, product_id: str, serial_number: str
-) -> list[str]:
+def list_all_com_ports(vendor_id: str, product_id: str, serial_number: str) -> list[str]:
     ports: list[str] = []
 
     hkey_path = "SYSTEM\\CurrentControlSet\\Enum\\USB\\VID_{}&PID_{}\\{}".format(
@@ -276,9 +272,7 @@ def list_all_com_ports(
 
 class Win32Lister(AbstractLister):
     def __init__(self) -> None:
-        self.GUID_DEVINTERFACE_USB_DEVICE = GUID(
-            "{A5DCBF10-6530-11D2-901F-00C04FB951ED}"
-        )
+        self.GUID_DEVINTERFACE_USB_DEVICE = GUID("{A5DCBF10-6530-11D2-901F-00C04FB951ED}")
 
     def enumerate(self) -> list[EnumeratedDevice]:
         enumerated_devices: list[EnumeratedDevice] = []
@@ -311,18 +305,14 @@ class Win32Lister(AbstractLister):
             vendor_id = sz_buffer.value[8:12]
             product_id = sz_buffer.value[17:21]
 
-            serial_number = get_serial_serial_no(
-                vendor_id, product_id, h_dev_info, dev_info_data
-            )
+            serial_number = get_serial_serial_no(vendor_id, product_id, h_dev_info, dev_info_data)
             if not serial_number:
                 continue
 
             COM_ports = list_all_com_ports(vendor_id, product_id, serial_number)
 
             if len(COM_ports) > 0:
-                device = EnumeratedDevice(
-                    vendor_id, product_id, serial_number, COM_ports
-                )
+                device = EnumeratedDevice(vendor_id, product_id, serial_number, COM_ports)
                 enumerated_devices.append(device)
 
         return enumerated_devices

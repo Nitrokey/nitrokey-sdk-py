@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """Base for SPSDK exceptions."""
+
 from typing import Optional
 
 #######################################################################

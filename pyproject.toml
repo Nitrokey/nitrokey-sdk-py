@@ -45,12 +45,10 @@ classifiers = [
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-black = "^24.3"
 fake-winreg = "^1.6"
-flake8 = "^7.1"
-isort = "^5.13.2"
 mypy = "^1.4"
 rstcheck = { version = "^6", extras = ["sphinx"] }
+ruff = "^0.14"
 sphinx = "^7"
 types-protobuf = ">=5.26, <7"
 types-requests = "^2.16"
@@ -74,13 +72,6 @@ dev-dependencies = [
     "wrapt <2",
 ]
 
-[tool.black]
-target-version = ["py310"]
-
-[tool.isort]
-py_version = "310"
-profile = "black"
-
 [tool.mypy]
 mypy_path = "stubs"
 show_error_codes = true
@@ -90,3 +81,19 @@ strict = true
 [tool.rstcheck]
 ignore_directives = ["autoclass", "autofunction", "automodule"]
 ignore_substitutions = ["nitrokey_sdk_version"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.format]
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint]
+select = ["B", "C", "E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+
+[tool.ruff.lint.mccabe]
+max-complexity = 30

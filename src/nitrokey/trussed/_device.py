@@ -33,9 +33,7 @@ class App(Enum):
 
 
 class TrussedDevice(TrussedBase):
-    def __init__(
-        self, device: CtapHidDevice, fido2_certs: Sequence[Fido2Certs]
-    ) -> None:
+    def __init__(self, device: CtapHidDevice, fido2_certs: Sequence[Fido2Certs]) -> None:
         self._validate_vid_pid(device.descriptor.vid, device.descriptor.pid)
 
         self.device = device
@@ -67,11 +65,7 @@ class TrussedDevice(TrussedBase):
         self.device.wink()
 
     def _call(
-        self,
-        command: int,
-        command_name: str,
-        response_len: Optional[int] = None,
-        data: bytes = b"",
+        self, command: int, command_name: str, response_len: Optional[int] = None, data: bytes = b""
     ) -> bytes:
         response = self.device.call(command, data=data)
         if response_len is not None and response_len != len(response):
@@ -81,12 +75,7 @@ class TrussedDevice(TrussedBase):
             )
         return response
 
-    def _call_app(
-        self,
-        app: App,
-        response_len: Optional[int] = None,
-        data: bytes = b"",
-    ) -> bytes:
+    def _call_app(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
         return self._call(app.value, app.name, response_len, data)
 
     @classmethod

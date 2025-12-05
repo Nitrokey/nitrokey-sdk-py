@@ -232,9 +232,7 @@ class CmdHeader:
         :raises McuBootError: Invalid data format
         """
         if len(data) < 4:
-            raise McuBootError(
-                f"Invalid format of RX packet (data length is {len(data)} bytes)"
-            )
+            raise McuBootError(f"Invalid format of RX packet (data length is {len(data)} bytes)")
         return cls(*unpack_from("4B", data, offset))
 
 

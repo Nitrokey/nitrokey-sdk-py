@@ -8,7 +8,6 @@
 
 """Helper module for more human-friendly interpretation of the target device properties."""
 
-
 import ctypes
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
@@ -34,7 +33,7 @@ def size_fmt(value: Union[int, float], kibibyte: bool = True) -> str:
     """
     base, suffix = [(1000.0, "B"), (1024.0, "iB")][kibibyte]
     x = "B"
-    for x in ["B"] + [prefix + suffix for prefix in list("kMGTP")]:
+    for x in ["B"] + [prefix + suffix for prefix in list("kMGTP")]:  # noqa: B007
         if -base < value < base:
             break
         value /= base
@@ -141,6 +140,7 @@ class Version:
 # McuBoot Properties
 ########################################################################################################################
 
+
 # fmt: off
 class PropertyTag(SpsdkEnum):
     """McuBoot Properties."""
@@ -227,9 +227,7 @@ class PropertyValueBase:
 
     __slots__ = ("tag", "name", "desc")
 
-    def __init__(
-        self, tag: int, name: Optional[str] = None, desc: Optional[str] = None
-    ) -> None:
+    def __init__(self, tag: int, name: Optional[str] = None, desc: Optional[str] = None) -> None:
         """Initialize the base of property.
 
         :param tag: Property tag, see: `PropertyTag`
@@ -257,14 +255,9 @@ class PropertyValueBase:
 class IntValue(PropertyValueBase):
     """Integer-based value property."""
 
-    __slots__ = (
-        "value",
-        "_fmt",
-    )
+    __slots__ = ("value", "_fmt")
 
-    def __init__(
-        self, tag: int, raw_values: List[int], str_format: str = "dec"
-    ) -> None:
+    def __init__(self, tag: int, raw_values: List[int], str_format: str = "dec") -> None:
         """Initialize the integer-based property object.
 
         :param tag: Property tag, see: `PropertyTag`
@@ -297,13 +290,7 @@ class IntValue(PropertyValueBase):
 class BoolValue(PropertyValueBase):
     """Boolean-based value property."""
 
-    __slots__ = (
-        "value",
-        "_true_values",
-        "_false_values",
-        "_true_string",
-        "_false_string",
-    )
+    __slots__ = ("value", "_true_values", "_false_values", "_true_string", "_false_string")
 
     def __init__(
         self,
@@ -339,9 +326,7 @@ class BoolValue(PropertyValueBase):
 
     def to_str(self) -> str:
         """Get stringified property representation."""
-        return (
-            self._true_string if self.value in self._true_values else self._false_string
-        )
+        return self._true_string if self.value in self._true_values else self._false_string
 
 
 class EnumValue(PropertyValueBase):
@@ -350,11 +335,7 @@ class EnumValue(PropertyValueBase):
     __slots__ = ("value", "enum", "_na_msg")
 
     def __init__(
-        self,
-        tag: int,
-        raw_values: List[int],
-        enum: Type[SpsdkEnum],
-        na_msg: str = "Unknown Item",
+        self, tag: int, raw_values: List[int], enum: Type[SpsdkEnum], na_msg: str = "Unknown Item"
     ) -> None:
         """Initialize the enumeration-based property object.
 
@@ -416,10 +397,7 @@ class DeviceUidValue(PropertyValueBase):
         """
         super().__init__(tag)
         self.value = b"".join(
-            [
-                int.to_bytes(val, length=4, byteorder=Endianness.LITTLE.value)
-                for val in raw_values
-            ]
+            [int.to_bytes(val, length=4, byteorder=Endianness.LITTLE.value) for val in raw_values]
         )
 
     def to_int(self) -> int:
@@ -454,9 +432,7 @@ class ReservedRegionsValue(PropertyValueBase):
 
     def to_str(self) -> str:
         """Get stringified property representation."""
-        return "\n".join(
-            [f"    Region {i}: {region}" for i, region in enumerate(self.regions)]
-        )
+        return "\n".join([f"    Region {i}: {region}" for i, region in enumerate(self.regions)])
 
 
 class AvailablePeripheralsValue(PropertyValueBase):
@@ -557,7 +533,9 @@ class IrqNotifierPinValue(PropertyValueBase):
 
     def to_str(self) -> str:
         """Get stringified property representation."""
-        return f"IRQ Port[{self.port}], Pin[{self.pin}] is {'enabled' if self.enabled else 'disabled'}"
+        return (
+            f"IRQ Port[{self.port}], Pin[{self.pin}] is {'enabled' if self.enabled else 'disabled'}"
+        )
 
 
 class ExternalMemoryAttributesValue(PropertyValueBase):
@@ -586,19 +564,11 @@ class ExternalMemoryAttributesValue(PropertyValueBase):
             raw_values[1] if raw_values[0] & ExtMemPropTags.START_ADDRESS.tag else None
         )
         self.total_size = (
-            raw_values[2] * 1024
-            if raw_values[0] & ExtMemPropTags.SIZE_IN_KBYTES.tag
-            else None
+            raw_values[2] * 1024 if raw_values[0] & ExtMemPropTags.SIZE_IN_KBYTES.tag else None
         )
-        self.page_size = (
-            raw_values[3] if raw_values[0] & ExtMemPropTags.PAGE_SIZE.tag else None
-        )
-        self.sector_size = (
-            raw_values[4] if raw_values[0] & ExtMemPropTags.SECTOR_SIZE.tag else None
-        )
-        self.block_size = (
-            raw_values[5] if raw_values[0] & ExtMemPropTags.BLOCK_SIZE.tag else None
-        )
+        self.page_size = raw_values[3] if raw_values[0] & ExtMemPropTags.PAGE_SIZE.tag else None
+        self.sector_size = raw_values[4] if raw_values[0] & ExtMemPropTags.SECTOR_SIZE.tag else None
+        self.block_size = raw_values[5] if raw_values[0] & ExtMemPropTags.BLOCK_SIZE.tag else None
         self.value = raw_values[0]
 
     def to_str(self) -> str:
@@ -711,19 +681,10 @@ class FuseLockedStatus(PropertyValueBase):
 
 PROPERTIES: Dict[PropertyTag, Dict[Any, Any]] = {
     PropertyTag.CURRENT_VERSION: {"class": VersionValue, "kwargs": {}},
-    PropertyTag.AVAILABLE_PERIPHERALS: {
-        "class": AvailablePeripheralsValue,
-        "kwargs": {},
-    },
-    PropertyTag.FLASH_START_ADDRESS: {
-        "class": IntValue,
-        "kwargs": {"str_format": "hex"},
-    },
+    PropertyTag.AVAILABLE_PERIPHERALS: {"class": AvailablePeripheralsValue, "kwargs": {}},
+    PropertyTag.FLASH_START_ADDRESS: {"class": IntValue, "kwargs": {"str_format": "hex"}},
     PropertyTag.FLASH_SIZE: {"class": IntValue, "kwargs": {"str_format": "size"}},
-    PropertyTag.FLASH_SECTOR_SIZE: {
-        "class": IntValue,
-        "kwargs": {"str_format": "size"},
-    },
+    PropertyTag.FLASH_SECTOR_SIZE: {"class": IntValue, "kwargs": {"str_format": "size"}},
     PropertyTag.FLASH_BLOCK_COUNT: {"class": IntValue, "kwargs": {"str_format": "dec"}},
     PropertyTag.AVAILABLE_COMMANDS: {"class": AvailableCommandsValue, "kwargs": {}},
     PropertyTag.CRC_CHECK_STATUS: {
@@ -746,10 +707,7 @@ PROPERTIES: Dict[PropertyTag, Dict[Any, Any]] = {
     },
     PropertyTag.RAM_START_ADDRESS: {"class": IntValue, "kwargs": {"str_format": "hex"}},
     PropertyTag.RAM_SIZE: {"class": IntValue, "kwargs": {"str_format": "size"}},
-    PropertyTag.SYSTEM_DEVICE_IDENT: {
-        "class": IntValue,
-        "kwargs": {"str_format": "hex"},
-    },
+    PropertyTag.SYSTEM_DEVICE_IDENT: {"class": IntValue, "kwargs": {"str_format": "hex"}},
     PropertyTag.FLASH_SECURITY_STATE: {
         "class": BoolValue,
         "kwargs": {
@@ -764,14 +722,8 @@ PROPERTIES: Dict[PropertyTag, Dict[Any, Any]] = {
         "class": BoolValue,
         "kwargs": {"true_string": "ON", "false_string": "OFF"},
     },
-    PropertyTag.FLASH_ACCESS_SEGMENT_SIZE: {
-        "class": IntValue,
-        "kwargs": {"str_format": "size"},
-    },
-    PropertyTag.FLASH_ACCESS_SEGMENT_COUNT: {
-        "class": IntValue,
-        "kwargs": {"str_format": "int32"},
-    },
+    PropertyTag.FLASH_ACCESS_SEGMENT_SIZE: {"class": IntValue, "kwargs": {"str_format": "size"}},
+    PropertyTag.FLASH_ACCESS_SEGMENT_COUNT: {"class": IntValue, "kwargs": {"str_format": "int32"}},
     PropertyTag.FLASH_READ_MARGIN: {
         "class": EnumValue,
         "kwargs": {"enum": FlashReadMargin, "na_msg": "Unknown Margin"},
@@ -795,14 +747,8 @@ PROPERTIES: Dict[PropertyTag, Dict[Any, Any]] = {
         "class": EnumValue,
         "kwargs": {"enum": PfrKeystoreUpdateOpt, "na_msg": "Unknown"},
     },
-    PropertyTag.BYTE_WRITE_TIMEOUT_MS: {
-        "class": IntValue,
-        "kwargs": {"str_format": "dec"},
-    },
-    PropertyTag.FUSE_LOCKED_STATUS: {
-        "class": FuseLockedStatus,
-        "kwargs": {},
-    },
+    PropertyTag.BYTE_WRITE_TIMEOUT_MS: {"class": IntValue, "kwargs": {"str_format": "dec"}},
+    PropertyTag.FUSE_LOCKED_STATUS: {"class": FuseLockedStatus, "kwargs": {}},
 }
 
 PROPERTIES_KW45XX = {
@@ -810,14 +756,8 @@ PROPERTIES_KW45XX = {
         "class": BoolValue,
         "kwargs": {"true_string": "ENABLE", "false_string": "DISABLE"},
     },
-    PropertyTagKw45xx.BOOT_STATUS_REGISTER: {
-        "class": IntValue,
-        "kwargs": {"str_format": "int32"},
-    },
-    PropertyTagKw45xx.FIRMWARE_VERSION: {
-        "class": IntValue,
-        "kwargs": {"str_format": "int32"},
-    },
+    PropertyTagKw45xx.BOOT_STATUS_REGISTER: {"class": IntValue, "kwargs": {"str_format": "int32"}},
+    PropertyTagKw45xx.FIRMWARE_VERSION: {"class": IntValue, "kwargs": {"str_format": "int32"}},
     PropertyTagKw45xx.FUSE_PROGRAM_VOLTAGE: {
         "class": BoolValue,
         "kwargs": {

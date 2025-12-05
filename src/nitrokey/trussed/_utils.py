@@ -210,13 +210,11 @@ class Version:
 
         try:
             int_parts = [int(part) for part in str_parts]
-        except ValueError:
-            raise ValueError(f"Invalid component in firmware version: {s}")
+        except ValueError as e:
+            raise ValueError(f"Invalid component in firmware version: {s}") from e
 
         [major, minor, patch] = int_parts
-        return cls(
-            major=major, minor=minor, patch=patch, pre=pre, build=build, complete=True
-        )
+        return cls(major=major, minor=minor, patch=patch, pre=pre, build=build, complete=True)
 
     @classmethod
     def from_v_str(cls, s: str) -> "Version":

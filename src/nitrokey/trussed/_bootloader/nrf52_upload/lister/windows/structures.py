@@ -37,16 +37,11 @@ class _GUID(ctypes.Structure):
     ]
 
     def __init__(
-        self,
-        guid: Union[
-            str, "ctypesInternalGUID"
-        ] = "{00000000-0000-0000-0000-000000000000}",
+        self, guid: Union[str, "ctypesInternalGUID"] = "{00000000-0000-0000-0000-000000000000}"
     ) -> None:
         super().__init__()
         if isinstance(guid, str):
-            ret = _ole32.CLSIDFromString(
-                ctypes.create_unicode_buffer(guid), ctypes.byref(self)
-            )
+            ret = _ole32.CLSIDFromString(ctypes.create_unicode_buffer(guid), ctypes.byref(self))
             if ret < 0:
                 err_no = ctypes.GetLastError()  # type: ignore[attr-defined]
                 raise WindowsError(err_no, ctypes.FormatError(err_no), guid)  # type: ignore[attr-defined,name-defined]
@@ -72,10 +67,7 @@ assert ctypes.sizeof(_GUID) == 16
 
 class GUID:
     def __init__(
-        self,
-        guid: Union[
-            str, "ctypesInternalGUID"
-        ] = "{00000000-0000-0000-0000-000000000000}",
+        self, guid: Union[str, "ctypesInternalGUID"] = "{00000000-0000-0000-0000-000000000000}"
     ) -> None:
         self._guid = _GUID(guid)
 

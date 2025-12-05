@@ -21,10 +21,8 @@ _PID_NKPK_BOOTLOADER = 0x42F4
 _FIDO2_CERTS = [
     Fido2Certs(
         start=Version(0, 1, 0),
-        hashes=[
-            "c7512dfcd15ffc5a7b4000e4898e5956ee858027794c5086cc137a02cd15d123",
-        ],
-    ),
+        hashes=["c7512dfcd15ffc5a7b4000e4898e5956ee858027794c5086cc137a02cd15d123"],
+    )
 ]
 
 _NKPK_DATA = ModelData(

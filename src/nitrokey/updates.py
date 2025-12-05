@@ -34,17 +34,12 @@ class Asset:
     tag: str
     url: str
 
-    def download(
-        self, f: BinaryIO, callback: Optional[ProgressCallback] = None
-    ) -> None:
+    def download(self, f: BinaryIO, callback: Optional[ProgressCallback] = None) -> None:
         for chunk in self._get_chunks(callback=callback):
             f.write(chunk)
 
     def download_to_dir(
-        self,
-        d: str,
-        overwrite: bool = False,
-        callback: Optional[ProgressCallback] = None,
+        self, d: str, overwrite: bool = False, callback: Optional[ProgressCallback] = None
     ) -> str:
         if not os.path.exists(d):
             raise DownloadError(f"Directory {d} does not exist")
@@ -104,18 +99,14 @@ class Release:
         if len(urls) == 1:
             return Asset(tag=self.tag, url=urls[0])
         elif len(urls) > 1:
-            raise ValueError(
-                f"Found multiple assets for release {self.tag} matching {url_pattern}"
-            )
+            raise ValueError(f"Found multiple assets for release {self.tag} matching {url_pattern}")
         else:
             return None
 
     def require_asset(self, url_pattern: Pattern[str]) -> Asset:
         update = self.find_asset(url_pattern)
         if not update:
-            raise ValueError(
-                f"Failed to find asset for release {self.tag} matching {url_pattern}"
-            )
+            raise ValueError(f"Failed to find asset for release {self.tag} matching {url_pattern}")
         return update
 
     @classmethod
@@ -148,7 +139,10 @@ class Repository:
             return self.get_release(tag)
         return self.get_latest_release()
 
-    def _call(self, path: str, errors: Dict[int, str] = dict()) -> dict[Any, Any]:
+    def _call(self, path: str, errors: Optional[Dict[int, str]] = None) -> dict[Any, Any]:
+        if errors is None:
+            errors = {}
+
         url = self._get_url(path)
         response = requests.get(url)
         for code in errors:

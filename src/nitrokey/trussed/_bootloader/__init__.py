@@ -89,9 +89,7 @@ class FirmwareContainer:
             manifest = json.loads(manifest_bytes)
             actual_model = Model.from_str(manifest["device"])
             if actual_model != model:
-                raise ValueError(
-                    f"Expected firmware container for {model}, got {actual_model}"
-                )
+                raise ValueError(f"Expected firmware container for {model}, got {actual_model}")
             version = Version.from_v_str(manifest["version"])
             pynitrokey = None
             if "pynitrokey" in manifest:
@@ -106,12 +104,7 @@ class FirmwareContainer:
                 _validate_checksum(checksums, image, image_bytes)
                 images[Variant.from_str(variant)] = image_bytes
 
-            return cls(
-                version=version,
-                pynitrokey=pynitrokey,
-                sdk=sdk,
-                images=images,
-            )
+            return cls(version=version, pynitrokey=pynitrokey, sdk=sdk, images=images)
 
 
 @dataclass
@@ -123,11 +116,7 @@ class FirmwareMetadata:
 
 class TrussedBootloader(TrussedBase):
     @abstractmethod
-    def update(
-        self,
-        image: bytes,
-        callback: Optional[ProgressCallback] = None,
-    ) -> None: ...
+    def update(self, image: bytes, callback: Optional[ProgressCallback] = None) -> None: ...
 
     @property
     @abstractmethod
@@ -157,16 +146,13 @@ def parse_filename(filename: str) -> Optional[Tuple[Variant, Version]]:
 
 
 def validate_firmware_image(
-    variant: Variant,
-    data: bytes,
-    version: Optional[Version],
-    model: Model,
+    variant: Variant, data: bytes, version: Optional[Version], model: Model
 ) -> FirmwareMetadata:
     try:
         metadata = parse_firmware_image(variant, data, model)
-    except Exception:
+    except Exception as e:
         logger.exception("Failed to parse firmware image", exc_info=sys.exc_info())
-        raise Exception("Failed to parse firmware image")
+        raise Exception("Failed to parse firmware image") from e
 
     if version:
         if version.core() != metadata.version:
@@ -186,17 +172,13 @@ def validate_firmware_image(
     return metadata
 
 
-def parse_firmware_image(
-    variant: Variant, data: bytes, model: Model
-) -> FirmwareMetadata:
+def parse_firmware_image(variant: Variant, data: bytes, model: Model) -> FirmwareMetadata:
     from .lpc55 import parse_firmware_image as parse_firmware_image_lpc55
     from .nrf52 import parse_firmware_image as parse_firmware_image_nrf52
 
     if variant == Variant.LPC55:
         return parse_firmware_image_lpc55(data)
     elif variant == Variant.NRF52:
-        return parse_firmware_image_nrf52(
-            data, get_model_data(model).nrf52_signature_keys
-        )
+        return parse_firmware_image_nrf52(data, get_model_data(model).nrf52_signature_keys)
     else:
         raise ValueError(f"Unexpected variant {variant}")

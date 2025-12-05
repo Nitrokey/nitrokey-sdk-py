@@ -40,9 +40,7 @@ class CertBlockHeader(BaseClass):
     SIZE = calcsize(FORMAT)
     SIGNATURE = b"cert"
 
-    def __init__(
-        self, version: str = "1.0", flags: int = 0, build_number: int = 0
-    ) -> None:
+    def __init__(self, version: str = "1.0", flags: int = 0, build_number: int = 0) -> None:
         """Constructor.
 
         :param version: Version of the certificate in format n.n
@@ -101,9 +99,7 @@ class CertBlockHeader(BaseClass):
         if length != cls.SIZE:
             raise SPSDKError("Incorrect length")
         obj = cls(
-            version=f"{major_version}.{minor_version}",
-            flags=flags,
-            build_number=build_number,
+            version=f"{major_version}.{minor_version}", flags=flags, build_number=build_number
         )
         obj.image_length = image_length
         obj.cert_count = cert_count
@@ -222,9 +218,7 @@ class CertBlockV1(CertBlock):
             raise SPSDKError("Invalid image length")
         self._header.image_length = value
 
-    def __init__(
-        self, version: str = "1.0", flags: int = 0, build_number: int = 0
-    ) -> None:
+    def __init__(self, version: str = "1.0", flags: int = 0, build_number: int = 0) -> None:
         """Constructor.
 
         :param version: of the certificate in format n.n
@@ -254,20 +248,14 @@ class CertBlockV1(CertBlock):
         else:
             raise SPSDKError("Invalid parameter type (cert)")
         if cert_obj.version.name != "v3":
-            raise SPSDKError(
-                "Expected certificate v3 but received: " + cert_obj.version.name
-            )
+            raise SPSDKError("Expected certificate v3 but received: " + cert_obj.version.name)
         if self._cert:  # chain certificate?
             last_cert = self._cert[-1]  # verify that it is signed by parent key
             if not cert_obj.validate(last_cert):
-                raise SPSDKError(
-                    "Chain certificate cannot be verified using parent public key"
-                )
+                raise SPSDKError("Chain certificate cannot be verified using parent public key")
         else:  # root certificate
             if not cert_obj.self_signed:
-                raise SPSDKError(
-                    f"Root certificate must be self-signed.\n{str(cert_obj)}"
-                )
+                raise SPSDKError(f"Root certificate must be self-signed.\n{str(cert_obj)}")
         self._cert.append(cert_obj)
         self._header.cert_count += 1
         self._header.cert_table_length += cert_obj.raw_size + 4
@@ -281,7 +269,9 @@ class CertBlockV1(CertBlock):
         nfo += " Public Root Keys Hash e.g. RKH (SHA256):\n"
         rkh_index = self.rkh_index
         for index, root_key in enumerate(self._rkht.rkh_list):
-            nfo += f"  {index}) {root_key.hex().upper()} {'<- Used' if index == rkh_index else ''}\n"
+            nfo += (
+                f"  {index}) {root_key.hex().upper()} {'<- Used' if index == rkh_index else ''}\n"
+            )
         rkth = self.rkth
         nfo += f" RKTH (SHA256): {rkth.hex().upper()}\n"
         for index, fuse in enumerate(self.rkth_fuses):
@@ -313,22 +303,14 @@ class CertBlockV1(CertBlock):
         """
         header = CertBlockHeader.parse(data)
         offset = CertBlockHeader.SIZE
-        if len(data) < (
-            header.cert_table_length + (RKHTv1.RKHT_SIZE * RKHTv1.RKH_SIZE)
-        ):
-            raise SPSDKError(
-                "Length of the data doesn't match Certificate Block length"
-            )
-        obj = cls(
-            version=header.version, flags=header.flags, build_number=header.build_number
-        )
+        if len(data) < (header.cert_table_length + (RKHTv1.RKHT_SIZE * RKHTv1.RKH_SIZE)):
+            raise SPSDKError("Length of the data doesn't match Certificate Block length")
+        obj = cls(version=header.version, flags=header.flags, build_number=header.build_number)
         for _ in range(header.cert_count):
             cert_len = unpack_from("<I", data, offset)[0]
             offset += 4
             cert_obj = Certificate.parse(data[offset : offset + cert_len])
             obj.add_certificate(cert_obj)
             offset += cert_len
-        obj._rkht = RKHTv1.parse(
-            data[offset : offset + (RKHTv1.RKH_SIZE * RKHTv1.RKHT_SIZE)]
-        )
+        obj._rkht = RKHTv1.parse(data[offset : offset + (RKHTv1.RKH_SIZE * RKHTv1.RKHT_SIZE)])
         return obj

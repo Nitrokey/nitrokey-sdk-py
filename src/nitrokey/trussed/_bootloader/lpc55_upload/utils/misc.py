@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """Miscellaneous functions used throughout the SPSDK."""
+
 import re
 from enum import Enum
 from math import ceil
@@ -54,11 +55,11 @@ class BinaryPattern:
         """
         try:
             value_to_int(pattern)
-        except SPSDKError:
+        except SPSDKError as e:
             if pattern not in BinaryPattern.SPECIAL_PATTERNS:
                 raise SPSDKValueError(  # pylint: disable=raise-missing-from
                     f"Unsupported input pattern {pattern}"
-                )
+                ) from e
 
         self._pattern = pattern
 
@@ -175,9 +176,7 @@ def get_bytes_cnt_of_int(
     return cnt
 
 
-def value_to_int(
-    value: Union[bytes, bytearray, int, str], default: Optional[int] = None
-) -> int:
+def value_to_int(value: Union[bytes, bytearray, int, str], default: Optional[int] = None) -> int:
     """Function loads value from lot of formats to integer.
 
     :param value: Input value.
@@ -197,9 +196,7 @@ def value_to_int(
             value.strip().lower(),
         )
         if match:
-            base = {"0b": 2, "0o": 8, "0": 10, "0x": 16, None: 10}[
-                match.group("prefix")
-            ]
+            base = {"0b": 2, "0o": 8, "0": 10, "0x": 16, None: 10}[match.group("prefix")]
             try:
                 return int(match.group("number"), base=base)
             except ValueError:
@@ -240,7 +237,7 @@ def size_fmt(num: Union[float, int], use_kibibyte: bool = True) -> str:
     """Size format."""
     base, suffix = [(1000.0, "B"), (1024.0, "iB")][use_kibibyte]
     i = "B"
-    for i in ["B"] + [i + suffix for i in list("kMGTP")]:
+    for i in ["B"] + [i + suffix for i in list("kMGTP")]:  # noqa: B007
         if num < base:
             break
         num /= base

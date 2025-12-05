@@ -1,4 +1,4 @@
-from typing import Any, Optional, TypedDict
+from typing import TypedDict
 
 class device:
     def open_path(self, path: bytes) -> None: ...

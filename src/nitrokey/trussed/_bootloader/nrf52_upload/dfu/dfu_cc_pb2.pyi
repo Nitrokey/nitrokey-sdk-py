@@ -70,9 +70,7 @@ class Hash(_message.Message):
     hash_type: HashType
     hash: bytes
     def __init__(
-        self,
-        hash_type: _Optional[_Union[HashType, str]] = ...,
-        hash: _Optional[bytes] = ...,
+        self, hash_type: _Optional[_Union[HashType, str]] = ..., hash: _Optional[bytes] = ...
     ) -> None: ...
 
 class BootValidation(_message.Message):
@@ -82,9 +80,7 @@ class BootValidation(_message.Message):
     type: ValidationType
     bytes_: bytes
     def __init__(
-        self,
-        type: _Optional[_Union[ValidationType, str]] = ...,
-        bytes_: _Optional[bytes] = ...,
+        self, type: _Optional[_Union[ValidationType, str]] = ..., bytes_: _Optional[bytes] = ...
     ) -> None: ...
 
 class InitCommand(_message.Message):

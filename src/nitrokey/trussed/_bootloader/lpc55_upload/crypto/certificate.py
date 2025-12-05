@@ -46,9 +46,7 @@ class Certificate(BaseClass):
         if encoding == SPSDKEncoding.NXP:
             return align_block(self.export(SPSDKEncoding.DER), 4, "zeros")
 
-        return self.cert.public_bytes(
-            SPSDKEncoding.get_cryptography_encodings(encoding)
-        )
+        return self.cert.public_bytes(SPSDKEncoding.get_cryptography_encodings(encoding))
 
     def get_public_key(self) -> PublicKey:
         """Get public keys from certificate.
@@ -77,9 +75,7 @@ class Certificate(BaseClass):
         return self.cert.tbs_certificate_bytes
 
     @property
-    def signature_hash_algorithm(
-        self,
-    ) -> Optional[hashes.HashAlgorithm]:
+    def signature_hash_algorithm(self) -> Optional[hashes.HashAlgorithm]:
         """Returns a HashAlgorithm corresponding to the type of the digest signed in the certificate."""
         return self.cert.signature_hash_algorithm
 
@@ -123,9 +119,7 @@ class Certificate(BaseClass):
 
         :return: true/false depending whether ca flag is set or not
         """
-        extension = self.extensions.get_extension_for_oid(
-            SPSDKExtensionOID.BASIC_CONSTRAINTS
-        )
+        extension = self.extensions.get_extension_for_oid(SPSDKExtensionOID.BASIC_CONSTRAINTS)
         return extension.value.ca  # type: ignore # mypy can not handle property definition in cryptography
 
     @property
@@ -138,9 +132,7 @@ class Certificate(BaseClass):
         """Raw size of the certificate."""
         return len(self.export())
 
-    def public_key_hash(
-        self, algorithm: EnumHashAlgorithm = EnumHashAlgorithm.SHA256
-    ) -> bytes:
+    def public_key_hash(self, algorithm: EnumHashAlgorithm = EnumHashAlgorithm.SHA256) -> bytes:
         """Get key hash.
 
         :param algorithm: Used hash algorithm, defaults to sha256
@@ -161,9 +153,7 @@ class Certificate(BaseClass):
         nfo += f"  Serial Number:              {hex(self.cert.serial_number)}\n"
         nfo += f"  Validity Range:             {not_valid_before} - {not_valid_after}\n"
         if self.signature_hash_algorithm:
-            nfo += (
-                f"  Signature Algorithm:        {self.signature_hash_algorithm.name}\n"
-            )
+            nfo += f"  Signature Algorithm:        {self.signature_hash_algorithm.name}\n"
         nfo += f"  Self Issued:                {'YES' if self.self_signed else 'NO'}\n"
 
         return nfo
@@ -190,11 +180,7 @@ class Certificate(BaseClass):
                 try:
                     return x509.load_der_x509_certificate(data)
                 except ValueError as exc:
-                    if (
-                        len(exc.args)
-                        and "kind: ExtraData" in exc.args[0]
-                        and data[-1:] == b"\00"
-                    ):
+                    if len(exc.args) and "kind: ExtraData" in exc.args[0] and data[-1:] == b"\00":
                         data = data[:-1]
                     else:
                         raise SPSDKValueError(str(exc)) from exc
