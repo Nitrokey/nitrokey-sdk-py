@@ -41,6 +41,9 @@ classifiers = [
     "Intended Audience :: Developers",
 ]
 
+[project.optional-dependencies]
+pcsc = ["pyscard >=2, <3"]
+
 [tool.poetry.group.dev]
 optional = true
 
