@@ -248,9 +248,7 @@ class TrussedDevice(TrussedBase):
     def _list_pcsc_atr(cls: type[T], atr: List[int]) -> List[T]:
         try:
             from smartcard.Exceptions import NoCardException
-            from smartcard.ExclusiveConnectCardConnection import (
-                ExclusiveConnectCardConnection,
-            )
+            from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
             from smartcard.System import readers
 
             devices = []

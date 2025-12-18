@@ -39,10 +39,7 @@ FIDO2_CERTS = [
 class NK3(TrussedDevice):
     """A Nitrokey 3 device running the firmware."""
 
-    def __init__(
-        self,
-        device: CtapHidDevice | ExclusiveConnectCardConnection,
-    ) -> None:
+    def __init__(self, device: CtapHidDevice | ExclusiveConnectCardConnection) -> None:
         super().__init__(device, FIDO2_CERTS)
 
     @property
@@ -60,10 +57,7 @@ class NK3(TrussedDevice):
         return "Nitrokey 3"
 
     @classmethod
-    def from_device(
-        cls,
-        device: CtapHidDevice | ExclusiveConnectCardConnection,
-    ) -> "NK3":
+    def from_device(cls, device: CtapHidDevice | ExclusiveConnectCardConnection) -> "NK3":
         return cls(device)
 
     @classmethod
@@ -74,6 +68,4 @@ class NK3(TrussedDevice):
 
     @classmethod
     def list_ccid(cls) -> List["NK3"]:
-        return cls._list_pcsc_atr(
-            list(bytes.fromhex("3B8F01805D4E6974726F6B657900000000006A"))
-        )
+        return cls._list_pcsc_atr(list(bytes.fromhex("3B8F01805D4E6974726F6B657900000000006A")))

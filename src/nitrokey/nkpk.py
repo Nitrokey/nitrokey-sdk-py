@@ -53,14 +53,8 @@ _NKPK_DATA = ModelData(
 
 
 class NKPK(TrussedDevice):
-    def __init__(
-        self,
-        device: CtapHidDevice | ExclusiveConnectCardConnection,
-    ) -> None:
-        super().__init__(
-            device,
-            _FIDO2_CERTS,
-        )
+    def __init__(self, device: CtapHidDevice | ExclusiveConnectCardConnection) -> None:
+        super().__init__(device, _FIDO2_CERTS)
 
     @property
     def model(self) -> Model:
@@ -75,10 +69,7 @@ class NKPK(TrussedDevice):
         return "Nitrokey Passkey"
 
     @classmethod
-    def from_device(
-        cls,
-        device: CtapHidDevice | ExclusiveConnectCardConnection,
-    ) -> "NKPK":
+    def from_device(cls, device: CtapHidDevice | ExclusiveConnectCardConnection) -> "NKPK":
         return cls(device)
 
     @classmethod
