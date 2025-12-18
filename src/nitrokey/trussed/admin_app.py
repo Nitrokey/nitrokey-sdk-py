@@ -250,7 +250,7 @@ class AdminApp:
                     # The admin app returns ConditionsOfUseNotSatisfied if the user confirmation
                     # request times out
                     if e.sw1 == 0x69 and e.sw2 == 0x85:
-                        raise TimeoutException()
+                        raise TimeoutException() from None
                     else:
                         raise e
 
