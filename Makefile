@@ -44,8 +44,8 @@ check-docs:
 
 .PHONY: fix
 fix:
-	poetry run black $(FORMAT_DIRS)
-	poetry run isort $(FORMAT_DIRS)
+	$(RUFF) format $(FORMAT_DIRS)
+	$(RUFF) check --fix $(LINT_DIRS)
 
 .PHONY: test
 test:
