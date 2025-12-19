@@ -23,18 +23,18 @@ from ._utils import Uuid as Uuid  # noqa: F401
 from ._utils import Version as Version  # noqa: F401
 
 
-def list(*, model: Optional[Model] = None) -> List[TrussedBase]:
+def list(use_ccid: bool = False, *, model: Optional[Model] = None) -> List[TrussedBase]:
     devices: List[TrussedBase] = []
 
     if model is None or model == Model.NK3:
         from nitrokey import nk3
 
-        devices.extend(nk3.list())
+        devices.extend(nk3.list(use_ccid))
 
     if model is None or model == Model.NKPK:
         from nitrokey import nkpk
 
-        devices.extend(nkpk.list())
+        devices.extend(nkpk.list(use_ccid))
 
     return devices
 
