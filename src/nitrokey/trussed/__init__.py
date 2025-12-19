@@ -5,6 +5,9 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
+import ctypes
+import sys
+from importlib.util import find_spec
 from typing import List, Optional
 
 from ._base import Model as Model  # noqa: F401
@@ -23,7 +26,26 @@ from ._utils import Uuid as Uuid  # noqa: F401
 from ._utils import Version as Version  # noqa: F401
 
 
-def list(use_ccid: bool = False, *, model: Optional[Model] = None) -> List[TrussedBase]:
+def should_default_ccid() -> bool:
+    if find_spec("smartcard") is None:
+        return False
+
+    if sys.platform != "win32" and sys.platform != "cygwin":
+        # Linux or MacOS don't need admin to access with CTAPHID
+        return False
+
+    try:
+        if ctypes.windll.shell32.IsUserAnAdmin():
+            return False
+        else:
+            return True
+    except Exception:
+        return False
+
+
+def list(
+    use_ccid: bool = should_default_ccid(), *, model: Optional[Model] = None
+) -> List[TrussedBase]:
     devices: List[TrussedBase] = []
 
     if model is None or model == Model.NK3:
