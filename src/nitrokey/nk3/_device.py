@@ -11,7 +11,11 @@ from fido2.hid import CtapHidDevice
 
 try:
     from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
+    from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
 except ModuleNotFoundError:
+
+    class ExclusiveTransmitCardConnection:  # type: ignore[no-redef]
+        pass
 
     class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
         pass
@@ -39,7 +43,10 @@ FIDO2_CERTS = [
 class NK3(TrussedDevice):
     """A Nitrokey 3 device running the firmware."""
 
-    def __init__(self, device: CtapHidDevice | ExclusiveConnectCardConnection) -> None:
+    def __init__(
+        self,
+        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
+    ) -> None:
         super().__init__(device, FIDO2_CERTS)
 
     @property
@@ -57,7 +64,10 @@ class NK3(TrussedDevice):
         return "Nitrokey 3"
 
     @classmethod
-    def from_device(cls, device: CtapHidDevice | ExclusiveConnectCardConnection) -> "NK3":
+    def from_device(
+        cls,
+        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
+    ) -> "NK3":
         return cls(device)
 
     @classmethod
@@ -67,5 +77,7 @@ class NK3(TrussedDevice):
         return cls._list_vid_pid(_VID_NITROKEY, _PID_NK3_DEVICE)
 
     @classmethod
-    def list_ccid(cls) -> List["NK3"]:
-        return cls._list_pcsc_atr(list(bytes.fromhex("3B8F01805D4E6974726F6B657900000000006A")))
+    def list_ccid(cls, exclusive: bool = True) -> List["NK3"]:
+        return cls._list_pcsc_atr(
+            list(bytes.fromhex("3B8F01805D4E6974726F6B657900000000006A")), exclusive
+        )

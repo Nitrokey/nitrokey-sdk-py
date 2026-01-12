@@ -12,7 +12,11 @@ from fido2.hid import CtapHidDevice
 
 try:
     from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
+    from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
 except ModuleNotFoundError:
+
+    class ExclusiveTransmitCardConnection:  # type: ignore[no-redef]
+        pass
 
     class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
         pass
@@ -53,7 +57,10 @@ _NKPK_DATA = ModelData(
 
 
 class NKPK(TrussedDevice):
-    def __init__(self, device: CtapHidDevice | ExclusiveConnectCardConnection) -> None:
+    def __init__(
+        self,
+        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
+    ) -> None:
         super().__init__(device, _FIDO2_CERTS)
 
     @property
@@ -69,7 +76,10 @@ class NKPK(TrussedDevice):
         return "Nitrokey Passkey"
 
     @classmethod
-    def from_device(cls, device: CtapHidDevice | ExclusiveConnectCardConnection) -> "NKPK":
+    def from_device(
+        cls,
+        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
+    ) -> "NKPK":
         return cls(device)
 
     @classmethod
@@ -77,9 +87,9 @@ class NKPK(TrussedDevice):
         return cls._list_vid_pid(_VID_NITROKEY, _PID_NKPK_DEVICE)
 
     @classmethod
-    def list_ccid(cls) -> List["NKPK"]:
+    def list_ccid(cls, exclusive: bool = True) -> List["NKPK"]:
         return cls._list_pcsc_atr(
-            builtins.list(bytes.fromhex("3B8F01805D4E6974726F6B657900000000006A"))
+            builtins.list(bytes.fromhex("3B8F01805D4E6974726F6B657900000000006A")), exclusive
         )
 
 
@@ -109,11 +119,11 @@ class NKPKBootloader(TrussedBootloaderNrf52):
         return _NKPK_DATA.nrf52_signature_keys
 
 
-def list(use_ccid: bool = False) -> List[Union[NKPK, NKPKBootloader]]:
+def list(use_ccid: bool = False, exclusive: bool = True) -> List[Union[NKPK, NKPKBootloader]]:
     devices: List[Union[NKPK, NKPKBootloader]] = []
     devices.extend(NKPKBootloader.list())
     if use_ccid:
-        devices.extend(NKPK.list_ccid())
+        devices.extend(NKPK.list_ccid(exclusive))
     else:
         devices.extend(NKPK.list_ctaphid())
     return devices

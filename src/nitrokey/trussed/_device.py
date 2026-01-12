@@ -17,7 +17,11 @@ from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
 try:
     from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
+    from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
 except ModuleNotFoundError:
+
+    class ExclusiveTransmitCardConnection:  # type: ignore[no-redef]
+        pass
 
     class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
         pass
@@ -58,7 +62,7 @@ class App(Enum):
 class TrussedDevice(TrussedBase):
     def __init__(
         self,
-        device: CtapHidDevice | ExclusiveConnectCardConnection,
+        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
         fido2_certs: Sequence[Fido2Certs],
     ) -> None:
         self._path = None
@@ -154,7 +158,7 @@ class TrussedDevice(TrussedBase):
     def _call_ccid(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
         assert not isinstance(self.device, CtapHidDevice)
         select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
-        _, sw1, sw2 = self.device.transmit(list(select))
+        tmpbytes, sw1, sw2 = self.device.transmit(list(select))
         while True:
             if sw1 == 0x61:
                 _, sw1, sw2 = self.device.transmit(
@@ -208,7 +212,10 @@ class TrussedDevice(TrussedBase):
 
     @classmethod
     @abstractmethod
-    def from_device(cls: type[T], device: CtapHidDevice | ExclusiveConnectCardConnection) -> T: ...
+    def from_device(
+        cls: type[T],
+        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
+    ) -> T: ...
 
     @classmethod
     def open(cls: type[T], path: str) -> Optional[T]:
@@ -244,15 +251,21 @@ class TrussedDevice(TrussedBase):
         return [cls.from_device(open_device(desc.path)) for desc in descriptors]
 
     @classmethod
-    def _list_pcsc_atr(cls: type[T], atr: List[int]) -> List[T]:
+    def _list_pcsc_atr(cls: type[T], atr: List[int], exclusive: bool) -> List[T]:
         try:
             from smartcard.Exceptions import NoCardException
-            from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
+            from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
             from smartcard.System import readers
 
             devices = []
             for r in readers():
-                connection = ExclusiveConnectCardConnection(r.createConnection())
+                raw_connection = r.createConnection()
+                connection: Union[ExclusiveConnectCardConnection, ExclusiveTransmitCardConnection]
+                if exclusive:
+                    connection = ExclusiveConnectCardConnection(raw_connection)
+                else:
+                    connection = ExclusiveTransmitCardConnection(raw_connection)
+
                 try:
                     connection.connect()
                 except NoCardException:

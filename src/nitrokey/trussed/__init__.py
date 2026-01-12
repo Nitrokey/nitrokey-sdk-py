@@ -44,19 +44,19 @@ def should_default_ccid() -> bool:
 
 
 def list(
-    use_ccid: bool = should_default_ccid(), *, model: Optional[Model] = None
+    use_ccid: bool = should_default_ccid(), *, model: Optional[Model] = None, exclusive: bool = True
 ) -> List[TrussedBase]:
     devices: List[TrussedBase] = []
 
     if model is None or model == Model.NK3:
         from nitrokey import nk3
 
-        devices.extend(nk3.list(use_ccid))
+        devices.extend(nk3.list(use_ccid, exclusive))
 
     if model is None or model == Model.NKPK:
         from nitrokey import nkpk
 
-        devices.extend(nkpk.list(use_ccid))
+        devices.extend(nkpk.list(use_ccid, exclusive))
 
     return devices
 
