@@ -17,6 +17,7 @@ from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
 try:
     from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
+    from smartcard.System import readers
 except ModuleNotFoundError:
 
     class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
@@ -154,7 +155,7 @@ class TrussedDevice(TrussedBase):
     def _call_ccid(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
         assert not isinstance(self.device, CtapHidDevice)
         select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
-        _, sw1, sw2 = self.device.transmit(list(select))
+        tmpbytes, sw1, sw2 = self.device.transmit(list(select))
         while True:
             if sw1 == 0x61:
                 _, sw1, sw2 = self.device.transmit(
@@ -210,6 +211,23 @@ class TrussedDevice(TrussedBase):
     @classmethod
     @abstractmethod
     def from_device(cls: type[T], device: CtapHidDevice | ExclusiveConnectCardConnection) -> T: ...
+
+    @classmethod
+    def clone(cls: type[T], device: T) -> Optional[T]:
+        """Clone the device, closing the previous connection first"""
+
+        device.close()
+        if isinstance(device.device, CtapHidDevice):
+            new_device = cls.open(_device_path_to_str(device.device.descriptor.path))
+            return new_device
+        else:
+            reader = device.device.getReader()
+            for r in readers():
+                if r.name == reader:
+                    connection = ExclusiveConnectCardConnection(r.createConnection())
+                    connection.connect()
+                    return cls.from_device(connection)
+            return None
 
     @classmethod
     def open(cls: type[T], path: str) -> Optional[T]:
