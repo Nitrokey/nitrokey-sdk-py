@@ -11,10 +11,10 @@ from typing import List, Optional, Sequence, Union
 from fido2.hid import CtapHidDevice
 
 try:
-    from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
+    from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
 except ModuleNotFoundError:
 
-    class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
+    class ExclusiveTransmitCardConnection:  # type: ignore[no-redef]
         pass
 
 
@@ -53,7 +53,7 @@ _NKPK_DATA = ModelData(
 
 
 class NKPK(TrussedDevice):
-    def __init__(self, device: CtapHidDevice | ExclusiveConnectCardConnection) -> None:
+    def __init__(self, device: CtapHidDevice | ExclusiveTransmitCardConnection) -> None:
         super().__init__(device, _FIDO2_CERTS)
 
     @property
@@ -69,7 +69,7 @@ class NKPK(TrussedDevice):
         return "Nitrokey Passkey"
 
     @classmethod
-    def from_device(cls, device: CtapHidDevice | ExclusiveConnectCardConnection) -> "NKPK":
+    def from_device(cls, device: CtapHidDevice | ExclusiveTransmitCardConnection) -> "NKPK":
         return cls(device)
 
     @classmethod

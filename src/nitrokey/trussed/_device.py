@@ -16,11 +16,11 @@ from typing import List, Optional, Sequence, TypeVar, Union
 from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
 try:
-    from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
+    from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
     from smartcard.System import readers
 except ModuleNotFoundError:
 
-    class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
+    class ExclusiveTransmitCardConnection:  # type: ignore[no-redef]
         pass
 
 
@@ -59,7 +59,7 @@ class App(Enum):
 class TrussedDevice(TrussedBase):
     def __init__(
         self,
-        device: CtapHidDevice | ExclusiveConnectCardConnection,
+        device: CtapHidDevice | ExclusiveTransmitCardConnection,
         fido2_certs: Sequence[Fido2Certs],
     ) -> None:
         self._path = None
@@ -210,7 +210,7 @@ class TrussedDevice(TrussedBase):
 
     @classmethod
     @abstractmethod
-    def from_device(cls: type[T], device: CtapHidDevice | ExclusiveConnectCardConnection) -> T: ...
+    def from_device(cls: type[T], device: CtapHidDevice | ExclusiveTransmitCardConnection) -> T: ...
 
     @classmethod
     def clone(cls: type[T], device: T) -> Optional[T]:
@@ -224,7 +224,7 @@ class TrussedDevice(TrussedBase):
             reader = device.device.getReader()
             for r in readers():
                 if r.name == reader:
-                    connection = ExclusiveConnectCardConnection(r.createConnection())
+                    connection = ExclusiveTransmitCardConnection(r.createConnection())
                     connection.connect()
                     return cls.from_device(connection)
             return None
@@ -266,12 +266,12 @@ class TrussedDevice(TrussedBase):
     def _list_pcsc_atr(cls: type[T], atr: List[int]) -> List[T]:
         try:
             from smartcard.Exceptions import NoCardException
-            from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
+            from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
             from smartcard.System import readers
 
             devices = []
             for r in readers():
-                connection = ExclusiveConnectCardConnection(r.createConnection())
+                connection = ExclusiveTransmitCardConnection(r.createConnection())
                 try:
                     connection.connect()
                 except NoCardException:
