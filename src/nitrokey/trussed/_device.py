@@ -16,11 +16,15 @@ from typing import List, Optional, Sequence, TypeVar, Union
 from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
 try:
+    from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
     from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
     from smartcard.System import readers
 except ModuleNotFoundError:
 
     class ExclusiveTransmitCardConnection:  # type: ignore[no-redef]
+        pass
+
+    class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
         pass
 
 
@@ -59,7 +63,7 @@ class App(Enum):
 class TrussedDevice(TrussedBase):
     def __init__(
         self,
-        device: CtapHidDevice | ExclusiveTransmitCardConnection,
+        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
         fido2_certs: Sequence[Fido2Certs],
     ) -> None:
         self._path = None
@@ -210,11 +214,16 @@ class TrussedDevice(TrussedBase):
 
     @classmethod
     @abstractmethod
-    def from_device(cls: type[T], device: CtapHidDevice | ExclusiveTransmitCardConnection) -> T: ...
+    def from_device(
+        cls: type[T],
+        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
+    ) -> T: ...
 
     @classmethod
-    def clone(cls: type[T], device: T) -> Optional[T]:
-        """Clone the device, closing the previous connection first"""
+    def clone(cls: type[T], device: T, exclusive: bool = True) -> Optional[T]:
+        """Clone the device, closing the previous connection first
+
+        The exclusive argument defines whether in the case of CCID communication, the connection should be exclusively connected, which is required for some multi-command operations"""
 
         device.close()
         if isinstance(device.device, CtapHidDevice):
@@ -224,7 +233,15 @@ class TrussedDevice(TrussedBase):
             reader = device.device.getReader()
             for r in readers():
                 if r.name == reader:
-                    connection = ExclusiveTransmitCardConnection(r.createConnection())
+                    raw_connection = r.createConnection()
+                    connection: Union[
+                        ExclusiveConnectCardConnection, ExclusiveTransmitCardConnection
+                    ]
+                    if exclusive:
+                        connection = ExclusiveConnectCardConnection(raw_connection)
+                    else:
+                        connection = ExclusiveTransmitCardConnection(raw_connection)
+
                     connection.connect()
                     return cls.from_device(connection)
             return None
@@ -263,7 +280,7 @@ class TrussedDevice(TrussedBase):
         return [cls.from_device(open_device(desc.path)) for desc in descriptors]
 
     @classmethod
-    def _list_pcsc_atr(cls: type[T], atr: List[int]) -> List[T]:
+    def _list_pcsc_atr(cls: type[T], atr: List[int], exclusive: bool) -> List[T]:
         try:
             from smartcard.Exceptions import NoCardException
             from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
@@ -271,7 +288,13 @@ class TrussedDevice(TrussedBase):
 
             devices = []
             for r in readers():
-                connection = ExclusiveTransmitCardConnection(r.createConnection())
+                raw_connection = r.createConnection()
+                connection: Union[ExclusiveConnectCardConnection, ExclusiveTransmitCardConnection]
+                if exclusive:
+                    connection = ExclusiveConnectCardConnection(raw_connection)
+                else:
+                    connection = ExclusiveTransmitCardConnection(raw_connection)
+
                 try:
                     connection.connect()
                 except NoCardException:
