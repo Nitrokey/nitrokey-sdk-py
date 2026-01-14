@@ -6,6 +6,16 @@ from typing import Optional
 from fido2 import cbor
 from fido2.ctap import CtapError
 
+try:
+    from smartcard.Exceptions import CardConnectionException
+except ImportError:
+
+    class CardConnectionException(Exception):  # type: ignore[no-redef]
+        pass
+
+
+from nitrokey.trussed._device import PcscError
+
 from . import App, TimeoutException, TrussedDevice, Uuid, Version
 
 RNG_LEN = 57
@@ -202,7 +212,7 @@ class AdminApp:
     ) -> Optional[bytes]:
         try:
             if command.is_legacy_command():
-                return self.device._call(
+                return self.device._call_admin_legacy(
                     command.value, command.name, response_len=response_len, data=data
                 )
             else:
@@ -236,7 +246,15 @@ class AdminApp:
                         raise TimeoutException() from e
                     else:
                         raise e
-        except OSError as e:
+                except PcscError as e:
+                    # The admin app returns ConditionsOfUseNotSatisfied if the user confirmation
+                    # request times out
+                    if e.sw1 == 0x69 and e.sw2 == 0x85:
+                        raise TimeoutException() from None
+                    else:
+                        raise e
+
+        except (OSError, CardConnectionException) as e:
             # OS error is expected as the device does not respond during the reboot
             self.device._logger.debug("ignoring OSError after reboot", exc_info=e)
         return True
