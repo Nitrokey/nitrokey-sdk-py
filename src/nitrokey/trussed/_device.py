@@ -253,7 +253,7 @@ class TrussedDevice(TrussedBase):
     @classmethod
     def _list_pcsc_atr(cls: type[T], atr: List[int], exclusive: bool) -> List[T]:
         try:
-            from smartcard.Exceptions import NoCardException
+            from smartcard.Exceptions import CardConnectionException, NoCardException
             from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
             from smartcard.System import readers
 
@@ -269,6 +269,8 @@ class TrussedDevice(TrussedBase):
                 try:
                     connection.connect()
                 except NoCardException:
+                    continue
+                except CardConnectionException:
                     continue
                 if atr != connection.getATR():
                     connection.disconnect()
