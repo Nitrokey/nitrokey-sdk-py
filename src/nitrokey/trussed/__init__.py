@@ -44,7 +44,7 @@ def should_default_ccid() -> bool:
 
 
 def list(
-    use_ccid: bool = should_default_ccid(), *, model: Optional[Model] = None, exclusive: bool = True
+    *, use_ccid: bool = False, model: Optional[Model] = None, exclusive: bool = True
 ) -> List[TrussedBase]:
     devices: List[TrussedBase] = []
 
