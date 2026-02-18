@@ -53,6 +53,8 @@ sphinx = "^7"
 types-protobuf = ">=5.26, <7"
 types-requests = "^2.16"
 typing-extensions = "^4.1"
+# fake-winreg does not work with wrapt v2 so we need to add an additional upper bound
+wrapt = "<2"
 
 [tool.uv]
 dev-dependencies = [
