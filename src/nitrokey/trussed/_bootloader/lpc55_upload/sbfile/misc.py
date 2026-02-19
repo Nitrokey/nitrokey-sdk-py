@@ -134,7 +134,7 @@ class BcdVersion3:
             return BcdVersion3.from_str(input_version)
         raise SPSDKError("unsupported format")
 
-    def __init__(self, major: int = 1, minor: int = 0, service: int = 0):
+    def __init__(self, major: int = 1, minor: int = 0, service: int = 0) -> None:
         """Initialize BcdVersion3.
 
         :param major: number in BCD format, 1-4 decimal digits

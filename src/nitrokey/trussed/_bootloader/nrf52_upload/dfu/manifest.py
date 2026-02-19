@@ -49,7 +49,7 @@ class FWMetaData:
         softdevice_req: Optional[Any] = None,
         sd_size: Optional[Any] = None,
         bl_size: Optional[Any] = None,
-    ):
+    ) -> None:
         """
         The FWMetaData data model.
 
@@ -77,7 +77,7 @@ class Firmware:
         bin_file: Optional[str] = None,
         dat_file: Optional[str] = None,
         info_read_only_metadata: Optional[dict[str, Any]] = None,
-    ):
+    ) -> None:
         """
         The firmware datamodel
 
@@ -101,7 +101,7 @@ class SoftdeviceBootloaderFirmware(Firmware):
         bin_file: Optional[str] = None,
         dat_file: Optional[str] = None,
         info_read_only_metadata: Optional[dict[str, Any]] = None,
-    ):
+    ) -> None:
         """
         The SoftdeviceBootloaderFirmware data model
 
@@ -120,7 +120,7 @@ class Manifest:
         bootloader: Optional[dict[str, Any]] = None,
         softdevice: Optional[dict[str, Any]] = None,
         softdevice_bootloader: Optional[dict[str, Any]] = None,
-    ):
+    ) -> None:
         """
         The Manifest data model.
 

@@ -300,7 +300,7 @@ class SecretsApp:
     _cache_status: Optional[SelectResponse]
     _metadata: dict[Any, Any]
 
-    def __init__(self, dev: NK3, logfn: Optional[LogFn] = None):
+    def __init__(self, dev: NK3, logfn: Optional[LogFn] = None) -> None:
         self._cache_status = None
         self.write_corpus_fn = None
         self.log = logging.getLogger("otpapp")

@@ -49,7 +49,7 @@ def size_fmt(value: Union[int, float], kibibyte: bool = True) -> str:
 class Version:
     """McuBoot current and target version type."""
 
-    def __init__(self, *args: Union[str, int], **kwargs: int):
+    def __init__(self, *args: Union[str, int], **kwargs: int) -> None:
         """Initialize the Version object.
 
         :raises McuBootError: Argument passed the not str not int

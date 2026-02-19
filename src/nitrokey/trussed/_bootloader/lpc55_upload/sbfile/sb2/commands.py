@@ -658,7 +658,7 @@ class CmdMemEnable(CmdBaseClass):
         """Set command's flag."""
         self._header.flags = value
 
-    def __init__(self, address: int, size: int, mem_id: int):
+    def __init__(self, address: int, size: int, mem_id: int) -> None:
         """Initialize CmdMemEnable.
 
         :param address: source address with configuration data for memory initialization
@@ -887,7 +887,7 @@ class CmdKeyStoreBackupRestore(CmdBaseClass):
         """
         raise NotImplementedError("Derived class has to implement this method.")
 
-    def __init__(self, address: int, controller_id: ExtMemId):
+    def __init__(self, address: int, controller_id: ExtMemId) -> None:
         """Initialize CmdKeyStoreBackupRestore.
 
         :param address: where to backup key-store or source for restoring key-store

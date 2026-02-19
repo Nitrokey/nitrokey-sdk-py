@@ -26,7 +26,7 @@ class SBV2xAdvancedParams:
     These parameters are used for the tests; for production, use can use default values (random keys + current time)
     """
 
-    def __init__(self, dek: bytes, mac: bytes, nonce: bytes, timestamp: datetime):
+    def __init__(self, dek: bytes, mac: bytes, nonce: bytes, timestamp: datetime) -> None:
         """Initialize SBV2xAdvancedParams.
 
         :param dek: DEK key

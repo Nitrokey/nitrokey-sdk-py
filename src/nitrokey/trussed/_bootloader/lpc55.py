@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 class TrussedBootloaderLpc55(TrussedBootloader):
     """A Nitrokey 3 device running the LPC55 bootloader."""
 
-    def __init__(self, device: UsbDevice):
+    def __init__(self, device: UsbDevice) -> None:
         self._validate_vid_pid(device.vid, device.pid)
         self._path = device.path
         self.device = McuBoot(MbootUSBInterface(device))

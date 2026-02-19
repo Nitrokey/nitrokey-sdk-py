@@ -29,7 +29,7 @@ class Counter:
         nonce: bytes,
         ctr_value: Optional[int] = None,
         ctr_byteorder_encoding: Endianness = Endianness.LITTLE,
-    ):
+    ) -> None:
         """Constructor.
 
         :param nonce: last four bytes are used as initial value for counter
