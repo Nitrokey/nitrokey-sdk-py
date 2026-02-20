@@ -106,6 +106,7 @@ To create a new release:
 6. Create a signed tag with the version number and a `v` prefix, for example `v0.2.4`, and push it to this repository.
 7. [Create a new release](https://github.com/Nitrokey/nitrokey-sdk-py/releases/new) for this tag and copy the relevant parts from the [changelog](./CHANGELOG.md) to the release description.
 8. Wait for the deployment action to run and approve the deployment to [PyPI](https://pypi.org/p/nitrokey).
+9. Update the `NITROKEY_SDK_PY_VERSION` and `NITROKEY_SDK_PY_CHECKSUM` variables in the `Makefile` of the [nitrokey-documentation](https://github.com/nitrokey/nitrokey-documentation) repository to update the documentation on docs.nitrokey.com.
 
 All commits to `main` are automatically deployed to [TestPyPI](https://test.pypi.org/p/nitrokey).
 It is also possible to publish release candidates (pre-releases) with a suffix like `-rc.1`.
