@@ -20,6 +20,8 @@ Accessing Trussed Devices
 
 .. autofunction:: nitrokey.trussed.open
 
+.. autofunction:: nitrokey.trussed.should_default_ccid
+
 Trussed Device Objects
 ----------------------
 

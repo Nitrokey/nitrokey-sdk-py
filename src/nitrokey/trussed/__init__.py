@@ -27,6 +27,9 @@ from ._utils import Version as Version  # noqa: F401
 
 
 def should_default_ccid() -> bool:
+    """Helper function to inform whether CCID should be the default communication protocol
+
+    Some features do not work over CCID, therefore it is only used when CTAPHID is not available, meaning on windows when not an administrator"""
     if find_spec("smartcard") is None:
         return False
 
