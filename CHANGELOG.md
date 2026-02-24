@@ -4,6 +4,12 @@
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.4.2...HEAD)
 
+## Unreleased
+
+- Enable communication with Nitrokey 3 and nitrokey passkeys over CCID instead of CtapHID
+  - `nitrokey.trussed.list`: add optional `use_ccid` argument
+  - `nitrokey.list`: add `should_default_ccid` function, that indicates when CCID should be prefered. CCID is more limited than CTAPHID, so this functions only returns `True` on Windows when not an administrator, as CTAPHID is not available in this case.
+
 ## [v0.4.2](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.4.2) (2025-11-26)
 
 - `nitrokey.trussed`: Add optional `model` argument for `list` and `open` functions.
