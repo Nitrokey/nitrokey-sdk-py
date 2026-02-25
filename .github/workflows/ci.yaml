@@ -228,6 +228,6 @@ jobs:
       - name: Lock dependencies
         run: uv lock && uv tree --locked
       - name: Check code static typing
-        run: make check-typing MYPY="uv run --locked mypy"
+        run: make check-typing MYPY="uv run --locked mypy" TY="uv run --locked ty"
       - name: Run test suite
         run: make test PYTHON="uv run --locked python"
