@@ -15,17 +15,7 @@ from typing import List, Optional, Sequence, TypeVar, Union
 
 from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
-try:
-    from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
-    from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
-except ModuleNotFoundError:
-
-    class ExclusiveTransmitCardConnection:  # type: ignore[no-redef]
-        pass
-
-    class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
-        pass
-
+from nitrokey._smartcard import ExclusiveConnectCardConnection, ExclusiveTransmitCardConnection
 
 from ._base import TrussedBase
 from ._utils import Fido2Certs, Iso7816Apdu, Uuid
@@ -57,6 +47,9 @@ class App(Enum):
             return bytes.fromhex("A00000084700000001")
         elif self == App.PROVISIONER:
             return bytes.fromhex("A00000084700000001")
+        else:
+            # TODO: use typing.assert_never
+            raise ValueError(self)
 
 
 class TrussedDevice(TrussedBase):
@@ -225,12 +218,12 @@ class TrussedDevice(TrussedBase):
             else:
                 device = open_device(path)
         except Exception:
-            logger.warn(f"No CTAPHID device at path {path}", exc_info=sys.exc_info())
+            logger.warning(f"No CTAPHID device at path {path}", exc_info=sys.exc_info())
             return None
         try:
             return cls.from_device(device)
         except ValueError:
-            logger.warn(f"No Nitrokey device at path {path}", exc_info=sys.exc_info())
+            logger.warning(f"No Nitrokey device at path {path}", exc_info=sys.exc_info())
             return None
 
     @classmethod

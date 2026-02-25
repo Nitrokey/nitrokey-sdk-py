@@ -136,7 +136,10 @@ def get_serial_serial_no(
 
     hkey_path = "SYSTEM\\CurrentControlSet\\Enum\\USB\\VID_{}&PID_{}".format(vendor_id, product_id)
     try:
-        vendor_product_hkey = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, hkey_path)
+        vendor_product_hkey = winreg.OpenKeyEx(
+            winreg.HKEY_LOCAL_MACHINE,  # ty: ignore[possibly-missing-attribute]
+            hkey_path,
+        )
     except EnvironmentError:
         return None
 
@@ -153,7 +156,10 @@ def get_serial_serial_no(
         )
 
         try:
-            device_hkey = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, hkey_path)
+            device_hkey = winreg.OpenKeyEx(
+                winreg.HKEY_LOCAL_MACHINE,  # ty: ignore[possibly-missing-attribute]
+                hkey_path,
+            )
         except EnvironmentError:
             continue
 
@@ -185,7 +191,10 @@ def get_serial_serial_no(
 def com_port_is_open(port: str) -> bool:
     hkey_path = "HARDWARE\\DEVICEMAP\\SERIALCOMM"
     try:
-        device_hkey = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, hkey_path)
+        device_hkey = winreg.OpenKeyEx(
+            winreg.HKEY_LOCAL_MACHINE,  # ty: ignore[possibly-missing-attribute]
+            hkey_path,
+        )
     except EnvironmentError:
         #  Unable to check enumerated serialports. Assume open.
         return True
@@ -211,7 +220,10 @@ def list_all_com_ports(vendor_id: str, product_id: str, serial_number: str) -> l
     )
 
     try:
-        device_hkey = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, hkey_path)
+        device_hkey = winreg.OpenKeyEx(
+            winreg.HKEY_LOCAL_MACHINE,  # ty: ignore[possibly-missing-attribute]
+            hkey_path,
+        )
     except EnvironmentError:
         return ports
 
@@ -227,7 +239,10 @@ def list_all_com_ports(vendor_id: str, product_id: str, serial_number: str) -> l
         vendor_id, product_id, serial_number
     )
     try:
-        device_hkey = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, hkey_path)
+        device_hkey = winreg.OpenKeyEx(
+            winreg.HKEY_LOCAL_MACHINE,  # ty: ignore[possibly-missing-attribute]
+            hkey_path,
+        )
         try:
             COM_port = winreg.QueryValueEx(device_hkey, "PortName")[0]
             ports.append(COM_port)
@@ -253,7 +268,10 @@ def list_all_com_ports(vendor_id: str, product_id: str, serial_number: str) -> l
         )
         iface_id += 1
         try:
-            device_hkey = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, hkey_path)
+            device_hkey = winreg.OpenKeyEx(
+                winreg.HKEY_LOCAL_MACHINE,  # ty: ignore[possibly-missing-attribute]
+                hkey_path,
+            )
         except EnvironmentError:
             break
 

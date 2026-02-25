@@ -186,12 +186,18 @@ class ConfigFieldType(Enum):
                     return False
             except ValueError:
                 return False
+        else:
+            # TODO: use typing.assert_never from Python 3.11
+            raise ValueError(self)
 
     def __str__(self) -> str:
         if self == ConfigFieldType.BOOL:
             return "Bool"
         elif self == ConfigFieldType.U8:
             return "u8"
+        else:
+            # TODO: use typing.assert_never from Python 3.11
+            raise ValueError(self)
 
 
 @dataclass
