@@ -88,7 +88,7 @@ python_version = "3.11"
 strict = true
 
 [tool.rstcheck]
-ignore_directives = ["autoclass", "autofunction", "automodule"]
+ignore_directives = ["autoclass", "autodata", "autofunction", "automodule"]
 ignore_substitutions = ["nitrokey_sdk_version"]
 
 [tool.ruff]

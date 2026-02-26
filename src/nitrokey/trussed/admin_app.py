@@ -7,17 +7,8 @@ from typing import Optional
 from fido2 import cbor
 from fido2.ctap import CtapError
 
-try:
-    from smartcard.Exceptions import CardConnectionException
-except ImportError:
-
-    class CardConnectionException(Exception):  # type: ignore[no-redef]
-        pass
-
-
-from nitrokey.trussed._device import PcscError
-
 from . import App, TimeoutException, TrussedDevice, Uuid, Version
+from ._exceptions import CcidErrorCode, ConnectionError, CtapErrorCode, DeviceError
 
 RNG_LEN = 57
 UUID_LEN = 16
@@ -226,11 +217,10 @@ class AdminApp:
                     response_len=response_len,
                     data=command.value.to_bytes(1, "big") + data,
                 )
-        except CtapError as e:
-            if e.code == CtapError.ERR.INVALID_COMMAND:
+        except DeviceError as e:
+            if e.is_code(CcidErrorCode(0x6D, 0x00), CtapErrorCode(CtapError.ERR.INVALID_COMMAND)):
                 return None
-            else:
-                raise
+            raise
 
     def is_locked(self) -> bool:
         response = self._call(AdminCommand.LOCKED, response_len=1)
@@ -244,24 +234,18 @@ class AdminApp:
             elif mode == BootMode.BOOTROM:
                 try:
                     self._call(AdminCommand.UPDATE)
-                except CtapError as e:
-                    # The admin app returns an Invalid Length error if the user confirmation
+                except DeviceError as e:
+                    # The admin app returns an Invalid Length (CTAPHID) error or
+                    # ConditionsOfUseNotSatisfied error (CCID) if the user confirmation
                     # request times out
-                    if e.code == CtapError.ERR.INVALID_LENGTH:
+                    if e.is_code(
+                        CcidErrorCode(0x69, 0x85), CtapErrorCode(CtapError.ERR.INVALID_LENGTH)
+                    ):
                         raise TimeoutException() from e
-                    else:
-                        raise e
-                except PcscError as e:
-                    # The admin app returns ConditionsOfUseNotSatisfied if the user confirmation
-                    # request times out
-                    if e.sw1 == 0x69 and e.sw2 == 0x85:
-                        raise TimeoutException() from None
-                    else:
-                        raise e
-
-        except (OSError, CardConnectionException) as e:
-            # OS error is expected as the device does not respond during the reboot
-            self.device._logger.debug("ignoring OSError after reboot", exc_info=e)
+                    raise e
+        except ConnectionError as e:
+            # Connection loss is expected as the device does not respond during the reboot
+            self.device._logger.debug("ignoring ConnectionError after reboot", exc_info=e)
         return True
 
     def rng(self) -> bytes:

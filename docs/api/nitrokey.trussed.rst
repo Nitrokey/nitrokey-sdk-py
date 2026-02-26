@@ -40,6 +40,19 @@ Trussed Device Objects
    :undoc-members:
    :show-inheritance:
 
+Error Codes
+-----------
+
+.. autoclass:: nitrokey.trussed.CcidErrorCode
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: nitrokey.trussed.CtapErrorCode
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Update Container Objects
 ------------------------
 
@@ -91,7 +104,22 @@ Trussed Exceptions
    :undoc-members:
    :show-inheritance:
 
+.. autoclass:: nitrokey.trussed.ConnectionError
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: nitrokey.trussed.DeviceError
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. autoclass:: nitrokey.trussed.TimeoutException
    :members:
    :undoc-members:
    :show-inheritance:
+
+Constants
+---------
+
+.. autodata:: nitrokey.trussed.HAS_CCID_SUPPORT

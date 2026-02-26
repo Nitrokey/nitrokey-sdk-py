@@ -6,6 +6,9 @@
 - Bump minimum Python version to 3.11.
 - `nitrokey.trussed`: Add the `inner_checksum` field to `FirmwareMetadata` with the checksum of the unsigned firmware image.
 - `nitrokey.trussed.nrfutils`: Add support for NRF52 package signing and upload
+- Wrap `OSError` in `ConnectionError` and `CtapError` in `DeviceError` for transport-agnostic error types.
+- Move connection handling into separate classes.
+- Rename `TrussedDevice.from_device` to `TrussedDevice.from_connection`.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.2...HEAD)
 
