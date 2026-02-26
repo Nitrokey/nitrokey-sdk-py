@@ -94,7 +94,7 @@ line-length = 100
 skip-magic-trailing-comma = true
 
 [tool.ruff.lint]
-select = ["ANN", "B", "C", "E", "F", "W", "I"]
+select = ["ANN", "B", "C", "E", "F", "W", "I", "RUF100"]
 ignore = ["ANN401", "E501"]
 
 [tool.ruff.lint.isort]
