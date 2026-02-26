@@ -10,20 +10,20 @@ import sys
 from importlib.util import find_spec
 from typing import List, Optional
 
-from ._base import Model as Model  # noqa: F401
-from ._base import TrussedBase as TrussedBase  # noqa: F401
-from ._bootloader import FirmwareContainer as FirmwareContainer  # noqa: F401
-from ._bootloader import FirmwareMetadata as FirmwareMetadata  # noqa: F401
-from ._bootloader import TrussedBootloader as TrussedBootloader  # noqa: F401
-from ._bootloader import Variant as Variant  # noqa: F401
-from ._bootloader import parse_firmware_image as parse_firmware_image  # noqa: F401
-from ._device import App as App  # noqa: F401
-from ._device import TrussedDevice as TrussedDevice  # noqa: F401
-from ._exceptions import TimeoutException as TimeoutException  # noqa: F401
-from ._exceptions import TrussedException as TrussedException  # noqa: F401
-from ._utils import Fido2Certs as Fido2Certs  # noqa: F401
-from ._utils import Uuid as Uuid  # noqa: F401
-from ._utils import Version as Version  # noqa: F401
+from ._base import Model as Model
+from ._base import TrussedBase as TrussedBase
+from ._bootloader import FirmwareContainer as FirmwareContainer
+from ._bootloader import FirmwareMetadata as FirmwareMetadata
+from ._bootloader import TrussedBootloader as TrussedBootloader
+from ._bootloader import Variant as Variant
+from ._bootloader import parse_firmware_image as parse_firmware_image
+from ._device import App as App
+from ._device import TrussedDevice as TrussedDevice
+from ._exceptions import TimeoutException as TimeoutException
+from ._exceptions import TrussedException as TrussedException
+from ._utils import Fido2Certs as Fido2Certs
+from ._utils import Uuid as Uuid
+from ._utils import Version as Version
 
 
 def should_default_ccid() -> bool:

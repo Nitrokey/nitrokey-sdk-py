@@ -10,8 +10,8 @@ from typing import List, Optional, Union
 from nitrokey.trussed._bootloader import ModelData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey
 
-from ._bootloader import NK3Bootloader as NK3Bootloader  # noqa: F401
-from ._device import NK3 as NK3  # noqa: F401
+from ._bootloader import NK3Bootloader as NK3Bootloader
+from ._device import NK3 as NK3
 
 _PID_NK3_DEVICE = 0x42B2
 _PID_NK3_LPC55_BOOTLOADER = 0x42DD
