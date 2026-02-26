@@ -7,22 +7,9 @@
 
 from typing import List
 
-from fido2.hid import CtapHidDevice
-
-try:
-    from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
-    from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
-except ModuleNotFoundError:
-
-    class ExclusiveTransmitCardConnection:  # type: ignore[no-redef]
-        pass
-
-    class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
-        pass
-
-
 from nitrokey import _VID_NITROKEY
 from nitrokey.trussed import Fido2Certs, Model, TrussedDevice, Version
+from nitrokey.trussed._connection import Connection
 
 FIDO2_CERTS = [
     Fido2Certs(
@@ -43,11 +30,8 @@ FIDO2_CERTS = [
 class NK3(TrussedDevice):
     """A Nitrokey 3 device running the firmware."""
 
-    def __init__(
-        self,
-        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
-    ) -> None:
-        super().__init__(device, FIDO2_CERTS)
+    def __init__(self, connection: Connection) -> None:
+        super().__init__(connection, FIDO2_CERTS)
 
     @property
     def model(self) -> Model:
@@ -64,11 +48,8 @@ class NK3(TrussedDevice):
         return "Nitrokey 3"
 
     @classmethod
-    def from_device(
-        cls,
-        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
-    ) -> "NK3":
-        return cls(device)
+    def from_device(cls, connection: Connection) -> "NK3":
+        return cls(connection)
 
     @classmethod
     def list_ctaphid(cls) -> List["NK3"]:
