@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  POETRY_SPEC: poetry >=2, <3
+  POETRY_SPEC: poetry >=2, <2.3
 
 jobs:
   check-package-version:
