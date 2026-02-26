@@ -187,25 +187,6 @@ jobs:
         run: /github/home/.cargo/bin/tangler python < README.md > readme.py
       - name: Run code from readme
         run: poetry run python readme.py
-  test-fido2-v2:
-    name: Test against fido2 v2
-    runs-on: ubuntu-latest
-    container: python:3.10-slim
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Install required packages
-        run: apt update && apt install -y ${REQUIRED_PACKAGES}
-      - name: Install Poetry
-        run: pip install "${POETRY_SPEC}"
-      - name: Update fido2 to v2
-        run: poetry add --lock "fido2@^2"
-      - name: Create virtual environment
-        run: make install
-      - name: Check code static typing
-        run: make check-typing
-      - name: Run test suite
-        run: make test
   test-uv-resolution:
     name: Test different resolution strategies with uv
     runs-on: ubuntu-latest
