@@ -7,7 +7,6 @@
 
 import ctypes
 import sys
-from importlib.util import find_spec
 from typing import List, Optional
 
 from ._base import Model as Model  # noqa: F401
@@ -17,7 +16,8 @@ from ._bootloader import FirmwareMetadata as FirmwareMetadata  # noqa: F401
 from ._bootloader import TrussedBootloader as TrussedBootloader  # noqa: F401
 from ._bootloader import Variant as Variant  # noqa: F401
 from ._bootloader import parse_firmware_image as parse_firmware_image  # noqa: F401
-from ._device import App as App  # noqa: F401
+from ._connection import HAS_CCID_SUPPORT as HAS_CCID_SUPPORT
+from ._connection import App as App  # noqa: F401
 from ._device import TrussedDevice as TrussedDevice  # noqa: F401
 from ._exceptions import TimeoutException as TimeoutException  # noqa: F401
 from ._exceptions import TrussedException as TrussedException  # noqa: F401
@@ -30,7 +30,8 @@ def should_default_ccid() -> bool:
     """Helper function to inform whether CCID should be the default communication protocol
 
     Some features do not work over CCID, therefore it is only used when CTAPHID is not available, meaning on windows when not an administrator"""
-    if find_spec("smartcard") is None:
+
+    if not HAS_CCID_SUPPORT:
         return False
 
     if sys.platform != "win32" and sys.platform != "cygwin":

@@ -8,25 +8,12 @@
 import builtins
 from typing import List, Optional, Sequence, Union
 
-from fido2.hid import CtapHidDevice
-
-try:
-    from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
-    from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
-except ModuleNotFoundError:
-
-    class ExclusiveTransmitCardConnection:  # type: ignore[no-redef]
-        pass
-
-    class ExclusiveConnectCardConnection:  # type: ignore[no-redef]
-        pass
-
-
 from nitrokey import _VID_NITROKEY
 from nitrokey.trussed import Fido2Certs, TrussedDevice, Version
 from nitrokey.trussed._base import Model
 from nitrokey.trussed._bootloader import ModelData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey, TrussedBootloaderNrf52
+from nitrokey.trussed._connection import Connection
 
 _PID_NKPK_DEVICE = 0x42F3
 _PID_NKPK_BOOTLOADER = 0x42F4
@@ -57,11 +44,8 @@ _NKPK_DATA = ModelData(
 
 
 class NKPK(TrussedDevice):
-    def __init__(
-        self,
-        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
-    ) -> None:
-        super().__init__(device, _FIDO2_CERTS)
+    def __init__(self, connection: Connection) -> None:
+        super().__init__(connection, _FIDO2_CERTS)
 
     @property
     def model(self) -> Model:
@@ -76,11 +60,8 @@ class NKPK(TrussedDevice):
         return "Nitrokey Passkey"
 
     @classmethod
-    def from_device(
-        cls,
-        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
-    ) -> "NKPK":
-        return cls(device)
+    def from_device(cls, connection: Connection) -> "NKPK":
+        return cls(connection)
 
     @classmethod
     def list_ctaphid(cls) -> List["NKPK"]:
