@@ -14,7 +14,7 @@ except ImportError:
         pass
 
 
-from nitrokey.trussed._device import PcscError
+from nitrokey.trussed._connection.ccid import PcscError
 
 from . import App, TimeoutException, TrussedDevice, Uuid, Version
 
