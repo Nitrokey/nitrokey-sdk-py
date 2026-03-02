@@ -7,6 +7,7 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
+from types import TracebackType
 from typing import Optional, TypeVar
 
 from nitrokey import _VID_NITROKEY
@@ -40,7 +41,12 @@ class TrussedBase(ABC):
     def __enter__(self: T) -> T:
         return self
 
-    def __exit__(self, exc_type: None, exc_val: None, exc_tb: None) -> None:
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         self.close()
 
     def _validate_vid_pid(self, vid: int, pid: int) -> None:

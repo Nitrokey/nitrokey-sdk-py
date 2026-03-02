@@ -6,7 +6,7 @@
 # copied, modified, or distributed except according to those terms.
 
 import builtins
-from typing import List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 from fido2.hid import CtapHidDevice
 
@@ -128,3 +128,10 @@ def open(path: str) -> Optional[Union[NKPK, NKPKBootloader]]:
     if bootloader_device:
         return bootloader_device
     return None
+
+
+if TYPE_CHECKING:
+    from contextlib import AbstractContextManager
+
+    _ACM_DEV: type[AbstractContextManager[NKPK]] = NKPK
+    _ACM_BL: type[AbstractContextManager[NKPKBootloader]] = NKPKBootloader

@@ -5,7 +5,7 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
-from typing import List, Optional, Sequence
+from typing import TYPE_CHECKING, List, Optional, Sequence
 
 from nitrokey import _VID_NITROKEY
 from nitrokey.trussed._base import Model
@@ -85,3 +85,10 @@ class NK3BootloaderNrf52(TrussedBootloaderNrf52, NK3Bootloader):
         from . import _NK3_DATA
 
         return _NK3_DATA.nrf52_signature_keys
+
+
+if TYPE_CHECKING:
+    from contextlib import AbstractContextManager
+
+    _ACM_NRF52: type[AbstractContextManager[NK3BootloaderNrf52]] = NK3BootloaderNrf52
+    _ACM_LPC55: type[AbstractContextManager[NK3BootloaderLpc55]] = NK3BootloaderLpc55
