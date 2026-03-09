@@ -10,7 +10,7 @@ TY ?= poetry run ty
 
 .PHONY: install
 install:
-	poetry sync --with dev
+	poetry sync --with dev $(POETRY_FLAGS)
 
 .PHONY: lock
 lock:
