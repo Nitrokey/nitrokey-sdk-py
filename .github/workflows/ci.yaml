@@ -7,6 +7,7 @@ on:
 
 env:
   REQUIRED_PACKAGES: make
+  REQUIRED_PACKAGES_ALL_EXTRAS: build-essential libpcsclite-dev
   POETRY_SPEC: poetry >=2, <2.3
 
 jobs:
@@ -44,15 +45,23 @@ jobs:
     name: Check static typing
     runs-on: ubuntu-latest
     container: python:3.10-slim
+    strategy:
+      matrix:
+        all-extras: [true, false]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
+      - name: Install required packages for all extras
+        run: apt install -y ${REQUIRED_PACKAGES_ALL_EXTRAS}
+        if: ${{ matrix.all-extras }}
       - name: Install Poetry
         run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
+        env:
+          POETRY_FLAGS: ${{ case(matrix.all-extras, '--all-extras', '') }}
       - name: Check code static typing
         run: make check-typing
   lint-poetry:
@@ -123,15 +132,23 @@ jobs:
     name: Run test suite
     runs-on: ubuntu-latest
     container: python:3.10-slim
+    strategy:
+      matrix:
+        all-extras: [true, false]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
+      - name: Install required packages for all extras
+        run: apt install -y ${REQUIRED_PACKAGES_ALL_EXTRAS}
+        if: ${{ matrix.all-extras }}
       - name: Install Poetry
         run: pip install "${POETRY_SPEC}"
       - name: Create virtual environment
         run: make install
+        env:
+          POETRY_FLAGS: ${{ case(matrix.all-extras, '--all-extras', '') }}
       - name: Run test suite
         run: make test
   test-update:
