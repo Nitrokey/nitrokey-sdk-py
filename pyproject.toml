@@ -48,7 +48,7 @@ pcsc = ["pyscard >=2, <3"]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-fake-winreg = "^1.6"
+fake-winreg = "^1.9"
 mypy = "^1.4"
 rstcheck = { version = "^6", extras = ["sphinx"] }
 ruff = "^0.14"
@@ -63,7 +63,7 @@ wrapt = "<2"
 [tool.uv]
 dev-dependencies = [
     # These dependencies are required for running the type checks.
-    "fake-winreg >=1.6, <2",
+    "fake-winreg >=1.9, <2",
     "mypy >=1.4, <2",
     "ty >=0.0.29, <0.0.30",
     "types-protobuf >=5.26, <7",

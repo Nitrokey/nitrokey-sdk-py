@@ -172,7 +172,7 @@ def get_serial_serial_no(
         winreg.CloseKey(device_hkey)
 
         if (
-            queried_container_id.lower() == str(wanted_GUID).lower()
+            queried_container_id.lower() == str(wanted_GUID).lower()  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
             and queried_address == device_address.value
         ):
             winreg.CloseKey(vendor_product_hkey)
@@ -230,7 +230,7 @@ def list_all_com_ports(vendor_id: str, product_id: str, serial_number: str) -> l
         device_hkey = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, hkey_path)
         try:
             COM_port = winreg.QueryValueEx(device_hkey, "PortName")[0]
-            ports.append(COM_port)
+            ports.append(COM_port)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         except EnvironmentError:
             #  No COM port for root device.
             pass
@@ -242,7 +242,7 @@ def list_all_com_ports(vendor_id: str, product_id: str, serial_number: str) -> l
     iface_id = 0
     while True:
         hkey_path = (
-            "SYSTEM\\CurrentControlSet\\Enum\\USB\\VID_{vid_val}&PID_{pid_val}&"
+            "SYSTEM\\CurrentControlSet\\Enum\\USB\\VID_{vid_val}&PID_{pid_val}&"  # type: ignore[str-bytes-safe]
             "MI_{mi_val}\\{parent_val}&{parent_iface}\\Device Parameters".format(
                 vid_val=vendor_id,
                 pid_val=product_id,
@@ -264,8 +264,8 @@ def list_all_com_ports(vendor_id: str, product_id: str, serial_number: str) -> l
             continue
 
         winreg.CloseKey(device_hkey)
-        if com_port_is_open(port_name):
-            ports.append(port_name)
+        if com_port_is_open(port_name):  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+            ports.append(port_name)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     return ports
 
