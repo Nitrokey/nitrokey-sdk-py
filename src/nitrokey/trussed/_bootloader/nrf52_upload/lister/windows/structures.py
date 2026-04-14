@@ -139,7 +139,7 @@ def ValidHandle(value: int, func: Any, arguments: Any) -> int:
     return value
 
 
-DeviceInfoData.size = DeviceInfoData.cbSize  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+DeviceInfoData.size = DeviceInfoData.cbSize  # type: ignore[attr-defined, misc]  # ty: ignore[unresolved-attribute]
 DeviceInfoData.dev_inst = DeviceInfoData.DevInst  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 DeviceInfoData.class_guid = DeviceInfoData.ClassGuid  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 # noinspection SpellCheckingInspection
