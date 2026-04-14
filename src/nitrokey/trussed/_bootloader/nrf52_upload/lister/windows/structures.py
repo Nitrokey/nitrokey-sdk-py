@@ -25,7 +25,7 @@ SOFTWARE.
 import ctypes
 from typing import Any, Optional, Union
 
-_ole32 = ctypes.WinDLL("ole32")  # type: ignore[attr-defined]
+_ole32 = ctypes.WinDLL("ole32")  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
 
 class _GUID(ctypes.Structure):
@@ -43,8 +43,8 @@ class _GUID(ctypes.Structure):
         if isinstance(guid, str):
             ret = _ole32.CLSIDFromString(ctypes.create_unicode_buffer(guid), ctypes.byref(self))
             if ret < 0:
-                err_no = ctypes.GetLastError()  # type: ignore[attr-defined]
-                raise WindowsError(err_no, ctypes.FormatError(err_no), guid)  # type: ignore[attr-defined,name-defined]
+                err_no = ctypes.GetLastError()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+                raise WindowsError(err_no, ctypes.FormatError(err_no), guid)  # type: ignore[attr-defined,name-defined]  # ty: ignore[unresolved-attribute, unresolved-reference]
         else:
             ctypes.memmove(ctypes.byref(self), bytes(guid), ctypes.sizeof(self))
 
@@ -52,8 +52,8 @@ class _GUID(ctypes.Structure):
         s = ctypes.c_wchar_p()
         ret = _ole32.StringFromCLSID(ctypes.byref(self), ctypes.byref(s))
         if ret < 0:
-            err_no = ctypes.GetLastError()  # type: ignore[attr-defined]
-            raise WindowsError(err_no, ctypes.FormatError(err_no))  # type: ignore[attr-defined,name-defined]
+            err_no = ctypes.GetLastError()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+            raise WindowsError(err_no, ctypes.FormatError(err_no))  # type: ignore[attr-defined,name-defined]  # ty: ignore[unresolved-attribute, unresolved-reference]
         value = str(s.value)
         _ole32.CoTaskMemFree(s)
         return value
@@ -135,13 +135,13 @@ class ctypesInternalGUID:
 
 def ValidHandle(value: int, func: Any, arguments: Any) -> int:
     if value == 0:
-        raise ctypes.WinError()  # type: ignore[attr-defined]
+        raise ctypes.WinError()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     return value
 
 
-DeviceInfoData.size = DeviceInfoData.cbSize  # type: ignore[attr-defined]
-DeviceInfoData.dev_inst = DeviceInfoData.DevInst  # type: ignore[attr-defined]
-DeviceInfoData.class_guid = DeviceInfoData.ClassGuid  # type: ignore[attr-defined]
+DeviceInfoData.size = DeviceInfoData.cbSize  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+DeviceInfoData.dev_inst = DeviceInfoData.DevInst  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+DeviceInfoData.class_guid = DeviceInfoData.ClassGuid  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 # noinspection SpellCheckingInspection
 SP_DEVINFO_DATA = DeviceInfoData
 # noinspection SpellCheckingInspection

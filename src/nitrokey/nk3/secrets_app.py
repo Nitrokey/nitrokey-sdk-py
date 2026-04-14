@@ -612,7 +612,7 @@ class SecretsApp:
             (0x02 if touch_button_required else 0x00) | (0x04 if pin_based_encryption else 0x00),
         ]
         structure = list(filter(lambda x: x is not None, structure))
-        return RawBytes(structure)  # type: ignore[arg-type]
+        return RawBytes(structure)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     def calculate(self, cred_id: bytes, challenge: Optional[int] = None) -> bytes:
         """
@@ -733,7 +733,7 @@ class SecretsApp:
         ]
         raw_res = self._send_receive(Instruction.Validate, structure=structure)
         resd: tlv8.EntryList = tlv8.decode(raw_res)
-        return resd.data  # type: ignore[return-value]
+        return resd.data  # type: ignore[return-value]  # ty: ignore[invalid-return-type]
 
     def select(self) -> SelectResponse:
         """

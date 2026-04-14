@@ -53,7 +53,7 @@ mypy = "^1.4"
 rstcheck = { version = "^6", extras = ["sphinx"] }
 ruff = "^0.14"
 sphinx = "^7"
-ty = "^0.0.16"
+ty = "^0.0.29"
 types-protobuf = ">=5.26, <7"
 types-requests = "^2.16"
 typing-extensions = "^4.1"
@@ -65,7 +65,7 @@ dev-dependencies = [
     # These dependencies are required for running the type checks.
     "fake-winreg >=1.6, <2",
     "mypy >=1.4, <2",
-    "ty >=0.0.16, <0.0.17",
+    "ty >=0.0.29, <0.0.30",
     "types-protobuf >=5.26, <7",
     "types-requests >=2.16, <3",
 
