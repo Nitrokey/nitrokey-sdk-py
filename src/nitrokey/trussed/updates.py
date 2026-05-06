@@ -421,7 +421,7 @@ class Updater:
     ) -> None:
         if container.sdk:
             try:
-                sdk_version = Version.from_str(importlib.metadata.version("nitrokey"))
+                sdk_version = Version.from_python_str(importlib.metadata.version("nitrokey"))
             except PackageNotFoundError as e:
                 raise self.ui.error("Failed to determine the Nitrokey SDK version") from e
 

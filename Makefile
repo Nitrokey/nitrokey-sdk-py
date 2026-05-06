@@ -52,6 +52,7 @@ fix:
 .PHONY: test
 test:
 	$(PYTHON) -m unittest -v
+	$(PYTHON) -m doctest src/nitrokey/trussed/_utils.py
 
 .PHONY: generate-protobuf
 generate-protobuf:

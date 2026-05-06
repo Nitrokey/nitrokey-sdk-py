@@ -222,6 +222,22 @@ class Version:
             raise ValueError(f"Missing v prefix for firmware version: {s}")
         return Version.from_str(s[1:])
 
+    @classmethod
+    def from_python_str(cls, s: str) -> "Version":
+        """
+        Parses a Python version number, e. g. 0.4.0 or 0.5.0rc1.
+
+        >>> Version.from_python_str("0.4.0")
+        Version(major=0, minor=4, patch=0, pre=None, build=None)
+        >>> Version.from_python_str("0.5.0rc1")
+        Version(major=0, minor=5, patch=0, pre='rc.1', build=None)
+        """
+        if "rc" in s:
+            head, tail = s.split("rc", 1)
+            v = Version.from_str(head)
+            return Version(major=v.major, minor=v.minor, patch=v.patch, pre=f"rc.{tail}")
+        return Version.from_str(s)
+
 
 @dataclass
 class Fido2Certs:

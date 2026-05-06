@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix SDK version check during firmware update to correctly handle release candidates
 - Remove RPM specification file, associated Makefile target, and CI jobs.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.1...HEAD)
