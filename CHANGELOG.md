@@ -2,10 +2,16 @@
 
 ## Unreleased
 
+-
+
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.2...HEAD)
+
+## [v0.5.0-rc.2](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.0-rc.2) (2026-05-06)
+
 - Fix SDK version check during firmware update to correctly handle release candidates
 - Remove RPM specification file, associated Makefile target, and CI jobs.
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.1...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.1...v0.5.0-rc.2)
 
 ## [v0.5.0-rc.1](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.0-rc.1) (2026-03-03)
 
