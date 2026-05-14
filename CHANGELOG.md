@@ -10,6 +10,7 @@
 
 - Fix SDK version check during firmware update to correctly handle release candidates
 - Remove RPM specification file, associated Makefile target, and CI jobs.
+- Add support for `protobuf` v7.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.1...v0.5.0-rc.2)
 

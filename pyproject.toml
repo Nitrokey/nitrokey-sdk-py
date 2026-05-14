@@ -29,7 +29,7 @@ dependencies = [
     "hidapi >=0.14, <0.15",
 
     # nrf52
-    "protobuf >=5.26, <7",
+    "protobuf >=5.26, <8",
     "pyserial >=3.5, <4",
 ]
 
@@ -54,7 +54,7 @@ rstcheck = { version = "^6", extras = ["sphinx"] }
 ruff = "^0.14"
 sphinx = "^7"
 ty = "^0.0.29"
-types-protobuf = ">=5.26, <7"
+types-protobuf = ">=5.26, <8"
 types-requests = "^2.16"
 typing-extensions = "^4.1"
 # fake-winreg does not work with wrapt v2 so we need to add an additional upper bound
@@ -66,7 +66,7 @@ dev-dependencies = [
     "fake-winreg >=1.9, <2",
     "mypy >=1.20, <2",
     "ty >=0.0.29, <0.0.30",
-    "types-protobuf >=5.26, <7",
+    "types-protobuf >=5.26, <8",
     "types-requests >=2.16, <3",
 
     # These additional lower bounds are required for --resolution lowest.
