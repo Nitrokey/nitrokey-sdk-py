@@ -232,11 +232,12 @@ class PasswordToCXF:
 
     @classmethod
     def cxf_to_items(cls, payload: CXFPayload) -> List[Item]:
-        return (
-            payload.accounts[0].items
-            if payload and payload.accounts and payload.accounts[0]
-            else []
-        )
+        if not payload.accounts:
+            return []
+        item_list = []
+        for account in payload.accounts:
+            item_list.extend(account.items)
+        return item_list
 
     @classmethod
     def item_to_password(cls, item: Item) -> Tuple[ListItem | None, PasswordSafeEntry]:
