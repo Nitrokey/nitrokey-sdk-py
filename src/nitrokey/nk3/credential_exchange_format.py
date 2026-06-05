@@ -5,7 +5,7 @@ import uuid
 from base64 import urlsafe_b64encode
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Any, List, Optional, Tuple, TypeAlias
+from typing import Any, List, Optional, Tuple, TypeAlias, cast
 
 from nitrokey.nk3.secrets_app_dataclasses import (
     Algorithm,
@@ -318,14 +318,14 @@ class PasswordToCXF:
                     Item(
                         id=item_d["id"],
                         title=item_d["title"],
-                        credentials=credentials,
+                        credentials=cast(List[Credential], credentials),
                         creationAt=item_d.get("creationAt"),
                         modifiedAt=item_d.get("modifiedAt"),
                         subtitle=item_d.get("subtitle"),
                         favorite=item_d.get("favorite"),
                         scope=item_d.get("scope"),
                         tags=item_d.get("tags"),
-                        extensions=extensions if extensions else [],
+                        extensions=cast(List[Extension], extensions)
                     )
                 )
             accounts.append(

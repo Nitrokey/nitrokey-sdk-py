@@ -375,7 +375,7 @@ class SecretsApp:
                     PasswordToCXF.password_to_item(item, self.get_credential(item.label))
                 )
             except SecretsAppException as e:
-                self.logfn(f"Exception in getting credential {item.label} -> {e}")
+                self.logfn(f"Exception in getting credential -> {e}")
                 continue  # Incorrect pin will still retrieve credentials not protected by pin
         return export_list
 
@@ -405,7 +405,7 @@ class SecretsApp:
 
     def bulk_import_cxf(self, payload: CXFPayload | dict[str, Any], password: str = "") -> None:
         if isinstance(payload, dict):
-            cxfpayload = PasswordToCXF.cxf_from_dict(cast(dict[str, Any], payload))
+            cxfpayload = PasswordToCXF.cxf_from_dict(cast(dict[str, Any], payload)) # type: ignore[redundant-cast] #If I keep that cast, mypy throws error, if I remove, ty does
         else:
             cxfpayload = payload
 
