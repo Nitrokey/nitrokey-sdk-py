@@ -5,7 +5,7 @@ import uuid
 from base64 import urlsafe_b64encode
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import List, Optional, Tuple, TypeAlias, Any
+from typing import Any, List, Optional, Tuple, TypeAlias
 
 from nitrokey.nk3.secrets_app_dataclasses import (
     Algorithm,
@@ -240,7 +240,7 @@ class PasswordToCXF:
 
     @classmethod
     def item_to_password(cls, item: Item) -> Tuple[ListItem | None, PasswordSafeEntry]:
-        credid = item.title.encode() if item.title else b""
+        # credid = item.title.encode() if item.title else b""
         cred = item.credentials[0] if item.credentials else None
         cred_basic_auth = cls.basic_auth_from_dict(asdict(cred)) if cred else None
         login = cred_basic_auth.username.value.encode() if cred_basic_auth else b""
@@ -251,7 +251,9 @@ class PasswordToCXF:
         )
         metadata = extension.metadata.encode() if extension else b""
         list_item_serializable = (
-            extension.item if extension and type(extension) == NitrokeyPasswordExtension else None
+            extension.item
+            if extension and isinstance(extension, NitrokeyPasswordExtension)
+            else None
         )
         list_item = list_item_serializable.to_list_item() if list_item_serializable else None
         pse = PasswordSafeEntry(login, password, metadata)
@@ -311,9 +313,6 @@ class PasswordToCXF:
                     credentials.append(cls.basic_auth_from_dict(cred))
                 extensions = []
                 for ext in item_d.get("extensions", []):
-                    list_item_d = ext.get("item", {})
-                    props = list_item_d.get("properties", {})
-                    label = list_item_d.get("label", "")
                     extensions.append(cls.nitrokey_password_extension_from_dict(ext))
                 items.append(
                     Item(

@@ -9,6 +9,7 @@ import dataclasses
 import hmac
 import logging
 import typing
+from dataclasses import asdict
 from enum import Enum, IntEnum
 from hashlib import pbkdf2_hmac
 from secrets import token_bytes
@@ -19,21 +20,157 @@ import tlv8
 from semver.version import Version
 
 from nitrokey.nk3 import NK3
+from nitrokey.nk3.credential_exchange_format import CXFPayload, Item, PasswordToCXF
+from nitrokey.nk3.secrets_app_dataclasses import (
+    Algorithm,
+    Kind,
+    ListItem,
+    ListItemProperties,
+    PasswordSafeEntry,
+    Tag,
+)
 from nitrokey.trussed import App
-
-# from nitrokey.nk3.credential_exchange_format import Account, Item, ItemType, BasicAuth, EditableField, NitrokeyPasswordExtension, _get_random_id
-import nitrokey.nk3.credential_exchange_format as CXF
-from nitrokey.nk3.credential_exchange_format import PasswordToCXF, CXFPayload, Item
-import time
-from nitrokey.nk3.secrets_app_dataclasses import *
-import traceback
-
-
-import json
-from dataclasses import asdict
 
 LogFn = Callable[[str], Any]
 WriteCorpusFn = Callable[[typing.Union["Instruction", "CCIDInstruction"], bytes], Any]
+
+
+@dataclasses.dataclass
+class RawBytes:
+    data: list[int]
+
+
+@dataclasses.dataclass
+class SelectResponse:
+    # Application version
+    version: Optional[bytes]
+    # PIN attempt counter
+    pin_attempt_counter: Optional[int]
+    # Salt, challenge-response auth only, tag Name
+    salt: Optional[bytes]
+    # Challenge field, challenge-response auth only
+    challenge: Optional[bytes]
+    # Selected algorithm, challenge-response auth only
+    algorithm: Optional[bytes]
+    # Serial number of the device
+    serial_number: Optional[bytes]
+
+    def version_str(self) -> str:
+        if self.version:
+            return f"{self.version[0]}.{self.version[1]}.{self.version[2]}"
+        else:
+            return "unknown"
+
+    def __str__(self) -> str:
+        return (
+            "Nitrokey Secrets\n"
+            f"\tVersion: {self.version_str()}\n"
+            f"\tPIN attempt counter: {self.pin_attempt_counter}\n"
+            f"\tSerial number: {self.serial_number.hex() if self.serial_number else 'None'}"
+        )
+
+
+class SecretsAppExceptionID(IntEnum):
+    MoreDataAvailable = 0x61FF
+    VerificationFailed = 0x6300
+    UnspecifiedNonpersistentExecutionError = 0x6400
+    UnspecifiedPersistentExecutionError = 0x6500
+    WrongLength = 0x6700
+    LogicalChannelNotSupported = 0x6881
+    SecureMessagingNotSupported = 0x6882
+    CommandChainingNotSupported = 0x6884
+    SecurityStatusNotSatisfied = 0x6982
+    ConditionsOfUseNotSatisfied = 0x6985
+    OperationBlocked = 0x6983
+    IncorrectDataParameter = 0x6A80
+    FunctionNotSupported = 0x6A81
+    NotFound = 0x6A82
+    NotEnoughMemory = 0x6A84
+    IncorrectP1OrP2Parameter = 0x6A86
+    KeyReferenceNotFound = 0x6A88
+    InstructionNotSupportedOrInvalid = 0x6D00
+    ClassNotSupported = 0x6E00
+    UnspecifiedCheckingError = 0x6F00
+    Success = 0x9000
+
+
+class SecretsAppHealthCheckException(Exception):
+    pass
+
+
+@dataclasses.dataclass
+class SecretsAppException(Exception):
+    code: str
+    context: str
+
+    def to_id(self) -> SecretsAppExceptionID:
+        return SecretsAppExceptionID(int(self.code, 16))
+
+    def to_string(self) -> str:
+        d = {
+            "61FF": "MoreDataAvailable",
+            "6300": "VerificationFailed",
+            "6400": "UnspecifiedNonpersistentExecutionError",
+            "6500": "UnspecifiedPersistentExecutionError",
+            "6700": "WrongLength",
+            "6881": "LogicalChannelNotSupported",
+            "6882": "SecureMessagingNotSupported",
+            "6884": "CommandChainingNotSupported",
+            "6982": "SecurityStatusNotSatisfied",
+            "6985": "ConditionsOfUseNotSatisfied",
+            "6983": "OperationBlocked",
+            "6a80": "IncorrectDataParameter",
+            "6a81": "FunctionNotSupported",
+            "6a82": "NotFound",
+            "6a84": "NotEnoughMemory",
+            "6a86": "IncorrectP1OrP2Parameter",
+            "6a88": "KeyReferenceNotFound",
+            "6d00": "InstructionNotSupportedOrInvalid",
+            "6e00": "ClassNotSupported",
+            "6f00": "UnspecifiedCheckingError",
+            "9000": "Success",
+        }
+        return d.get(self.code, "Unknown SW code")
+
+    def __repr__(self) -> str:
+        return f"SecretsAppException(code={self.code}/{self.to_string()})"
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
+
+class CCIDInstruction(Enum):
+    Select = 0xA4
+
+
+class Instruction(Enum):
+    Put = 0x1
+    Delete = 0x2
+    SetCode = 0x3
+    Reset = 0x4
+    List = 0xA1
+    Calculate = 0xA2
+    Validate = 0xA3
+    CalculateAll = 0xA4  # 0xA4 is Select as well # Unused
+    SendRemaining = 0xA5
+    VerifyCode = 0xB1
+    # Place extending commands in 0xBx space
+    VerifyPIN = 0xB2
+    ChangePIN = 0xB3
+    SetPIN = 0xB4
+    GetCredential = 0xB5
+    UpdateCredential = 0xB7
+
+
+STRING_TO_KIND = {
+    "HOTP": Kind.Hotp,
+    "TOTP": Kind.Totp,
+    "HOTP_REVERSE": Kind.HotpReverse,
+    "HMAC": Kind.Hmac,
+}
+
+
+ALGORITHM_TO_KIND = {"SHA1": Algorithm.Sha1, "SHA256": Algorithm.Sha256}
 
 
 class SecretsApp:
@@ -237,7 +374,8 @@ class SecretsApp:
                 export_list.append(
                     PasswordToCXF.password_to_item(item, self.get_credential(item.label))
                 )
-            except Exception as e:
+            except SecretsAppException as e:
+                self.logfn(f"Exception in getting credential {item.label} -> {e}")
                 continue  # Incorrect pin will still retrieve credentials not protected by pin
         return export_list
 
@@ -277,7 +415,8 @@ class SecretsApp:
             try:
                 if list_item and pse:
                     self.import_single_credential(list_item, pse, password)
-            except:
+            except SecretsAppException as e:
+                self.logfn(f"Exception in getting credential  -> {e}")
                 continue  # Import others
 
     def rename_credential(self, cred_id: bytes, new_name: bytes) -> None:
