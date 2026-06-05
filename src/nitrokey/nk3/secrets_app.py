@@ -239,9 +239,11 @@ class SecretsApp:
         return export_list
 
 
-    def get_export_cxf(self, password: str = '') -> CXFPayload:
+    def get_export_cxf(self, password: str = '', as_dict: bool = False) -> CXFPayload | dict[str, Any]:
         items_list=self.get_export_list(password)
-        return PasswordToCXF.items_to_cxf(items=items_list)
+        cxfpayload= PasswordToCXF.items_to_cxf(items=items_list)
+        return asdict(cxfpayload) if as_dict else cxfpayload
+
         
     def import_single_credential(self, item: ListItem, pse: PasswordSafeEntry, password: str = '') -> None:
         if item.properties.secret_encryption and password:
@@ -258,12 +260,17 @@ class SecretsApp:
             metadata = pse.metadata,
         )
 
-    def bulk_import_cxf(self, payload: CXFPayload, password: str = '') -> None:
-        items_list=PasswordToCXF.cxf_to_items(payload)
+    def bulk_import_cxf(self, payload: CXFPayload | dict[str, Any], password: str = '') -> None:
+        if type(payload) == dict:
+            cxfpayload = PasswordToCXF.cxf_from_dict(payload)
+        elif type(payload) == CXFPayload:
+            cxfpayload = payload
+        items_list=PasswordToCXF.cxf_to_items(cxfpayload)
         for item in items_list:
             list_item, pse = PasswordToCXF.item_to_password(item)
             try:
-                self.import_single_credential(list_item, pse, password)
+                if list_item and pse:
+                    self.import_single_credential(list_item, pse, password)
             except:
                 continue #Import others
 
