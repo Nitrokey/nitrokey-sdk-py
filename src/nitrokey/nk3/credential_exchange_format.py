@@ -246,7 +246,8 @@ class PasswordToCXF:
         login = cred_basic_auth.username.value.encode() if cred_basic_auth else b""
         password = cred_basic_auth.password.value.encode() if cred_basic_auth else b""
         extension = item.extensions[0] if item and item.extensions else None
-        metadata = extension.metadata.encode() if extension and type(extension) == NitrokeyPasswordExtension else b""
+        extension = cls.nitrokey_password_extension_from_dict(asdict(extension)) if extension else None
+        metadata = extension.metadata.encode() if extension else b""
         list_item_serializable = extension.item if extension and type(extension) == NitrokeyPasswordExtension else None
         list_item = list_item_serializable.to_list_item() if list_item_serializable else None
         pse = PasswordSafeEntry(login, password, metadata)

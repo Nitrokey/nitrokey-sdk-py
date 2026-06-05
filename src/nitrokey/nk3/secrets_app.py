@@ -13,7 +13,7 @@ from enum import Enum, IntEnum
 from hashlib import pbkdf2_hmac
 from secrets import token_bytes
 from struct import pack
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union, cast
 
 import tlv8
 from semver.version import Version
@@ -261,10 +261,12 @@ class SecretsApp:
         )
 
     def bulk_import_cxf(self, payload: CXFPayload | dict[str, Any], password: str = '') -> None:
-        if type(payload) == dict:
-            cxfpayload = PasswordToCXF.cxf_from_dict(payload)
-        elif type(payload) == CXFPayload:
-            cxfpayload = payload
+
+        if isinstance(payload, dict):
+            cxfpayload = PasswordToCXF.cxf_from_dict(cast(dict[str, Any], payload))
+        else:
+            cxfpayload = payload            
+
         items_list=PasswordToCXF.cxf_to_items(cxfpayload)
         for item in items_list:
             list_item, pse = PasswordToCXF.item_to_password(item)
