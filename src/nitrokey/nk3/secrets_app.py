@@ -20,7 +20,8 @@ from semver.version import Version
 
 from nitrokey.nk3 import NK3
 from nitrokey.trussed import App
-#from nitrokey.nk3.credential_exchange_format import Account, Item, ItemType, BasicAuth, EditableField, NitrokeyPasswordExtension, _get_random_id
+
+# from nitrokey.nk3.credential_exchange_format import Account, Item, ItemType, BasicAuth, EditableField, NitrokeyPasswordExtension, _get_random_id
 import nitrokey.nk3.credential_exchange_format as CXF
 from nitrokey.nk3.credential_exchange_format import PasswordToCXF, CXFPayload, Item
 import time
@@ -227,54 +228,57 @@ class SecretsApp:
         p.properties = p.properties.hex().encode() if p.properties else None
         return p
 
-    def get_export_list(self, password: str ='') -> List[Item]:
-        export_list=[]
+    def get_export_list(self, password: str = "") -> List[Item]:
+        export_list = []
         for item in self.list_with_properties():
             try:
                 if password:
                     self.verify_pin_raw(password)
-                export_list.append(PasswordToCXF.password_to_item(item, self.get_credential(item.label)))
+                export_list.append(
+                    PasswordToCXF.password_to_item(item, self.get_credential(item.label))
+                )
             except Exception as e:
-                continue #Incorrect pin will still retrieve credentials not protected by pin
+                continue  # Incorrect pin will still retrieve credentials not protected by pin
         return export_list
 
-
-    def get_export_cxf(self, password: str = '', as_dict: bool = False) -> CXFPayload | dict[str, Any]:
-        items_list=self.get_export_list(password)
-        cxfpayload= PasswordToCXF.items_to_cxf(items=items_list)
+    def get_export_cxf(
+        self, password: str = "", as_dict: bool = False
+    ) -> CXFPayload | dict[str, Any]:
+        items_list = self.get_export_list(password)
+        cxfpayload = PasswordToCXF.items_to_cxf(items=items_list)
         return asdict(cxfpayload) if as_dict else cxfpayload
 
-        
-    def import_single_credential(self, item: ListItem, pse: PasswordSafeEntry, password: str = '') -> None:
+    def import_single_credential(
+        self, item: ListItem, pse: PasswordSafeEntry, password: str = ""
+    ) -> None:
         if item.properties.secret_encryption and password:
             self.verify_pin_raw(password)
 
-        self.register(       
-            credid = item.label,
-            kind = item.kind,
-            algo = item.algorithm,
-            touch_button_required = item.properties.touch_required,
-            pin_based_encryption = item.properties.secret_encryption,
-            login = pse.login,
-            password = pse.password,
-            metadata = pse.metadata,
+        self.register(
+            credid=item.label,
+            kind=item.kind,
+            algo=item.algorithm,
+            touch_button_required=item.properties.touch_required,
+            pin_based_encryption=item.properties.secret_encryption,
+            login=pse.login,
+            password=pse.password,
+            metadata=pse.metadata,
         )
 
-    def bulk_import_cxf(self, payload: CXFPayload | dict[str, Any], password: str = '') -> None:
-
+    def bulk_import_cxf(self, payload: CXFPayload | dict[str, Any], password: str = "") -> None:
         if isinstance(payload, dict):
             cxfpayload = PasswordToCXF.cxf_from_dict(cast(dict[str, Any], payload))
         else:
-            cxfpayload = payload            
+            cxfpayload = payload
 
-        items_list=PasswordToCXF.cxf_to_items(cxfpayload)
+        items_list = PasswordToCXF.cxf_to_items(cxfpayload)
         for item in items_list:
             list_item, pse = PasswordToCXF.item_to_password(item)
             try:
                 if list_item and pse:
                     self.import_single_credential(list_item, pse, password)
             except:
-                continue #Import others
+                continue  # Import others
 
     def rename_credential(self, cred_id: bytes, new_name: bytes) -> None:
         """

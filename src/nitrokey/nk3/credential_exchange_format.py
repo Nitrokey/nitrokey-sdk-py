@@ -246,9 +246,13 @@ class PasswordToCXF:
         login = cred_basic_auth.username.value.encode() if cred_basic_auth else b""
         password = cred_basic_auth.password.value.encode() if cred_basic_auth else b""
         extension = item.extensions[0] if item and item.extensions else None
-        extension = cls.nitrokey_password_extension_from_dict(asdict(extension)) if extension else None
+        extension = (
+            cls.nitrokey_password_extension_from_dict(asdict(extension)) if extension else None
+        )
         metadata = extension.metadata.encode() if extension else b""
-        list_item_serializable = extension.item if extension and type(extension) == NitrokeyPasswordExtension else None
+        list_item_serializable = (
+            extension.item if extension and type(extension) == NitrokeyPasswordExtension else None
+        )
         list_item = list_item_serializable.to_list_item() if list_item_serializable else None
         pse = PasswordSafeEntry(login, password, metadata)
         return list_item, pse
@@ -275,7 +279,6 @@ class PasswordToCXF:
             ),
         )
 
-
     @classmethod
     def nitrokey_password_extension_from_dict(cls, d: dict[str, Any]) -> NitrokeyPasswordExtension:
         item_d = d.get("item", {})
@@ -289,7 +292,9 @@ class PasswordToCXF:
                 label=label,
                 properties=ListItemProperties(
                     touch_required=props.get("touch_required", True),
-                    secret_encryption=props.get("secret_encryption", True), #Fail safe. Will be encrypted in case of errors
+                    secret_encryption=props.get(
+                        "secret_encryption", True
+                    ),  # Fail safe. Will be encrypted in case of errors
                     pws_data_exist=props.get("pws_data_exist", False),
                 ),
             ),
@@ -303,17 +308,13 @@ class PasswordToCXF:
             for item_d in acc.get("items", []):
                 credentials = []
                 for cred in item_d.get("credentials", []):
-                    credentials.append(
-                        cls.basic_auth_from_dict(cred)
-                    )
+                    credentials.append(cls.basic_auth_from_dict(cred))
                 extensions = []
                 for ext in item_d.get("extensions", []):
                     list_item_d = ext.get("item", {})
                     props = list_item_d.get("properties", {})
                     label = list_item_d.get("label", "")
-                    extensions.append(
-                        cls.nitrokey_password_extension_from_dict(ext)
-                    )
+                    extensions.append(cls.nitrokey_password_extension_from_dict(ext))
                 items.append(
                     Item(
                         id=item_d["id"],
@@ -325,7 +326,7 @@ class PasswordToCXF:
                         favorite=item_d.get("favorite"),
                         scope=item_d.get("scope"),
                         tags=item_d.get("tags"),
-                        extensions=extensions if extensions else [], 
+                        extensions=extensions if extensions else [],
                     )
                 )
             accounts.append(

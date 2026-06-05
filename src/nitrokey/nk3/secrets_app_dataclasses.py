@@ -52,6 +52,7 @@ class ListItem:
             f"\t{self.properties}"
         )
 
+
 @dataclasses.dataclass
 class ListItemSerializable:
     kind: "Kind"
@@ -59,21 +60,21 @@ class ListItemSerializable:
     label: str
     properties: ListItemProperties
 
-    @classmethod 
+    @classmethod
     def from_list_item(cls, list_item: ListItem) -> "ListItemSerializable":
         return ListItemSerializable(
-            kind = list_item.kind,
-            algorithm = list_item.algorithm,
-            label = list_item.label.decode("utf-8", errors="ignore"),
-            properties = list_item.properties,
+            kind=list_item.kind,
+            algorithm=list_item.algorithm,
+            label=list_item.label.decode("utf-8", errors="ignore"),
+            properties=list_item.properties,
         )
-        
+
     def to_list_item(self) -> ListItem:
         return ListItem(
-            kind = self.kind,
-            algorithm = self.algorithm,
-            label = self.label.encode(),
-            properties = self.properties
+            kind=self.kind,
+            algorithm=self.algorithm,
+            label=self.label.encode(),
+            properties=self.properties,
         )
 
 
