@@ -325,7 +325,7 @@ class PasswordToCXF:
                         favorite=item_d.get("favorite"),
                         scope=item_d.get("scope"),
                         tags=item_d.get("tags"),
-                        extensions=cast(List[Extension], extensions)
+                        extensions=cast(List[Extension], extensions),
                     )
                 )
             accounts.append(

@@ -405,7 +405,7 @@ class SecretsApp:
 
     def bulk_import_cxf(self, payload: CXFPayload | dict[str, Any], password: str = "") -> None:
         if isinstance(payload, dict):
-            cxfpayload = PasswordToCXF.cxf_from_dict(cast(dict[str, Any], payload)) # type: ignore[redundant-cast] #If I keep that cast, mypy throws error, if I remove, ty does
+            cxfpayload = PasswordToCXF.cxf_from_dict(cast(dict[str, Any], payload))  # type: ignore[redundant-cast] #If I keep that cast, mypy throws error, if I remove, ty does
         else:
             cxfpayload = payload
 
