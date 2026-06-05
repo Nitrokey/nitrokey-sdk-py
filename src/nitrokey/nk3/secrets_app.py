@@ -365,26 +365,32 @@ class SecretsApp:
         p.properties = p.properties.hex().encode() if p.properties else None
         return p
 
-    def get_export_list(self, password: str = "") -> List[Item]:
+    def get_export_list(self, password: str = "") -> Tuple[List[Item], List[bytes]]:
         export_list = []
+        non_exportable_credentials = []
         for item in self.list_with_properties():
             try:
                 if password:
                     self.verify_pin_raw(password)
-                export_list.append(
-                    PasswordToCXF.password_to_item(item, self.get_credential(item.label))
-                )
+
+                if item.kind != Kind.NotSet:
+                    non_exportable_credentials.append(item.label)
+                else:
+                    export_list.append(
+                        PasswordToCXF.password_to_item(item, self.get_credential(item.label))
+                    )
             except SecretsAppException as e:
                 self.logfn(f"Exception in getting credential -> {e}")
+                non_exportable_credentials.append(item.label)
                 continue  # Incorrect pin will still retrieve credentials not protected by pin
-        return export_list
+        return export_list, non_exportable_credentials
 
     def get_export_cxf(
         self, password: str = "", as_dict: bool = False
-    ) -> CXFPayload | dict[str, Any]:
-        items_list = self.get_export_list(password)
+    ) -> Tuple[CXFPayload | dict[str, Any], List[bytes]]:
+        items_list, non_exportable_credentials = self.get_export_list(password)
         cxfpayload = PasswordToCXF.items_to_cxf(items=items_list)
-        return asdict(cxfpayload) if as_dict else cxfpayload
+        return asdict(cxfpayload) if as_dict else cxfpayload, non_exportable_credentials
 
     def import_single_credential(
         self, item: ListItem, pse: PasswordSafeEntry, password: str = ""
