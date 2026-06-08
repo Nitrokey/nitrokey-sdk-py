@@ -311,10 +311,12 @@ class PasswordToCXF:
             for item_d in acc.get("items", []):
                 credentials = []
                 for cred in item_d.get("credentials", []):
-                    credentials.append(cls.basic_auth_from_dict(cred))
+                    if "password" in cred and cred["password"]:  # Check whether cred is BasicAuth
+                        credentials.append(cls.basic_auth_from_dict(cred))
                 extensions = []
                 for ext in item_d.get("extensions", []):
-                    extensions.append(cls.nitrokey_password_extension_from_dict(ext))
+                    if ext["name"] == "Nitrokey Password Extension":
+                        extensions.append(cls.nitrokey_password_extension_from_dict(ext))
                 items.append(
                     Item(
                         id=item_d["id"],
