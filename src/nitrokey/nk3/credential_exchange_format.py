@@ -5,16 +5,10 @@ import uuid
 from base64 import urlsafe_b64encode
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Any, List, Optional, Tuple, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, TypeAlias, cast
 
-from nitrokey.nk3.secrets_app_dataclasses import (
-    Algorithm,
-    Kind,
-    ListItem,
-    ListItemProperties,
-    ListItemSerializable,
-    PasswordSafeEntry,
-)
+if TYPE_CHECKING:
+    from nitrokey.nk3.secrets_app import ListItem, ListItemSerializable, PasswordSafeEntry
 
 # https://fidoalliance.org/specs/cx/cxf-v1.0-ps-errata-20260309.html
 
@@ -175,7 +169,7 @@ class BasicAuth(Credential):
 @dataclass
 class NitrokeyPasswordExtension(Extension):
     metadata: tstr
-    item: ListItemSerializable
+    item: "ListItemSerializable"
 
     name: tstr = field(init=False, default="Nitrokey Password Extension")
 
@@ -185,7 +179,9 @@ CXFPayload: TypeAlias = Header
 
 class PasswordToCXF:
     @classmethod
-    def password_to_item(cls, item: ListItem, pse: PasswordSafeEntry) -> Item:
+    def password_to_item(cls, item: "ListItem", pse: "PasswordSafeEntry") -> Item:
+        from .secrets_app import ListItemSerializable
+
         return Item(
             id=_get_random_id(),
             title=item.label.decode("utf-8", errors="ignore"),
@@ -240,7 +236,9 @@ class PasswordToCXF:
         return item_list
 
     @classmethod
-    def item_to_password(cls, item: Item) -> Tuple[ListItem | None, PasswordSafeEntry]:
+    def item_to_password(cls, item: Item) -> Tuple["ListItem" | None, "PasswordSafeEntry"]:
+        from .secrets_app import PasswordSafeEntry
+
         # credid = item.title.encode() if item.title else b""
         cred = item.credentials[0] if item.credentials else None
         cred_basic_auth = cls.basic_auth_from_dict(asdict(cred)) if cred else None
@@ -284,6 +282,8 @@ class PasswordToCXF:
 
     @classmethod
     def nitrokey_password_extension_from_dict(cls, d: dict[str, Any]) -> NitrokeyPasswordExtension:
+        from .secrets_app import Algorithm, Kind, ListItemProperties, ListItemSerializable
+
         item_d = d.get("item", {})
         props = item_d.get("properties", {})
         label = item_d.get("label", "")
