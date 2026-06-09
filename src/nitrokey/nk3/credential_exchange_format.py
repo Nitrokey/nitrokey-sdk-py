@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import json
+import secrets
+import string
 import time
 import uuid
-from base64 import urlsafe_b64encode
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, TypeAlias, cast
+
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 if TYPE_CHECKING:
     from nitrokey.nk3.secrets_app import ListItem, ListItemSerializable, PasswordSafeEntry
@@ -164,6 +171,9 @@ class BasicAuth(Credential):
 
     def __post_init__(self) -> None:
         self.type = CredentialType.BASIC_AUTH
+
+
+# TODO other credentials like Credit Card and Passkey Dict
 
 
 @dataclass
@@ -352,4 +362,50 @@ class PasswordToCXF:
         )
 
 
-# TODO other credentials like Credit Card and Passkey Dict
+@dataclass
+class EncryptCXF:
+    passphrase: str = ""
+    key: bytes = b""
+
+    @classmethod
+    def generate_passphrase(cls) -> str:
+        alphabet = string.ascii_uppercase + string.digits
+        chars = [secrets.choice(alphabet) for _ in range(25)]
+        groups = [chars[i : i + 5] for i in range(0, 25, 5)]
+        return "-".join("".join(g) for g in groups)
+
+    @classmethod
+    def use_passphrase(cls, passphrase: str) -> EncryptCXF:
+        passphrase = passphrase.strip().replace("-", "").upper()
+        hkdf = HKDF(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=b"\x99\xf2L\x93\xe1\xe3%6\x0f}\x17\x0f",  # Random but constant salt
+            info=None,
+        )
+        key = hkdf.derive(passphrase.encode())
+        return EncryptCXF(passphrase=passphrase, key=key)
+
+    def encrypt_cxf(self, cxfpayload: CXFPayload | dict[str, Any]) -> dict[str, Any]:
+        payload = cxfpayload if isinstance(cxfpayload, dict) else asdict(cxfpayload)
+        payload_bytes = json.dumps(payload).encode()
+        aesgcm = AESGCM(self.key)
+        nonce = secrets.token_bytes(12)
+        ct = aesgcm.encrypt(nonce, payload_bytes, None)
+        encrypted = ct + nonce
+        return {
+            "EncryptedCXF": urlsafe_b64encode(encrypted).decode()
+        }  # Returning as dict to maintain downstream compatibility
+
+    def decrypt_cxf(
+        self, encrypted_cxf: dict[str, Any], as_dict: bool = False
+    ) -> CXFPayload | dict[str, Any]:
+        encrypted_b64 = encrypted_cxf.get("EncryptedCXF", "")
+        encrypted = urlsafe_b64decode(encrypted_b64)
+        nonce = encrypted[-12:]
+        ct = encrypted[:-12]
+        aesgcm = AESGCM(self.key)
+        payload_bytes = aesgcm.decrypt(nonce, ct, None)
+        payload = json.loads(payload_bytes)
+        cxfpayload = PasswordToCXF.cxf_from_dict(payload)
+        return asdict(cxfpayload) if as_dict else cxfpayload

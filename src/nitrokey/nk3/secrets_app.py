@@ -20,7 +20,7 @@ import tlv8
 from semver.version import Version
 
 from nitrokey.nk3 import NK3
-from nitrokey.nk3.credential_exchange_format import CXFPayload, Item, PasswordToCXF
+from nitrokey.nk3.credential_exchange_format import CXFPayload, EncryptCXF, Item, PasswordToCXF
 from nitrokey.trussed import App
 
 LogFn = Callable[[str], Any]
@@ -533,6 +533,15 @@ class SecretsApp:
         cxfpayload = PasswordToCXF.items_to_cxf(items=items_list)
         return asdict(cxfpayload) if as_dict else cxfpayload, non_exportable_credentials
 
+    def get_export_cxf_encrypted(
+        self, password: str = ""
+    ) -> Tuple[dict[str, Any], str, List[bytes]]:
+        cxf, non_exportable = self.get_export_cxf(password)
+        passphrase = EncryptCXF.generate_passphrase()
+        encryptcxf = EncryptCXF.use_passphrase(passphrase)
+        encrypted = encryptcxf.encrypt_cxf(cxf)
+        return encrypted, passphrase, non_exportable
+
     def import_single_credential(
         self, item: ListItem, pse: PasswordSafeEntry, password: str = ""
     ) -> None:
@@ -565,6 +574,13 @@ class SecretsApp:
             except SecretsAppException as e:
                 self.logfn(f"Exception in getting credential  -> {e}")
                 continue  # Import others
+
+    def bulk_import_cxf_encrypted(
+        self, encrypted: dict[str, Any], passphrase: str, password: str
+    ) -> None:
+        encryptcxf = EncryptCXF.use_passphrase(passphrase)
+        payload = encryptcxf.decrypt_cxf(encrypted)
+        self.bulk_import_cxf(payload, password)
 
     def rename_credential(self, cred_id: bytes, new_name: bytes) -> None:
         """

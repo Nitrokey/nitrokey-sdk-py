@@ -2,10 +2,11 @@ import random
 import string
 import unittest
 from dataclasses import asdict
-from typing import List, Tuple
+from typing import Any, List, Tuple, cast
 
 from nitrokey.nk3.credential_exchange_format import (
     BasicAuth,
+    EncryptCXF,
     Item,
     NitrokeyPasswordExtension,
     PasswordToCXF,
@@ -108,7 +109,9 @@ class TestPasswordExport(unittest.TestCase):
     def test_conversions(self) -> None:
         N = 10  # Number of tests
 
-        # Will perform ListItem, PSE lists 1 --> Item List 1 --> CXF Payload 1 --> CXF Payload Dict --> CXF Payload 2 --> Item List 2 --> ListItem, PSE lists 2
+        # Will perform:
+        # Keygen
+        # ListItem, PSE lists 1 --> Item List 1 --> CXF Payload 1 --> CXF Payload Dict 1 --> Encrypted --> CXF Payload Dict 2 --> CXF Payload 2 --> Item List 2 --> ListItem, PSE lists 2
         # Will check the following equalities:
         #   ListItem, PSE lists 1 <--> Item List 1
         #   ListItem, PSE lists 1 <--> Item List 2
@@ -116,10 +119,16 @@ class TestPasswordExport(unittest.TestCase):
         #   ListItem, PSE lists 2 <--> Item List 2
 
         list_item_list_1, pse_list_1 = generate_test_cases(N)
+        passphrase = EncryptCXF.generate_passphrase()
+        # print("Passphrase test ", passphrase)
+        encryptcxf = EncryptCXF.use_passphrase(passphrase)
+
         item_list_1 = list_convert_pse_to_item(list_item_list_1, pse_list_1)
         cxf_payload_1 = PasswordToCXF.items_to_cxf(item_list_1)
-        cxf_payload_dict = asdict(cxf_payload_1)
-        cxf_payload_2 = PasswordToCXF.cxf_from_dict(cxf_payload_dict)
+        cxf_payload_dict_1 = asdict(cxf_payload_1)
+        encrypted_cxf = encryptcxf.encrypt_cxf(cxf_payload_dict_1)
+        cxf_payload_dict_2 = encryptcxf.decrypt_cxf(encrypted_cxf, as_dict=True)
+        cxf_payload_2 = PasswordToCXF.cxf_from_dict(cast(dict[str, Any], cxf_payload_dict_2))
         item_list_2 = PasswordToCXF.cxf_to_items(cxf_payload_2)
         list_item_list_2, pse_list_2 = list_convert_item_to_pse(item_list_2)
 
