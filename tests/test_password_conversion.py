@@ -9,7 +9,6 @@ from nitrokey.nk3.credential_exchange_format import (
     CXFPayload,
     Item,
     NitrokeyPasswordExtension,
-    PasswordToCXF,
 )
 from nitrokey.nk3.secrets_app import (
     Algorithm,
@@ -87,7 +86,7 @@ def list_convert_pse_to_item(
     assert len(pse_list) == len(list_item_list)
     item_list = []
     for i in range(len(list_item_list)):
-        item_list.append(PasswordToCXF.password_to_item(list_item_list[i], pse_list[i]))
+        item_list.append(Item.from_password_safe_entry(list_item_list[i], pse_list[i]))
     return item_list
 
 
@@ -123,7 +122,7 @@ class TestPasswordExport(unittest.TestCase):
         key = CXFKey.from_passphrase(passphrase)
 
         item_list_1 = list_convert_pse_to_item(list_item_list_1, pse_list_1)
-        cxf_payload_1 = PasswordToCXF.items_to_cxf(item_list_1)
+        cxf_payload_1 = CXFPayload.from_items(item_list_1)
         encrypted_cxf = cxf_payload_1.encrypt(key)
         cxf_payload_2 = CXFPayload.decrypt(encrypted_cxf, key)
         item_list_2 = cxf_payload_2.items()

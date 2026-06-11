@@ -13,13 +13,13 @@ from enum import Enum, IntEnum
 from hashlib import pbkdf2_hmac
 from secrets import token_bytes
 from struct import pack
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 
 import tlv8
 from semver.version import Version
 
 from nitrokey.nk3 import NK3
-from nitrokey.nk3.credential_exchange_format import CXFKey, CXFPayload, Item, PasswordToCXF
+from nitrokey.nk3.credential_exchange_format import CXFPayload
 from nitrokey.trussed import App
 
 LogFn = Callable[[str], Any]
@@ -505,8 +505,8 @@ class SecretsApp:
         p.properties = p.properties.hex().encode() if p.properties else None
         return p
 
-    def get_export_list(self, password: str = "") -> Tuple[List[Item], List[bytes]]:
-        export_list = []
+    def export_cxf(self, password: str = "") -> Tuple[CXFPayload, List[bytes]]:
+        items = []
         non_exportable_credentials = []
         for item in self.list_with_properties():
             try:
@@ -516,30 +516,16 @@ class SecretsApp:
                 if item.kind != Kind.NotSet:
                     non_exportable_credentials.append(item.label)
                 else:
-                    export_list.append(
-                        PasswordToCXF.password_to_item(item, self.get_credential(item.label))
-                    )
+                    items.append((item, self.get_credential(item.label)))
             except SecretsAppException as e:
                 self.logfn(f"Exception in getting credential -> {e}")
                 non_exportable_credentials.append(item.label)
                 continue  # Incorrect pin will still retrieve credentials not protected by pin
-        return export_list, non_exportable_credentials
 
-    def get_export_cxf(self, password: str = "") -> Tuple[CXFPayload, List[bytes]]:
-        items_list, non_exportable_credentials = self.get_export_list(password)
-        cxfpayload = PasswordToCXF.items_to_cxf(items=items_list)
+        cxfpayload = CXFPayload.from_password_safe_entries(items)
         return cxfpayload, non_exportable_credentials
 
-    def get_export_cxf_encrypted(
-        self, password: str = ""
-    ) -> Tuple[dict[str, Any], str, List[bytes]]:
-        cxf, non_exportable = self.get_export_cxf(password)
-        passphrase = CXFKey.generate_passphrase()
-        key = CXFKey.from_passphrase(passphrase)
-        encrypted = cxf.encrypt(key)
-        return encrypted, passphrase, non_exportable
-
-    def import_single_credential(
+    def _import_single_credential(
         self, item: ListItem, pse: PasswordSafeEntry, password: str = ""
     ) -> None:
         if item.properties.secret_encryption and password:
@@ -556,27 +542,15 @@ class SecretsApp:
             metadata=pse.metadata,
         )
 
-    def bulk_import_cxf(self, payload: CXFPayload | dict[str, Any], password: str = "") -> None:
-        if isinstance(payload, dict):
-            cxfpayload = PasswordToCXF.cxf_from_dict(cast(dict[str, Any], payload))  # type: ignore[redundant-cast] #If I keep that cast, mypy throws error, if I remove, ty does
-        else:
-            cxfpayload = payload
-
+    def import_cxf(self, cxfpayload: CXFPayload, password: str = "") -> None:
         for item in cxfpayload.items():
             list_item, pse = item.to_password_safe_entry()
             try:
                 if list_item and pse:
-                    self.import_single_credential(list_item, pse, password)
+                    self._import_single_credential(list_item, pse, password)
             except SecretsAppException as e:
                 self.logfn(f"Exception in getting credential  -> {e}")
                 continue  # Import others
-
-    def bulk_import_cxf_encrypted(
-        self, encrypted: dict[str, Any], passphrase: str, password: str
-    ) -> None:
-        key = CXFKey.from_passphrase(passphrase)
-        payload = CXFPayload.decrypt(encrypted, key)
-        self.bulk_import_cxf(payload, password)
 
     def rename_credential(self, cred_id: bytes, new_name: bytes) -> None:
         """

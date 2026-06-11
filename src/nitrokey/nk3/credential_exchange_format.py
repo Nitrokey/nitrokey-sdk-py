@@ -94,6 +94,13 @@ class Header:
         )
 
     @staticmethod
+    def from_password_safe_entries(
+        entries: list[tuple["ListItem", "PasswordSafeEntry"]],
+    ) -> "Header":
+        items = [Item.from_password_safe_entry(item, pse) for (item, pse) in entries]
+        return Header.from_items(items)
+
+    @staticmethod
     def from_items(items: List[Item]) -> "Header":
         return Header(
             version=Version(1, 0),  # v1.0
@@ -376,17 +383,3 @@ class CXFKey:
         )
         key = hkdf.derive(passphrase.encode())
         return CXFKey(_key=key)
-
-
-class PasswordToCXF:
-    @classmethod
-    def password_to_item(cls, item: "ListItem", pse: "PasswordSafeEntry") -> Item:
-        return Item.from_password_safe_entry(item, pse)
-
-    @classmethod
-    def items_to_cxf(cls, items: List[Item]) -> CXFPayload:
-        return Header.from_items(items)
-
-    @classmethod
-    def cxf_from_dict(cls, d: dict[str, Any]) -> CXFPayload:
-        return Header.from_dict(d)
