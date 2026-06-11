@@ -565,9 +565,8 @@ class SecretsApp:
         else:
             cxfpayload = payload
 
-        items_list = PasswordToCXF.cxf_to_items(cxfpayload)
-        for item in items_list:
-            list_item, pse = PasswordToCXF.item_to_password(item)
+        for item in cxfpayload.items():
+            list_item, pse = item.to_password_safe_entry()
             try:
                 if list_item and pse:
                     self.import_single_credential(list_item, pse, password)

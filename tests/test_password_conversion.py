@@ -97,7 +97,7 @@ def list_convert_item_to_pse(
     list_item_list = []
     pse_list = []
     for item in item_list:
-        list_item, pse = PasswordToCXF.item_to_password(item)
+        list_item, pse = item.to_password_safe_entry()
         if not list_item or not pse:
             continue
         list_item_list.append(list_item)
@@ -129,7 +129,7 @@ class TestPasswordExport(unittest.TestCase):
         encrypted_cxf = encryptcxf.encrypt_cxf(cxf_payload_dict_1)
         cxf_payload_dict_2 = encryptcxf.decrypt_cxf(encrypted_cxf, as_dict=True)
         cxf_payload_2 = PasswordToCXF.cxf_from_dict(cast(dict[str, Any], cxf_payload_dict_2))
-        item_list_2 = PasswordToCXF.cxf_to_items(cxf_payload_2)
+        item_list_2 = cxf_payload_2.items()
         list_item_list_2, pse_list_2 = list_convert_item_to_pse(item_list_2)
 
         test_list_equality(item_list_1, list_item_list_1, pse_list_1)

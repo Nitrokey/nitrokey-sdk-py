@@ -46,6 +46,46 @@ class Header:
     timestamp: uint
     accounts: List[Account]
 
+    def items(self) -> List[Item]:
+        if not self.accounts:
+            return []
+        items = []
+        for account in self.accounts:
+            items.extend(account.items)
+        return items
+
+    @staticmethod
+    def from_dict(d: dict[str, Any]) -> Header:
+        accounts = []
+        for acc in d.get("accounts", []):
+            accounts.append(Account.from_dict(acc))
+        version = d.get("version", {})
+        return Header(
+            version=Version(version.get("major", 1), version.get("minor", 0)),
+            exporterRpId=d.get("exporterRpId", ""),
+            exporterDisplayName=d.get("exporterDisplayName", ""),
+            timestamp=d.get("timestamp", 0),
+            accounts=accounts,
+        )
+
+    @staticmethod
+    def from_items(items: List[Item]) -> "Header":
+        return Header(
+            version=Version(1, 0),  # v1.0
+            exporterRpId="nitrokey",  # We are exporting from an authenticator device. Are we supposed to have a RP ID in this case?
+            exporterDisplayName="Nitrokey NK3",
+            accounts=[
+                Account(
+                    id=_get_random_id(),
+                    username="",  # We are assuming one NK3 is held by one person only
+                    email="",
+                    collections=[],
+                    items=items,
+                )
+            ],
+            timestamp=uint(time.time()),
+        )
+
 
 @dataclass
 class Account:
@@ -56,6 +96,21 @@ class Account:
     items: List[Item]
     fullName: Optional[tstr] = None
     extensions: Optional[List[Extension]] = None
+
+    @staticmethod
+    def from_dict(acc: dict[str, Any]) -> "Account":
+        items = []
+        for item_d in acc.get("items", []):
+            items.append(Item.from_dict(item_d))
+        return Account(
+            id=acc["id"],
+            username=acc.get("username", ""),
+            email=acc.get("email", ""),
+            collections=acc.get("collections", []),
+            items=items,
+            fullName=acc.get("fullName"),
+            extensions=acc.get("extensions"),
+        )
 
 
 @dataclass
@@ -89,6 +144,79 @@ class Item:
     scope: Optional[CredentialScope] = None
     tags: Optional[List[tstr]] = None
     extensions: Optional[List[Extension]] = None
+
+    def to_password_safe_entry(self) -> Tuple["ListItem" | None, "PasswordSafeEntry"]:
+        from .secrets_app import PasswordSafeEntry
+
+        # credid = item.title.encode() if item.title else b""
+        cred = self.credentials[0] if self.credentials else None
+        cred_basic_auth = BasicAuth.from_dict(asdict(cred)) if cred else None
+        login = cred_basic_auth.username.value.encode() if cred_basic_auth else b""
+        password = cred_basic_auth.password.value.encode() if cred_basic_auth else b""
+        extension = self.extensions[0] if self.extensions else None
+        extension = NitrokeyPasswordExtension.from_dict(asdict(extension)) if extension else None
+        metadata = extension.metadata.encode() if extension else b""
+        list_item_serializable = (
+            extension.item
+            if extension and isinstance(extension, NitrokeyPasswordExtension)
+            else None
+        )
+        list_item = list_item_serializable.to_list_item() if list_item_serializable else None
+        pse = PasswordSafeEntry(login, password, metadata)
+        return list_item, pse
+
+    @staticmethod
+    def from_dict(item_d: dict[str, Any]) -> "Item":
+        credentials = []
+        for cred in item_d.get("credentials", []):
+            if "password" in cred and cred["password"]:  # Check whether cred is BasicAuth
+                credentials.append(BasicAuth.from_dict(cred))
+        extensions = []
+        for ext in item_d.get("extensions", []):
+            if ext["name"] == "Nitrokey Password Extension":
+                extensions.append(NitrokeyPasswordExtension.from_dict(ext))
+        return Item(
+            id=item_d["id"],
+            title=item_d["title"],
+            credentials=cast(List[Credential], credentials),
+            creationAt=item_d.get("creationAt"),
+            modifiedAt=item_d.get("modifiedAt"),
+            subtitle=item_d.get("subtitle"),
+            favorite=item_d.get("favorite"),
+            scope=item_d.get("scope"),
+            tags=item_d.get("tags"),
+            extensions=cast(List[Extension], extensions),
+        )
+
+    @staticmethod
+    def from_password_safe_entry(item: "ListItem", pse: "PasswordSafeEntry") -> "Item":
+        from .secrets_app import ListItemSerializable
+
+        return Item(
+            id=_get_random_id(),
+            title=item.label.decode("utf-8", errors="ignore"),
+            credentials=[
+                BasicAuth(
+                    urls=[],  # Nitrokey does not store URLs
+                    username=EditableField(
+                        id=_get_random_id(),
+                        fieldType=FieldType.STRING,
+                        value=pse.login.decode("utf-8", errors="ignore") if pse.login else "",
+                    ),
+                    password=EditableField(
+                        id=_get_random_id(),
+                        fieldType=FieldType.CONCEALED_STRING,
+                        value=pse.password.decode("utf-8", errors="ignore") if pse.password else "",
+                    ),
+                )
+            ],
+            extensions=[
+                NitrokeyPasswordExtension(
+                    metadata=pse.metadata.decode("utf-8", errors="ignore") if pse.metadata else "",
+                    item=ListItemSerializable.from_list_item(item),
+                )
+            ],
+        )
 
 
 @dataclass
@@ -141,104 +269,8 @@ class BasicAuth(Credential):
     def __post_init__(self) -> None:
         self.type = CredentialType.BASIC_AUTH
 
-
-# TODO other credentials like Credit Card and Passkey Dict
-
-
-@dataclass
-class NitrokeyPasswordExtension(Extension):
-    metadata: tstr
-    item: "ListItemSerializable"
-
-    name: tstr = field(init=False, default="Nitrokey Password Extension")
-
-
-CXFPayload: TypeAlias = Header
-
-
-class PasswordToCXF:
-    @classmethod
-    def password_to_item(cls, item: "ListItem", pse: "PasswordSafeEntry") -> Item:
-        from .secrets_app import ListItemSerializable
-
-        return Item(
-            id=_get_random_id(),
-            title=item.label.decode("utf-8", errors="ignore"),
-            credentials=[
-                BasicAuth(
-                    urls=[],  # Nitrokey does not store URLs
-                    username=EditableField(
-                        id=_get_random_id(),
-                        fieldType=FieldType.STRING,
-                        value=pse.login.decode("utf-8", errors="ignore") if pse.login else "",
-                    ),
-                    password=EditableField(
-                        id=_get_random_id(),
-                        fieldType=FieldType.CONCEALED_STRING,
-                        value=pse.password.decode("utf-8", errors="ignore") if pse.password else "",
-                    ),
-                )
-            ],
-            extensions=[
-                NitrokeyPasswordExtension(
-                    metadata=pse.metadata.decode("utf-8", errors="ignore") if pse.metadata else "",
-                    item=ListItemSerializable.from_list_item(item),
-                )
-            ],
-        )
-
-    @classmethod
-    def items_to_cxf(cls, items: List[Item]) -> CXFPayload:
-        return Header(
-            version=Version(1, 0),  # v1.0
-            exporterRpId="nitrokey",  # We are exporting from an authenticator device. Are we supposed to have a RP ID in this case?
-            exporterDisplayName="Nitrokey NK3",
-            accounts=[
-                Account(
-                    id=_get_random_id(),
-                    username="",  # We are assuming one NK3 is held by one person only
-                    email="",
-                    collections=[],
-                    items=items,
-                )
-            ],
-            timestamp=uint(time.time()),
-        )
-
-    @classmethod
-    def cxf_to_items(cls, payload: CXFPayload) -> List[Item]:
-        if not payload.accounts:
-            return []
-        item_list = []
-        for account in payload.accounts:
-            item_list.extend(account.items)
-        return item_list
-
-    @classmethod
-    def item_to_password(cls, item: Item) -> Tuple["ListItem" | None, "PasswordSafeEntry"]:
-        from .secrets_app import PasswordSafeEntry
-
-        # credid = item.title.encode() if item.title else b""
-        cred = item.credentials[0] if item.credentials else None
-        cred_basic_auth = cls.basic_auth_from_dict(asdict(cred)) if cred else None
-        login = cred_basic_auth.username.value.encode() if cred_basic_auth else b""
-        password = cred_basic_auth.password.value.encode() if cred_basic_auth else b""
-        extension = item.extensions[0] if item and item.extensions else None
-        extension = (
-            cls.nitrokey_password_extension_from_dict(asdict(extension)) if extension else None
-        )
-        metadata = extension.metadata.encode() if extension else b""
-        list_item_serializable = (
-            extension.item
-            if extension and isinstance(extension, NitrokeyPasswordExtension)
-            else None
-        )
-        list_item = list_item_serializable.to_list_item() if list_item_serializable else None
-        pse = PasswordSafeEntry(login, password, metadata)
-        return list_item, pse
-
-    @classmethod
-    def basic_auth_from_dict(cls, d: dict[str, Any]) -> BasicAuth:
+    @staticmethod
+    def from_dict(d: dict[str, Any]) -> "BasicAuth":
         username = d["username"]
         password = d["password"]
         return BasicAuth(
@@ -259,8 +291,19 @@ class PasswordToCXF:
             ),
         )
 
-    @classmethod
-    def nitrokey_password_extension_from_dict(cls, d: dict[str, Any]) -> NitrokeyPasswordExtension:
+
+# TODO other credentials like Credit Card and Passkey Dict
+
+
+@dataclass
+class NitrokeyPasswordExtension(Extension):
+    metadata: tstr
+    item: "ListItemSerializable"
+
+    name: tstr = field(init=False, default="Nitrokey Password Extension")
+
+    @staticmethod
+    def from_dict(d: dict[str, Any]) -> "NitrokeyPasswordExtension":
         from .secrets_app import Algorithm, Kind, ListItemProperties, ListItemSerializable
 
         item_d = d.get("item", {})
@@ -282,53 +325,22 @@ class PasswordToCXF:
             ),
         )
 
+
+CXFPayload: TypeAlias = Header
+
+
+class PasswordToCXF:
+    @classmethod
+    def password_to_item(cls, item: "ListItem", pse: "PasswordSafeEntry") -> Item:
+        return Item.from_password_safe_entry(item, pse)
+
+    @classmethod
+    def items_to_cxf(cls, items: List[Item]) -> CXFPayload:
+        return Header.from_items(items)
+
     @classmethod
     def cxf_from_dict(cls, d: dict[str, Any]) -> CXFPayload:
-        accounts = []
-        for acc in d.get("accounts", []):
-            items = []
-            for item_d in acc.get("items", []):
-                credentials = []
-                for cred in item_d.get("credentials", []):
-                    if "password" in cred and cred["password"]:  # Check whether cred is BasicAuth
-                        credentials.append(cls.basic_auth_from_dict(cred))
-                extensions = []
-                for ext in item_d.get("extensions", []):
-                    if ext["name"] == "Nitrokey Password Extension":
-                        extensions.append(cls.nitrokey_password_extension_from_dict(ext))
-                items.append(
-                    Item(
-                        id=item_d["id"],
-                        title=item_d["title"],
-                        credentials=cast(List[Credential], credentials),
-                        creationAt=item_d.get("creationAt"),
-                        modifiedAt=item_d.get("modifiedAt"),
-                        subtitle=item_d.get("subtitle"),
-                        favorite=item_d.get("favorite"),
-                        scope=item_d.get("scope"),
-                        tags=item_d.get("tags"),
-                        extensions=cast(List[Extension], extensions),
-                    )
-                )
-            accounts.append(
-                Account(
-                    id=acc["id"],
-                    username=acc.get("username", ""),
-                    email=acc.get("email", ""),
-                    collections=acc.get("collections", []),
-                    items=items,
-                    fullName=acc.get("fullName"),
-                    extensions=acc.get("extensions"),
-                )
-            )
-        version = d.get("version", {})
-        return Header(
-            version=Version(version.get("major", 1), version.get("minor", 0)),
-            exporterRpId=d.get("exporterRpId", ""),
-            exporterDisplayName=d.get("exporterDisplayName", ""),
-            timestamp=d.get("timestamp", 0),
-            accounts=accounts,
-        )
+        return Header.from_dict(d)
 
 
 @dataclass
@@ -376,5 +388,5 @@ class EncryptCXF:
         aesgcm = AESGCM(self.key)
         payload_bytes = aesgcm.decrypt(nonce, ct, None)
         payload = json.loads(payload_bytes)
-        cxfpayload = PasswordToCXF.cxf_from_dict(payload)
+        cxfpayload = CXFPayload.from_dict(payload)
         return asdict(cxfpayload) if as_dict else cxfpayload
