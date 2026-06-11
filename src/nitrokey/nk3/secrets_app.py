@@ -313,6 +313,12 @@ STRING_TO_KIND = {
 ALGORITHM_TO_KIND = {"SHA1": Algorithm.Sha1, "SHA256": Algorithm.Sha256}
 
 
+@dataclasses.dataclass
+class ExportCXFResult:
+    payload: CXFPayload
+    skipped_credentials: list[bytes]
+
+
 class SecretsApp:
     """
     This is a Secrets App client
@@ -505,7 +511,7 @@ class SecretsApp:
         p.properties = p.properties.hex().encode() if p.properties else None
         return p
 
-    def export_cxf(self, password: str = "") -> Tuple[CXFPayload, List[bytes]]:
+    def export_cxf(self, password: str = "") -> ExportCXFResult:
         items = []
         non_exportable_credentials = []
         for item in self.list_with_properties():
@@ -523,7 +529,7 @@ class SecretsApp:
                 continue  # Incorrect pin will still retrieve credentials not protected by pin
 
         cxfpayload = CXFPayload.from_password_safe_entries(items)
-        return cxfpayload, non_exportable_credentials
+        return ExportCXFResult(payload=cxfpayload, skipped_credentials=non_exportable_credentials)
 
     def _import_single_credential(
         self, item: ListItem, pse: PasswordSafeEntry, password: str = ""
