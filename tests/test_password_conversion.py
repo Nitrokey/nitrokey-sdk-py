@@ -1,12 +1,12 @@
 import random
 import string
 import unittest
-from dataclasses import asdict
-from typing import Any, List, Tuple, cast
+from typing import List, Tuple
 
 from nitrokey.nk3.credential_exchange_format import (
     BasicAuth,
-    EncryptCXF,
+    CXFKey,
+    CXFPayload,
     Item,
     NitrokeyPasswordExtension,
     PasswordToCXF,
@@ -119,16 +119,13 @@ class TestPasswordExport(unittest.TestCase):
         #   ListItem, PSE lists 2 <--> Item List 2
 
         list_item_list_1, pse_list_1 = generate_test_cases(N)
-        passphrase = EncryptCXF.generate_passphrase()
-        # print("Passphrase test ", passphrase)
-        encryptcxf = EncryptCXF.use_passphrase(passphrase)
+        passphrase = CXFKey.generate_passphrase()
+        key = CXFKey.from_passphrase(passphrase)
 
         item_list_1 = list_convert_pse_to_item(list_item_list_1, pse_list_1)
         cxf_payload_1 = PasswordToCXF.items_to_cxf(item_list_1)
-        cxf_payload_dict_1 = asdict(cxf_payload_1)
-        encrypted_cxf = encryptcxf.encrypt_cxf(cxf_payload_dict_1)
-        cxf_payload_dict_2 = encryptcxf.decrypt_cxf(encrypted_cxf, as_dict=True)
-        cxf_payload_2 = PasswordToCXF.cxf_from_dict(cast(dict[str, Any], cxf_payload_dict_2))
+        encrypted_cxf = cxf_payload_1.encrypt(key)
+        cxf_payload_2 = CXFPayload.decrypt(encrypted_cxf, key)
         item_list_2 = cxf_payload_2.items()
         list_item_list_2, pse_list_2 = list_convert_item_to_pse(item_list_2)
 

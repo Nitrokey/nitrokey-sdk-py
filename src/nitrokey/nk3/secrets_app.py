@@ -9,7 +9,6 @@ import dataclasses
 import hmac
 import logging
 import typing
-from dataclasses import asdict
 from enum import Enum, IntEnum
 from hashlib import pbkdf2_hmac
 from secrets import token_bytes
@@ -20,7 +19,7 @@ import tlv8
 from semver.version import Version
 
 from nitrokey.nk3 import NK3
-from nitrokey.nk3.credential_exchange_format import CXFPayload, EncryptCXF, Item, PasswordToCXF
+from nitrokey.nk3.credential_exchange_format import CXFKey, CXFPayload, Item, PasswordToCXF
 from nitrokey.trussed import App
 
 LogFn = Callable[[str], Any]
@@ -526,20 +525,18 @@ class SecretsApp:
                 continue  # Incorrect pin will still retrieve credentials not protected by pin
         return export_list, non_exportable_credentials
 
-    def get_export_cxf(
-        self, password: str = "", as_dict: bool = False
-    ) -> Tuple[CXFPayload | dict[str, Any], List[bytes]]:
+    def get_export_cxf(self, password: str = "") -> Tuple[CXFPayload, List[bytes]]:
         items_list, non_exportable_credentials = self.get_export_list(password)
         cxfpayload = PasswordToCXF.items_to_cxf(items=items_list)
-        return asdict(cxfpayload) if as_dict else cxfpayload, non_exportable_credentials
+        return cxfpayload, non_exportable_credentials
 
     def get_export_cxf_encrypted(
         self, password: str = ""
     ) -> Tuple[dict[str, Any], str, List[bytes]]:
         cxf, non_exportable = self.get_export_cxf(password)
-        passphrase = EncryptCXF.generate_passphrase()
-        encryptcxf = EncryptCXF.use_passphrase(passphrase)
-        encrypted = encryptcxf.encrypt_cxf(cxf)
+        passphrase = CXFKey.generate_passphrase()
+        key = CXFKey.from_passphrase(passphrase)
+        encrypted = cxf.encrypt(key)
         return encrypted, passphrase, non_exportable
 
     def import_single_credential(
@@ -577,8 +574,8 @@ class SecretsApp:
     def bulk_import_cxf_encrypted(
         self, encrypted: dict[str, Any], passphrase: str, password: str
     ) -> None:
-        encryptcxf = EncryptCXF.use_passphrase(passphrase)
-        payload = encryptcxf.decrypt_cxf(encrypted)
+        key = CXFKey.from_passphrase(passphrase)
+        payload = CXFPayload.decrypt(encrypted, key)
         self.bulk_import_cxf(payload, password)
 
     def rename_credential(self, cred_id: bytes, new_name: bytes) -> None:

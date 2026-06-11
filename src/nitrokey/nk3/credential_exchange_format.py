@@ -54,6 +54,31 @@ class Header:
             items.extend(account.items)
         return items
 
+    def encrypt(self, key: CXFKey) -> dict[str, Any]:
+        payload_bytes = json.dumps(self.to_dict()).encode()
+        aesgcm = AESGCM(key._key)
+        nonce = secrets.token_bytes(12)
+        ct = aesgcm.encrypt(nonce, payload_bytes, None)
+        encrypted = ct + nonce
+        return {
+            "EncryptedCXF": urlsafe_b64encode(encrypted).decode()
+        }  # Returning as dict to maintain downstream compatibility
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @staticmethod
+    def decrypt(d: dict[str, Any], key: CXFKey) -> Header:
+        encrypted_b64 = d.get("EncryptedCXF", "")
+        encrypted = urlsafe_b64decode(encrypted_b64)
+        nonce = encrypted[-12:]
+        ct = encrypted[:-12]
+        aesgcm = AESGCM(key._key)
+        payload_bytes = aesgcm.decrypt(nonce, ct, None)
+        payload = json.loads(payload_bytes)
+        cxfpayload = CXFPayload.from_dict(payload)
+        return cxfpayload
+
     @staticmethod
     def from_dict(d: dict[str, Any]) -> Header:
         accounts = []
@@ -329,6 +354,30 @@ class NitrokeyPasswordExtension(Extension):
 CXFPayload: TypeAlias = Header
 
 
+@dataclass
+class CXFKey:
+    _key: bytes
+
+    @staticmethod
+    def generate_passphrase() -> str:
+        alphabet = string.ascii_uppercase + string.digits
+        chars = [secrets.choice(alphabet) for _ in range(25)]
+        groups = [chars[i : i + 5] for i in range(0, 25, 5)]
+        return "-".join("".join(g) for g in groups)
+
+    @staticmethod
+    def from_passphrase(passphrase: str) -> "CXFKey":
+        passphrase = passphrase.strip().replace("-", "").replace(" ", "").upper()
+        hkdf = HKDF(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=b"\x99\xf2L\x93\xe1\xe3%6\x0f}\x17\x0f",  # Random but constant salt
+            info=None,
+        )
+        key = hkdf.derive(passphrase.encode())
+        return CXFKey(_key=key)
+
+
 class PasswordToCXF:
     @classmethod
     def password_to_item(cls, item: "ListItem", pse: "PasswordSafeEntry") -> Item:
@@ -341,52 +390,3 @@ class PasswordToCXF:
     @classmethod
     def cxf_from_dict(cls, d: dict[str, Any]) -> CXFPayload:
         return Header.from_dict(d)
-
-
-@dataclass
-class EncryptCXF:
-    passphrase: str = ""
-    key: bytes = b""
-
-    @classmethod
-    def generate_passphrase(cls) -> str:
-        alphabet = string.ascii_uppercase + string.digits
-        chars = [secrets.choice(alphabet) for _ in range(25)]
-        groups = [chars[i : i + 5] for i in range(0, 25, 5)]
-        return "-".join("".join(g) for g in groups)
-
-    @classmethod
-    def use_passphrase(cls, passphrase: str) -> EncryptCXF:
-        passphrase = passphrase.strip().replace("-", "").replace(" ", "").upper()
-        hkdf = HKDF(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=b"\x99\xf2L\x93\xe1\xe3%6\x0f}\x17\x0f",  # Random but constant salt
-            info=None,
-        )
-        key = hkdf.derive(passphrase.encode())
-        return EncryptCXF(passphrase=passphrase, key=key)
-
-    def encrypt_cxf(self, cxfpayload: CXFPayload | dict[str, Any]) -> dict[str, Any]:
-        payload = cxfpayload if isinstance(cxfpayload, dict) else asdict(cxfpayload)
-        payload_bytes = json.dumps(payload).encode()
-        aesgcm = AESGCM(self.key)
-        nonce = secrets.token_bytes(12)
-        ct = aesgcm.encrypt(nonce, payload_bytes, None)
-        encrypted = ct + nonce
-        return {
-            "EncryptedCXF": urlsafe_b64encode(encrypted).decode()
-        }  # Returning as dict to maintain downstream compatibility
-
-    def decrypt_cxf(
-        self, encrypted_cxf: dict[str, Any], as_dict: bool = False
-    ) -> CXFPayload | dict[str, Any]:
-        encrypted_b64 = encrypted_cxf.get("EncryptedCXF", "")
-        encrypted = urlsafe_b64decode(encrypted_b64)
-        nonce = encrypted[-12:]
-        ct = encrypted[:-12]
-        aesgcm = AESGCM(self.key)
-        payload_bytes = aesgcm.decrypt(nonce, ct, None)
-        payload = json.loads(payload_bytes)
-        cxfpayload = CXFPayload.from_dict(payload)
-        return asdict(cxfpayload) if as_dict else cxfpayload
