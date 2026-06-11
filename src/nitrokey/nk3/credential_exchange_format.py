@@ -25,9 +25,8 @@ b64url: TypeAlias = str
 uri: TypeAlias = str
 
 
-def _get_random_id() -> (
-    b64url
-):  # This function exists because CXF standard has no fixed method of assigning unique IDs
+# This function exists because CXF standard has no fixed method of assigning unique IDs
+def _get_random_id() -> b64url:
     id = uuid.uuid4().bytes
     id_b64 = urlsafe_b64encode(id).decode()
     return id_b64
