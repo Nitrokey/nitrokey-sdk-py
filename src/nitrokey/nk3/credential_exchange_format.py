@@ -376,7 +376,7 @@ class EncryptCXF:
 
     @classmethod
     def use_passphrase(cls, passphrase: str) -> EncryptCXF:
-        passphrase = passphrase.strip().replace("-", "").replace(" ","").upper()
+        passphrase = passphrase.strip().replace("-", "").replace(" ", "").upper()
         hkdf = HKDF(
             algorithm=hashes.SHA256(),
             length=32,
