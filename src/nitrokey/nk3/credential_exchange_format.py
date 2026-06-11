@@ -94,20 +94,6 @@ class Item:
 @dataclass
 class CredentialScope:
     urls: List[uri]
-    androidApps: List[AndroidAppId]
-
-
-@dataclass
-class AndroidAppId:
-    bundleId: tstr
-    certificate: Optional[AndroidAppCertificateFingerprint] = None
-    name: Optional[tstr] = None
-
-
-@dataclass
-class AndroidAppCertificateFingerprint:
-    fingerprint: b64url
-    hashAlg: HashAlgorithms
 
 
 @dataclass
@@ -120,24 +106,8 @@ class Credential:
     type: CredentialType = field(init=False)
 
 
-class HashAlgorithms(str, Enum):
-    Sha256 = "sha256"
-    Sha512 = "sha512"
-
-
 class CredentialType(str, Enum):
-    ADDRESS = "address"
-    API_KEY = "api-key"
     BASIC_AUTH = "basic-auth"
-    CREDIT_CARD = "credit-card"
-    CUSTOM_FIELDS = "custom-fields"
-    DRIVERS_LICENSE = "drivers-license"
-    FILE = "file"
-    GENERATED_PASSWORD = "generated-password"
-    PASSKEY = "passkey"
-    TOTP = "totp"
-    # TODO Add the rest of them
-    # https://fidoalliance.org/specs/cx/cxf-v1.0-ps-errata-20260309.html#enum-credential-type
 
 
 class FieldType(str, Enum):
