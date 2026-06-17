@@ -78,6 +78,9 @@ dev-dependencies = [
     # fake-winreg does not work with wrapt v2 so we need to add an additional upper bound
     "wrapt <2",
 ]
+exclude-newer = "7 days"
+# Can be used to update packages to a version more recent what exclude-newer allows
+exclude-newer-package = { }
 
 [tool.mypy]
 mypy_path = "stubs"
