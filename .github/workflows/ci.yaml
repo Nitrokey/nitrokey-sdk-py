@@ -8,6 +8,8 @@ on:
 env:
   REQUIRED_PACKAGES: make
   POETRY_SPEC: poetry >=2, <2.3
+  UV_EXCLUDE_NEWER: 0 days
+  PIP_UPLOADED_PRIOR_TO: P0D
 
 jobs:
   format-code:

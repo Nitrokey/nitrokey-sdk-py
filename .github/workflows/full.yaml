@@ -5,6 +5,9 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
+env:
+  PIP_UPLOADED_PRIOR_TO: P0D
+
 jobs:
   test-pip:
     name: Run test suite with pip installation
