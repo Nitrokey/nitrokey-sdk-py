@@ -315,19 +315,19 @@ ALGORITHM_TO_KIND = {"SHA1": Algorithm.Sha1, "SHA256": Algorithm.Sha256}
 
 
 @dataclasses.dataclass
-class CXFBackupCombined:
-    payload: dict[
-        str, Any
-    ]  # Using dict instead of CXFPayload to accomodate for encrypted export as well
-    skipped_credentials: Optional[list[bytes]]
-    passphrase: Optional[str]
-
-
-@dataclasses.dataclass
 class CXFRestoreCombined:
     successful_credentials: list[bytes]
     failed_credentials: list[bytes]
     skipped_credentials: list[bytes]
+
+
+@dataclasses.dataclass
+class CXFBackupCombined:
+    payload: dict[
+        str, Any
+    ]  # Using dict instead of CXFPayload to accomodate for encrypted export as well
+    results: CXFRestoreCombined
+    passphrase: Optional[str]
 
 
 class SecretsApp:
@@ -561,15 +561,13 @@ class SecretsApp:
         cxfpayload = CXFPayload.from_items(items=export_list)
         if not encryption:
             return CXFBackupCombined(
-                payload=asdict(cxfpayload),
-                skipped_credentials=non_exportable_credentials,
-                passphrase="",
+                payload=asdict(cxfpayload), results=callback_status, passphrase=""
             )
         else:
             passphrase = CXFKey.generate_passphrase()
             return CXFBackupCombined(
                 payload=cxfpayload.encrypt(CXFKey.use_passphrase(passphrase)),
-                skipped_credentials=non_exportable_credentials,
+                results=callback_status,
                 passphrase=passphrase,
             )
 
@@ -581,7 +579,7 @@ class SecretsApp:
     ) -> CXFRestoreCombined:
         passphrase = import_cxf_combined.passphrase
         payload = import_cxf_combined.payload
-        creds_to_skip = import_cxf_combined.skipped_credentials
+        creds_to_skip = import_cxf_combined.results.skipped_credentials
 
         if passphrase:
             cxfpayload = CXFPayload.decrypt(payload, CXFKey.use_passphrase(passphrase))
