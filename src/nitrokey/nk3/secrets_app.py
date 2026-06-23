@@ -326,8 +326,8 @@ class CXFBackupCombined:
     payload: dict[
         str, Any
     ]  # Using dict instead of CXFPayload to accomodate for encrypted export as well
-    results: CXFRestoreCombined
-    passphrase: Optional[str]
+    results: Optional[CXFRestoreCombined] = None
+    passphrase: Optional[str] = ""
 
 
 class SecretsApp:
@@ -529,7 +529,6 @@ class SecretsApp:
         password: str = "",
     ) -> CXFBackupCombined:
         export_list = []
-        non_exportable_credentials = []
         total_list = self.list_with_properties()
         callback_status = CXFRestoreCombined(
             successful_credentials=[], failed_credentials=[], skipped_credentials=[]
@@ -541,13 +540,11 @@ class SecretsApp:
                 self.verify_pin_raw(password)
 
             if item.kind != Kind.NotSet:
-                non_exportable_credentials.append(item.label)  # Not Basic Auth
-                callback_status.failed_credentials.append(item.label)
+                callback_status.failed_credentials.append(item.label)  # Not Basic Auth
             elif item.properties.secret_encryption and not password:
-                non_exportable_credentials.append(
+                callback_status.skipped_credentials.append(
                     item.label
                 )  # Skipping pin protected credentials when pin is not used
-                callback_status.skipped_credentials.append(item.label)
             else:
                 export_list.append(
                     Item.from_password_representation(
@@ -579,7 +576,9 @@ class SecretsApp:
     ) -> CXFRestoreCombined:
         passphrase = import_cxf_combined.passphrase
         payload = import_cxf_combined.payload
-        creds_to_skip = import_cxf_combined.results.skipped_credentials
+        creds_to_skip = (
+            import_cxf_combined.results.skipped_credentials if import_cxf_combined.results else []
+        )
 
         if passphrase:
             cxfpayload = CXFPayload.decrypt(payload, CXFKey.use_passphrase(passphrase))
