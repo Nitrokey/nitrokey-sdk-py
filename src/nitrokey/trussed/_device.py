@@ -148,19 +148,26 @@ class TrussedDevice(TrussedBase):
 
         return accumulator
 
-    def _call_ccid(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
+    def _call_ccid(
+        self,
+        app: App,
+        response_len: Optional[int] = None,
+        data: bytes = b"",
+        perform_select: Optional[bool] = True,
+    ) -> bytes:
         assert not isinstance(self.device, CtapHidDevice)
-        select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
-        tmpbytes, sw1, sw2 = self.device.transmit(list(select))
-        while True:
-            if sw1 == 0x61:
-                _, sw1, sw2 = self.device.transmit(
-                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
-                )
-                continue
-            break
-        if sw1 != 0x90 or sw2 != 0x00:
-            raise PcscError(sw1, sw2)
+        if perform_select:
+            select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
+            tmpbytes, sw1, sw2 = self.device.transmit(list(select))
+            while True:
+                if sw1 == 0x61:
+                    _, sw1, sw2 = self.device.transmit(
+                        list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
+                    )
+                    continue
+                break
+            if sw1 != 0x90 or sw2 != 0x00:
+                raise PcscError(sw1, sw2)
 
         command = None
         if app == App.ADMIN or app == App.PROVISIONER:
@@ -189,12 +196,18 @@ class TrussedDevice(TrussedBase):
 
         return accumulator
 
-    def _call_app(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
+    def _call_app(
+        self,
+        app: App,
+        response_len: Optional[int] = None,
+        data: bytes = b"",
+        perform_select: Optional[bool] = True,
+    ) -> bytes:
         response: bytes = bytes()
         if isinstance(self.device, CtapHidDevice):
             response = self.device.call(app.value, data=data)
         else:
-            response = self._call_ccid(app, response_len, data)
+            response = self._call_ccid(app, response_len, data, perform_select)
 
         if response_len is not None and response_len != len(response):
             raise ValueError(
