@@ -9,6 +9,7 @@ import enum
 import logging
 import platform
 import sys
+import time
 from abc import abstractmethod
 from enum import Enum
 from typing import List, Optional, Sequence, TypeVar, Union
@@ -148,14 +149,13 @@ class TrussedDevice(TrussedBase):
 
         return accumulator
 
-    def _call_ccid(
-        self,
-        app: App,
-        response_len: Optional[int] = None,
-        data: bytes = b"",
-        perform_select: Optional[bool] = True,
-    ) -> bytes:
+    def _call_ccid(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
         assert not isinstance(self.device, CtapHidDevice)
+        perform_select = (
+            (int(time.time() * 1000) - self.secrets_pin_cache) > 100
+            if hasattr(self, "secrets_pin_cache")
+            else True
+        )  # Check 100ms
         if perform_select:
             select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
             tmpbytes, sw1, sw2 = self.device.transmit(list(select))
@@ -186,6 +186,8 @@ class TrussedDevice(TrussedBase):
                 continue
             break
 
+        self.secrets_pin_cache = -1  # Running any command removes the pin auth cache
+
         if app == App.SECRETS:
             accumulator = bytes([sw1, sw2]) + accumulator
             # Let the secret app handle the error
@@ -196,18 +198,12 @@ class TrussedDevice(TrussedBase):
 
         return accumulator
 
-    def _call_app(
-        self,
-        app: App,
-        response_len: Optional[int] = None,
-        data: bytes = b"",
-        perform_select: Optional[bool] = True,
-    ) -> bytes:
+    def _call_app(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
         response: bytes = bytes()
         if isinstance(self.device, CtapHidDevice):
             response = self.device.call(app.value, data=data)
         else:
-            response = self._call_ccid(app, response_len, data, perform_select)
+            response = self._call_ccid(app, response_len, data)
 
         if response_len is not None and response_len != len(response):
             raise ValueError(

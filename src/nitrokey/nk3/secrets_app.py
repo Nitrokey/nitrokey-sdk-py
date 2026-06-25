@@ -8,6 +8,7 @@ Can be used directly over CCID as well.
 import dataclasses
 import hmac
 import logging
+import time
 import typing
 from dataclasses import asdict
 from enum import Enum, IntEnum
@@ -380,24 +381,19 @@ class SecretsApp:
         self,
         ins: typing.Union[Instruction, CCIDInstruction],
         structure: Optional[Sequence[Union[tlv8.Entry, RawBytes, None]]] = None,
-        perform_select: Optional[bool] = True,
     ) -> bytes:
         encoded_structure = self._custom_encode(structure)
         ins_b, p1, p2 = self._encode_command(ins)
         bytes_data = _iso7816_compose(ins_b, p1, p2, data=encoded_structure)
         if self.write_corpus_fn:
             self.write_corpus_fn(ins, bytes_data)
-        return self._send_receive_inner(
-            bytes_data, log_info=f"{ins}", perform_select=perform_select
-        )
+        return self._send_receive_inner(bytes_data, log_info=f"{ins}")
 
-    def _send_receive_inner(
-        self, data: bytes, log_info: str = "", perform_select: Optional[bool] = True
-    ) -> bytes:
+    def _send_receive_inner(self, data: bytes, log_info: str = "") -> bytes:
         self.logfn(f"Sending {log_info if log_info else ''} (data: {len(data)} bytes)")
 
         try:
-            result = self.dev._call_app(App.SECRETS, data=data, perform_select=perform_select)
+            result = self.dev._call_app(App.SECRETS, data=data)
         except Exception as e:
             self.logfn(f"Got exception: {e}")
             raise
@@ -465,15 +461,13 @@ class SecretsApp:
         self.logfn("Executing reset")
         self._send_receive(Instruction.Reset)
 
-    def list(
-        self, extended: bool = False, perform_select: Optional[bool] = True
-    ) -> list[Union[Tuple[bytes, bytes], bytes]]:
+    def list(self, extended: bool = False) -> list[Union[Tuple[bytes, bytes], bytes]]:
         """
         Return a list of the registered credentials
         :return: List of bytestrings, or tuple of bytestrings, if "extended" switch is provided
         @deprecated
         """
-        raw_res = self._send_receive(Instruction.List, perform_select=perform_select)
+        raw_res = self._send_receive(Instruction.List)
         resd: tlv8.EntryList = tlv8.decode(raw_res)
         res: list[Union[Tuple[bytes, bytes], bytes]] = []
         for e in resd:
@@ -484,15 +478,13 @@ class SecretsApp:
                 res.append(e.data[1:])
         return res
 
-    def list_with_properties(
-        self, version: int = 1, perform_select: Optional[bool] = True
-    ) -> List[ListItem]:
+    def list_with_properties(self, version: int = 1) -> List[ListItem]:
         """
         Return a list of the registered credentials with properties
         :return: List of ListItems
         """
         data = [RawBytes([version])]
-        raw_res = self._send_receive(Instruction.List, data, perform_select=perform_select)
+        raw_res = self._send_receive(Instruction.List, data)
         resd: tlv8.EntryList = tlv8.decode(raw_res)
         res = []
         for e in resd:
@@ -941,6 +933,7 @@ class SecretsApp:
     def verify_pin_raw(self, password: str) -> None:
         structure = [tlv8.Entry(Tag.Password.value, password)]
         self._send_receive(Instruction.VerifyPIN, structure=structure)
+        self.dev.secrets_pin_cache = int(time.time() * 1000)
 
     def get_feature_status_cached(self) -> SelectResponse:
         self._cache_status = self.select() if self._cache_status is None else self._cache_status
