@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 
 from .._exceptions import CcidErrorCode, ConnectionError, DeviceError
 from .._utils import Iso7816Apdu
-from . import HAS_CCID_SUPPORT, App, Connection
+from . import HAS_CCID_SUPPORT, App, Connection, Transport
 
 if HAS_CCID_SUPPORT:
     from smartcard.Exceptions import CardConnectionException, NoCardException
@@ -18,6 +18,9 @@ if HAS_CCID_SUPPORT:
         ) -> None:
             self.card = card
             self._secrets_pin_cache: datetime | None = None
+
+        def transport(self) -> Transport:
+            return Transport.CCID
 
         def logger_name(self) -> str:
             return str(self.card.getReader())

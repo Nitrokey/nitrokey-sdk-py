@@ -10,6 +10,19 @@ HAS_CCID_SUPPORT = importlib.util.find_spec("smartcard") is not None
 
 
 @enum.unique
+class Transport(Enum):
+    CCID = "ccid"
+    CTAPHID = "ctaphid"
+
+    @staticmethod
+    def from_str(s: str) -> "Transport":
+        for transport in Transport:
+            if transport.value == s:
+                return transport
+        raise ValueError(f"Unknown transport '{s}'")
+
+
+@enum.unique
 class App(Enum):
     """Vendor-specific CTAPHID commands for Trussed apps."""
 
@@ -37,6 +50,9 @@ class VidPid:
 class Connection(ABC):
     def path(self) -> Optional[str]:
         return None
+
+    @abstractmethod
+    def transport(self) -> Transport: ...
 
     @abstractmethod
     def logger_name(self) -> str: ...

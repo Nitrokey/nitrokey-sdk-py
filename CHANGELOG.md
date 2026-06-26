@@ -7,6 +7,9 @@
 - Wrap `OSError` in `ConnectionError` and `CtapError` in `DeviceError` for transport-agnostic error types.
 - Move connection handling into separate classes.
 - Rename `TrussedDevice.from_device` to `TrussedDevice.from_connection`.
+- Add `TrussedDevice.list` classmethod.
+- Add `Transport` enum and update list functions to use it instead of the `use_ccid` argument.
+- Replace `should_default_ccid` function with `recommended_transport` function.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.2...HEAD)
 

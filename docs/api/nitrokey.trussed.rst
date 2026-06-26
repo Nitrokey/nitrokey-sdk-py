@@ -20,7 +20,11 @@ Accessing Trussed Devices
 
 .. autofunction:: nitrokey.trussed.open
 
-.. autofunction:: nitrokey.trussed.should_default_ccid
+.. autofunction:: nitrokey.trussed.recommended_transport
+
+.. autoclass:: nitrokey.trussed.Transport
+   :members:
+   :undoc-members:
 
 Trussed Device Objects
 ----------------------
@@ -120,5 +124,12 @@ Trussed Exceptions
 
 Constants
 ---------
+
+.. autodata:: nitrokey.trussed.DEFAULT_TRANSPORT
+
+   The default transport that is used if no explicit transport is set.
+
+   Currently, this is CTAPHID as this is the only transport that supports all features.  See also
+   the :py:func:`recommended_transport` function that provides a sensible default for most applications.
 
 .. autodata:: nitrokey.trussed.HAS_CCID_SUPPORT

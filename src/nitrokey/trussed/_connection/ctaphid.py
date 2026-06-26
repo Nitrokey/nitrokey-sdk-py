@@ -5,13 +5,16 @@ from fido2.ctap import CtapError
 from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
 from .._exceptions import ConnectionError, CtapErrorCode, DeviceError
-from . import App, Connection, VidPid
+from . import App, Connection, Transport, VidPid
 
 
 class CtapHidConnection(Connection):
     def __init__(self, device: CtapHidDevice) -> None:
         self.device = device
         self._path = _device_path_to_str(device.descriptor.path)
+
+    def transport(self) -> Transport:
+        return Transport.CTAPHID
 
     def path(self) -> Optional[str]:
         return self._path
