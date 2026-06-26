@@ -10,6 +10,8 @@ import sys
 from abc import abstractmethod
 from typing import List, Optional, Sequence, TypeVar
 
+from fido2.hid import CtapHidDevice
+
 from ._base import TrussedBase
 from ._connection import App, Connection, Transport
 from ._connection.ccid import list_ccid
@@ -45,6 +47,9 @@ class TrussedDevice(TrussedBase):
     @property
     def path(self) -> Optional[str]:
         return self._path
+
+    def ctaphid_device(self) -> CtapHidDevice | None:
+        return self.connection.ctaphid_device()
 
     def close(self) -> None:
         self.connection.close()
