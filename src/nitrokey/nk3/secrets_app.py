@@ -8,9 +8,9 @@ Can be used directly over CCID as well.
 import dataclasses
 import hmac
 import logging
-import time
 import typing
 from dataclasses import asdict
+from datetime import datetime
 from enum import Enum, IntEnum
 from hashlib import pbkdf2_hmac
 from secrets import token_bytes
@@ -933,7 +933,7 @@ class SecretsApp:
     def verify_pin_raw(self, password: str) -> None:
         structure = [tlv8.Entry(Tag.Password.value, password)]
         self._send_receive(Instruction.VerifyPIN, structure=structure)
-        self.dev.secrets_pin_cache = int(time.time() * 1000)
+        self.dev.secrets_pin_cache = datetime.now()
 
     def get_feature_status_cached(self) -> SelectResponse:
         self._cache_status = self.select() if self._cache_status is None else self._cache_status

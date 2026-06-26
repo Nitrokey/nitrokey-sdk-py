@@ -9,8 +9,8 @@ import enum
 import logging
 import platform
 import sys
-import time
 from abc import abstractmethod
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import List, Optional, Sequence, TypeVar, Union
 
@@ -151,12 +151,13 @@ class TrussedDevice(TrussedBase):
 
     def _call_ccid(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
         assert not isinstance(self.device, CtapHidDevice)
-        perform_select = (
-            (int(time.time() * 1000) - self.secrets_pin_cache) > 100
-            if hasattr(self, "secrets_pin_cache")
-            else True
+        skip_perform_select = (
+            hasattr(self, "secrets_pin_cache")
+            and self.secrets_pin_cache
+            and (datetime.now() - self.secrets_pin_cache) < timedelta(milliseconds=100)
+            and app == App.SECRETS
         )  # Check 100ms
-        if perform_select:
+        if not skip_perform_select:
             select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
             tmpbytes, sw1, sw2 = self.device.transmit(list(select))
             while True:
@@ -186,7 +187,7 @@ class TrussedDevice(TrussedBase):
                 continue
             break
 
-        self.secrets_pin_cache = -1  # Running any command removes the pin auth cache
+        self.secrets_pin_cache = None  # Running any command removes the pin auth cache
 
         if app == App.SECRETS:
             accumulator = bytes([sw1, sw2]) + accumulator
