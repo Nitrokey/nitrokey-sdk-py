@@ -11,7 +11,7 @@ from abc import abstractmethod
 from typing import List, Optional, Sequence, TypeVar
 
 from ._base import TrussedBase
-from ._connection import App, Connection
+from ._connection import App, Connection, Transport
 from ._connection.ccid import list_ccid
 from ._connection.ctaphid import list_ctaphid, open_ctaphid
 from ._utils import Fido2Certs, Uuid
@@ -26,6 +26,7 @@ class TrussedDevice(TrussedBase):
         vid_pid = connection.vid_pid()
         if vid_pid is not None:
             self._validate_vid_pid(vid_pid.vid, vid_pid.pid)
+        self._transport = connection.transport()
         self._path = connection.path()
         self._logger = logger.getChild(connection.logger_name())
 
@@ -36,6 +37,10 @@ class TrussedDevice(TrussedBase):
 
         self.admin = AdminApp(self)
         self.admin.status()
+
+    @property
+    def transport(self) -> Transport:
+        return self._transport
 
     @property
     def path(self) -> Optional[str]:
@@ -97,8 +102,21 @@ class TrussedDevice(TrussedBase):
             return None
 
     @classmethod
+    def list(cls: type[T], transport: Transport | None = None, exclusive: bool = True) -> List[T]:
+        if transport is None:
+            transport = Transport.CTAPHID
+
+        if transport == Transport.CCID:
+            return cls.list_ccid(exclusive=exclusive)
+        elif transport == Transport.CTAPHID:
+            return cls.list_ctaphid()
+        else:
+            # TODO: use typing.assert_never
+            raise ValueError(transport)
+
+    @classmethod
     @abstractmethod
-    def list_ccid(cls: type[T]) -> List[T]: ...
+    def list_ccid(cls: type[T], exclusive: bool = True) -> List[T]: ...
 
     @classmethod
     @abstractmethod

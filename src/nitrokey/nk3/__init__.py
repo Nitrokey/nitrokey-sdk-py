@@ -9,6 +9,7 @@ from typing import List, Optional, Union
 
 from nitrokey.trussed._bootloader import ModelData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey
+from nitrokey.trussed._connection import Transport
 
 from ._bootloader import NK3Bootloader as NK3Bootloader
 from ._device import NK3 as NK3
@@ -35,14 +36,12 @@ _NK3_DATA = ModelData(
 )
 
 
-def list(use_ccid: bool = False, exclusive: bool = True) -> List[Union[NK3, NK3Bootloader]]:
+def list(
+    transport: Transport | None = None, exclusive: bool = True
+) -> List[Union[NK3, NK3Bootloader]]:
     devices: List[Union[NK3, NK3Bootloader]] = []
     devices.extend(NK3Bootloader.list())
-    if use_ccid:
-        devices.extend(NK3.list_ccid(exclusive))
-    else:
-        devices.extend(NK3.list_ctaphid())
-
+    devices.extend(NK3.list(transport=transport, exclusive=exclusive))
     return devices
 
 

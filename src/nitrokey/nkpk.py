@@ -13,7 +13,7 @@ from nitrokey.trussed import Fido2Certs, TrussedDevice, Version
 from nitrokey.trussed._base import Model
 from nitrokey.trussed._bootloader import ModelData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey, TrussedBootloaderNrf52
-from nitrokey.trussed._connection import Connection
+from nitrokey.trussed._connection import Connection, Transport
 
 _PID_NKPK_DEVICE = 0x42F3
 _PID_NKPK_BOOTLOADER = 0x42F4
@@ -100,13 +100,12 @@ class NKPKBootloader(TrussedBootloaderNrf52):
         return _NKPK_DATA.nrf52_signature_keys
 
 
-def list(use_ccid: bool = False, exclusive: bool = True) -> List[Union[NKPK, NKPKBootloader]]:
+def list(
+    transport: Transport | None = None, exclusive: bool = True
+) -> List[Union[NKPK, NKPKBootloader]]:
     devices: List[Union[NKPK, NKPKBootloader]] = []
     devices.extend(NKPKBootloader.list())
-    if use_ccid:
-        devices.extend(NKPK.list_ccid(exclusive))
-    else:
-        devices.extend(NKPK.list_ctaphid())
+    devices.extend(NKPK.list(transport=transport, exclusive=exclusive))
     return devices
 
 
