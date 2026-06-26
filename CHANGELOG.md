@@ -10,6 +10,7 @@
 - Add `TrussedDevice.list` classmethod.
 - Add `Transport` enum and update list functions to use it instead of the `use_ccid` argument.
 - Replace `should_default_ccid` function with `recommended_transport` function.
+- Add `TrussedDevice.ctaphid_device` function.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.2...HEAD)
 

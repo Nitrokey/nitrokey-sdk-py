@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
+from fido2.hid import CtapHidDevice
+
 HAS_CCID_SUPPORT = importlib.util.find_spec("smartcard") is not None
 
 
@@ -62,6 +64,9 @@ class Connection(ABC):
 
     @abstractmethod
     def close(self) -> None: ...
+
+    def ctaphid_device(self) -> CtapHidDevice | None:
+        return None
 
     @abstractmethod
     def wink(self) -> None: ...

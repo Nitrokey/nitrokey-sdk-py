@@ -26,6 +26,9 @@ class CtapHidConnection(Connection):
         d = self.device.descriptor
         return VidPid(vid=d.vid, pid=d.pid)
 
+    def ctaphid_device(self) -> CtapHidDevice:
+        return self.device
+
     def close(self) -> None:
         self.device.close()
 
