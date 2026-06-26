@@ -25,6 +25,13 @@ from ._utils import Fido2Certs as Fido2Certs
 from ._utils import Uuid as Uuid
 from ._utils import Version as Version
 
+try:
+    from fido2.hid.ipc import IPC_Pipe
+
+    ipc_available = IPC_Pipe.is_pipe_available()
+except ImportError:
+    ipc_available = False
+
 
 def should_default_ccid() -> bool:
     """Helper function to inform whether CCID should be the default communication protocol
@@ -38,7 +45,7 @@ def should_default_ccid() -> bool:
         return False
 
     try:
-        if ctypes.windll.shell32.IsUserAnAdmin():
+        if ctypes.windll.shell32.IsUserAnAdmin() or ipc_available:
             return False
         else:
             return True
