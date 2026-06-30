@@ -10,6 +10,7 @@ import logging
 import platform
 import sys
 from abc import abstractmethod
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import List, Optional, Sequence, TypeVar, Union
 
@@ -68,6 +69,7 @@ class TrussedDevice(TrussedBase):
 
         self.device = device
         self.fido2_certs = fido2_certs
+        self._secrets_pin_cache: datetime | None = None
 
         from .admin_app import AdminApp
 
@@ -150,17 +152,25 @@ class TrussedDevice(TrussedBase):
 
     def _call_ccid(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
         assert not isinstance(self.device, CtapHidDevice)
-        select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
-        tmpbytes, sw1, sw2 = self.device.transmit(list(select))
-        while True:
-            if sw1 == 0x61:
-                _, sw1, sw2 = self.device.transmit(
-                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
-                )
-                continue
-            break
-        if sw1 != 0x90 or sw2 != 0x00:
-            raise PcscError(sw1, sw2)
+        # SELECT resets the PIN verification status of secrets-app, so we skip the next select
+        # within 100 ms of a PIN verification
+        skip_perform_select = (
+            self._secrets_pin_cache
+            and (datetime.now() - self._secrets_pin_cache) < timedelta(milliseconds=100)
+            and app == App.SECRETS
+        )
+        if not skip_perform_select:
+            select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
+            tmpbytes, sw1, sw2 = self.device.transmit(list(select))
+            while True:
+                if sw1 == 0x61:
+                    _, sw1, sw2 = self.device.transmit(
+                        list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
+                    )
+                    continue
+                break
+            if sw1 != 0x90 or sw2 != 0x00:
+                raise PcscError(sw1, sw2)
 
         command = None
         if app == App.ADMIN or app == App.PROVISIONER:
@@ -179,6 +189,7 @@ class TrussedDevice(TrussedBase):
                 continue
             break
 
+        self._secrets_pin_cache = None  # Running any command removes the pin auth cache
         if app == App.SECRETS:
             accumulator = bytes([sw1, sw2]) + accumulator
             # Let the secret app handle the error

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
--
+- `nitrokey.nk3.secrets_app`: Fix discarded authentication when using `SecretsApp` over CCID
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.2...HEAD)
 
