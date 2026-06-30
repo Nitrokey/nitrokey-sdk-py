@@ -9,10 +9,7 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional, Union
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
+from typing import List, Optional, Self, Union
 
 from ..exceptions import SPSDKKeyError, SPSDKTypeError
 
@@ -98,7 +95,7 @@ class SpsdkEnum(SpsdkEnumMember, Enum):
         return value.description or default
 
     @classmethod
-    def from_attr(cls, attribute: Union[int, str]) -> "Self":
+    def from_attr(cls, attribute: Union[int, str]) -> Self:
         """Get enum member with given tag/label attribute.
 
         :param attribute: Attribute value of enum member
@@ -111,7 +108,7 @@ class SpsdkEnum(SpsdkEnumMember, Enum):
             return cls.from_label(attribute)
 
     @classmethod
-    def from_tag(cls, tag: int) -> "Self":
+    def from_tag(cls, tag: int) -> Self:
         """Get enum member with given tag.
 
         :param tag: Tag to be used for searching
@@ -124,7 +121,7 @@ class SpsdkEnum(SpsdkEnumMember, Enum):
         raise SPSDKKeyError(f"There is no {cls.__name__} item in with tag {tag} defined")
 
     @classmethod
-    def from_label(cls, label: str) -> "Self":
+    def from_label(cls, label: str) -> Self:
         """Get enum member with given label.
 
         :param label: Label to be used for searching

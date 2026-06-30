@@ -9,16 +9,13 @@
 
 from abc import ABC, abstractmethod
 from types import TracebackType
-from typing import TYPE_CHECKING, Optional, Type
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
+from typing import Optional, Self, Type
 
 
 class DeviceBase(ABC):
     """Device base class."""
 
-    def __enter__(self) -> "Self":
+    def __enter__(self) -> Self:
         self.open()
         return self
 
