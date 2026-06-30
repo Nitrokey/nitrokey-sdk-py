@@ -9,6 +9,7 @@ import dataclasses
 import hmac
 import logging
 import typing
+from dataclasses import asdict
 from enum import Enum, IntEnum
 from hashlib import pbkdf2_hmac
 from secrets import token_bytes
@@ -19,6 +20,7 @@ import tlv8
 from semver.version import Version
 
 from nitrokey.nk3 import NK3
+from nitrokey.nk3.credential_exchange_format import CXFKey, CXFPayload, Item, PasswordRepresentation
 from nitrokey.trussed import App
 
 LogFn = Callable[[str], Any]
@@ -60,7 +62,7 @@ class ListItem:
     properties: ListItemProperties
 
     @classmethod
-    def get_type_name(cls, x: typing.Any) -> str:
+    def get_type_name(cls, x: Any) -> str:
         return str(x).split(".")[-1]
 
     def __str__(self) -> str:
@@ -68,6 +70,31 @@ class ListItem:
             f"{self.label.decode()}"
             f"\t{self.get_type_name(self.kind)}/{self.get_type_name(self.algorithm)}"
             f"\t{self.properties}"
+        )
+
+
+@dataclasses.dataclass
+class ListItemSerializable:
+    kind: "Kind"
+    algorithm: "Algorithm"
+    label: str
+    properties: ListItemProperties
+
+    @classmethod
+    def from_list_item(cls, list_item: ListItem) -> "ListItemSerializable":
+        return ListItemSerializable(
+            kind=list_item.kind,
+            algorithm=list_item.algorithm,
+            label=list_item.label.decode("utf-8", errors="ignore"),
+            properties=list_item.properties,
+        )
+
+    def to_list_item(self) -> ListItem:
+        return ListItem(
+            kind=self.kind,
+            algorithm=self.algorithm,
+            label=self.label.encode(),
+            properties=self.properties,
         )
 
 
@@ -245,7 +272,7 @@ class Tag(Enum):
     SerialNumber = 0x8F
 
 
-class Kind(Enum):
+class Kind(IntEnum):
     Hotp = 0x10
     Totp = 0x20
     HotpReverse = 0x30
@@ -278,13 +305,29 @@ STRING_TO_KIND = {
 }
 
 
-class Algorithm(Enum):
+class Algorithm(IntEnum):
     Sha1 = 0x01
     Sha256 = 0x02
     Sha512 = 0x03
 
 
 ALGORITHM_TO_KIND = {"SHA1": Algorithm.Sha1, "SHA256": Algorithm.Sha256}
+
+
+@dataclasses.dataclass
+class CXFRestoreCombined:
+    successful_credentials: list[bytes]
+    failed_credentials: list[bytes]
+    skipped_credentials: list[bytes]
+
+
+@dataclasses.dataclass
+class CXFBackupCombined:
+    payload: dict[
+        str, Any
+    ]  # Using dict instead of CXFPayload to accomodate for encrypted export as well
+    results: Optional[CXFRestoreCombined] = None
+    passphrase: Optional[str] = ""
 
 
 class SecretsApp:
@@ -478,6 +521,116 @@ class SecretsApp:
         )
         p.properties = p.properties.hex().encode() if p.properties else None
         return p
+
+    def export_cxf(
+        self,
+        encryption: bool,
+        callback: Optional[Callable[[int, CXFRestoreCombined], None]] = None,
+        password: str = "",
+    ) -> CXFBackupCombined:
+        export_list = []
+        total_list = self.list_with_properties()
+        callback_status = CXFRestoreCombined(
+            successful_credentials=[], failed_credentials=[], skipped_credentials=[]
+        )
+        for item in total_list:
+            if callback:
+                callback(len(total_list), callback_status)
+            if password:
+                self.verify_pin_raw(password)
+
+            if item.kind != Kind.NotSet:
+                callback_status.failed_credentials.append(item.label)  # Not Basic Auth
+            elif item.properties.secret_encryption and not password:
+                callback_status.skipped_credentials.append(
+                    item.label
+                )  # Skipping pin protected credentials when pin is not used
+            else:
+                export_list.append(
+                    Item.from_password_representation(
+                        PasswordRepresentation(item, self.get_credential(item.label))
+                    )
+                )
+                callback_status.successful_credentials.append(item.label)
+
+        if callback:
+            callback(len(total_list), callback_status)  # Fincal call
+        cxfpayload = CXFPayload.from_items(items=export_list)
+        if not encryption:
+            return CXFBackupCombined(
+                payload=asdict(cxfpayload), results=callback_status, passphrase=""
+            )
+        else:
+            passphrase = CXFKey.generate_passphrase()
+            return CXFBackupCombined(
+                payload=cxfpayload.encrypt(CXFKey.use_passphrase(passphrase)),
+                results=callback_status,
+                passphrase=passphrase,
+            )
+
+    def import_cxf(
+        self,
+        import_cxf_combined: CXFBackupCombined,
+        callback: Optional[Callable[[int, CXFRestoreCombined], None]] = None,
+        password: str = "",
+    ) -> CXFRestoreCombined:
+        passphrase = import_cxf_combined.passphrase
+        payload = import_cxf_combined.payload
+        creds_to_skip = (
+            import_cxf_combined.results.skipped_credentials if import_cxf_combined.results else []
+        )
+
+        if passphrase:
+            cxfpayload = CXFPayload.decrypt(payload, CXFKey.use_passphrase(passphrase))
+        else:
+            cxfpayload = CXFPayload.from_dict(payload)
+        if password:
+            self.verify_pin_raw(
+                password
+            )  # This will fail entirely if pin is wrong, hence maintaining atomicity
+
+        restore_result = CXFRestoreCombined(
+            successful_credentials=[], failed_credentials=[], skipped_credentials=[]
+        )
+
+        item_list = cxfpayload.items()
+        total_pr = sum(len(cxfitem.password_representation()) for cxfitem in item_list)
+        for cxfitem in item_list:
+            pr_list = cxfitem.password_representation()
+            for pr in pr_list:
+                if callback:
+                    callback(total_pr, restore_result)
+                item = pr.item
+                pse = pr.pse
+                if creds_to_skip and item.label in creds_to_skip:
+                    restore_result.skipped_credentials.append(item.label)
+                    continue
+                if item.properties.secret_encryption and password:
+                    self.verify_pin_raw(password)
+
+                try:
+                    self.register(
+                        credid=item.label,
+                        kind=item.kind,
+                        algo=item.algorithm,
+                        touch_button_required=item.properties.touch_required,
+                        pin_based_encryption=item.properties.secret_encryption,
+                        login=pse.login,
+                        password=pse.password,
+                        metadata=pse.metadata,
+                    )
+                    restore_result.successful_credentials.append(item.label)
+                except SecretsAppException as e:
+                    print(e)
+                    self.logfn(
+                        f"Exception in adding credential {item.label.decode()} -> {e}"
+                    )  # Do not overwrite if already exists
+                    restore_result.failed_credentials.append(item.label)
+                    continue
+
+        if callback:
+            callback(total_pr, restore_result)  # Call for the final result
+        return restore_result
 
     def rename_credential(self, cred_id: bytes, new_name: bytes) -> None:
         """
