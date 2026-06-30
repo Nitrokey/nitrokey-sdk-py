@@ -9,6 +9,7 @@ import enum
 import logging
 import platform
 import sys
+import typing
 from abc import abstractmethod
 from datetime import datetime, timedelta
 from enum import Enum
@@ -49,8 +50,7 @@ class App(Enum):
         elif self == App.PROVISIONER:
             return bytes.fromhex("A00000084700000001")
         else:
-            # TODO: use typing.assert_never
-            raise ValueError(self)
+            typing.assert_never(self)
 
 
 class TrussedDevice(TrussedBase):

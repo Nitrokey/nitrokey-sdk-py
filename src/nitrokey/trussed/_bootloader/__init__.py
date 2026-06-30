@@ -10,6 +10,7 @@ import hashlib
 import json
 import logging
 import sys
+import typing
 from abc import abstractmethod
 from dataclasses import dataclass
 from io import BytesIO
@@ -45,7 +46,8 @@ def get_model_data(model: Model) -> ModelData:
         from nitrokey.nkpk import _NKPK_DATA
 
         return _NKPK_DATA
-    raise ValueError(f"Unknown model {model}")
+
+    typing.assert_never(model)
 
 
 class Variant(enum.Enum):
@@ -132,7 +134,7 @@ def get_firmware_filename_pattern(variant: Variant) -> Pattern[str]:
     elif variant == Variant.NRF52:
         return FILENAME_PATTERN_NRF52
     else:
-        raise ValueError(f"Unexpected variant {variant}")
+        typing.assert_never(variant)
 
 
 def parse_filename(filename: str) -> Optional[Tuple[Variant, Version]]:
