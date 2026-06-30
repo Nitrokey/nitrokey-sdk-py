@@ -10,7 +10,6 @@ import logging
 import platform
 import sys
 from abc import abstractmethod
-from datetime import datetime, timedelta
 from enum import Enum
 from typing import List, Optional, Sequence, TypeVar, Union
 
@@ -151,24 +150,17 @@ class TrussedDevice(TrussedBase):
 
     def _call_ccid(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
         assert not isinstance(self.device, CtapHidDevice)
-        skip_perform_select = (
-            hasattr(self, "secrets_pin_cache")
-            and self.secrets_pin_cache
-            and (datetime.now() - self.secrets_pin_cache) < timedelta(milliseconds=100)
-            and app == App.SECRETS
-        )  # Check 100ms
-        if not skip_perform_select:
-            select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
-            tmpbytes, sw1, sw2 = self.device.transmit(list(select))
-            while True:
-                if sw1 == 0x61:
-                    _, sw1, sw2 = self.device.transmit(
-                        list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
-                    )
-                    continue
-                break
-            if sw1 != 0x90 or sw2 != 0x00:
-                raise PcscError(sw1, sw2)
+        select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
+        tmpbytes, sw1, sw2 = self.device.transmit(list(select))
+        while True:
+            if sw1 == 0x61:
+                _, sw1, sw2 = self.device.transmit(
+                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
+                )
+                continue
+            break
+        if sw1 != 0x90 or sw2 != 0x00:
+            raise PcscError(sw1, sw2)
 
         command = None
         if app == App.ADMIN or app == App.PROVISIONER:
@@ -186,8 +178,6 @@ class TrussedDevice(TrussedBase):
                 accumulator += bytes(data)
                 continue
             break
-
-        self.secrets_pin_cache = None  # Running any command removes the pin auth cache
 
         if app == App.SECRETS:
             accumulator = bytes([sw1, sw2]) + accumulator
