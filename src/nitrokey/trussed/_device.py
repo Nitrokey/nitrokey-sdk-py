@@ -5,71 +5,35 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
-import enum
 import logging
-import platform
 import sys
-import typing
 from abc import abstractmethod
-from datetime import datetime, timedelta
-from enum import Enum
-from typing import List, Optional, Sequence, TypeVar, Union
+from typing import List, Optional, Sequence, TypeVar
 
-from fido2.hid import CtapHidDevice, list_descriptors, open_device
-
-from nitrokey._smartcard import ExclusiveConnectCardConnection, ExclusiveTransmitCardConnection
+from fido2.hid import CtapHidDevice
 
 from ._base import TrussedBase
-from ._utils import Fido2Certs, Iso7816Apdu, Uuid
+from ._connection import App, Connection, Transport
+from ._connection.ccid import list_ccid
+from ._connection.ctaphid import list_ctaphid, open_ctaphid
+from ._utils import Fido2Certs, Uuid
 
 T = TypeVar("T", bound="TrussedDevice")
 
 logger = logging.getLogger(__name__)
 
 
-class PcscError(Exception):
-    def __init__(self, sw1: int, sw2: int) -> None:
-        self.sw1 = sw1
-        self.sw2 = sw2
-        super().__init__(f"Got error code {bytes([sw1, sw2]).hex()}")
-
-
-@enum.unique
-class App(Enum):
-    """Vendor-specific CTAPHID commands for Trussed apps."""
-
-    SECRETS = 0x70
-    PROVISIONER = 0x71
-    ADMIN = 0x72
-
-    def aid(self) -> bytes:
-        if self == App.SECRETS:
-            return bytes.fromhex("A000000527 2101")
-        elif self == App.ADMIN:
-            return bytes.fromhex("A00000084700000001")
-        elif self == App.PROVISIONER:
-            return bytes.fromhex("A00000084700000001")
-        else:
-            typing.assert_never(self)
-
-
 class TrussedDevice(TrussedBase):
-    def __init__(
-        self,
-        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
-        fido2_certs: Sequence[Fido2Certs],
-    ) -> None:
-        self._path = None
-        if isinstance(device, CtapHidDevice):
-            self._validate_vid_pid(device.descriptor.vid, device.descriptor.pid)
-            self._path = _device_path_to_str(device.descriptor.path)
-            self._logger = logger.getChild(self._path)
-        else:
-            self._logger = logger.getChild(str(device.getReader()))
+    def __init__(self, connection: Connection, fido2_certs: Sequence[Fido2Certs]) -> None:
+        vid_pid = connection.vid_pid()
+        if vid_pid is not None:
+            self._validate_vid_pid(vid_pid.vid, vid_pid.pid)
+        self._transport = connection.transport()
+        self._path = connection.path()
+        self._logger = logger.getChild(connection.logger_name())
 
-        self.device = device
+        self.connection = connection
         self.fido2_certs = fido2_certs
-        self._secrets_pin_cache: datetime | None = None
 
         from .admin_app import AdminApp
 
@@ -77,15 +41,18 @@ class TrussedDevice(TrussedBase):
         self.admin.status()
 
     @property
+    def transport(self) -> Transport:
+        return self._transport
+
+    @property
     def path(self) -> Optional[str]:
         return self._path
 
+    def ctaphid_device(self) -> CtapHidDevice | None:
+        return self.connection.ctaphid_device()
+
     def close(self) -> None:
-        if isinstance(self.device, CtapHidDevice):
-            self.device.close()
-        else:
-            self.device.disconnect()
-            self.device.release()
+        self.connection.close()
 
     def reboot(self) -> bool:
         from .admin_app import BootMode
@@ -96,17 +63,14 @@ class TrussedDevice(TrussedBase):
         return self.admin.uuid()
 
     def wink(self) -> None:
-        if isinstance(self.device, CtapHidDevice):
-            self.device.wink()
+        self.connection.wink()
 
     def _call_admin_legacy(
         self, command: int, command_name: str, response_len: Optional[int] = None, data: bytes = b""
     ) -> bytes:
-        response: bytes = bytes()
-        if isinstance(self.device, CtapHidDevice):
-            response = self.device.call(command, data=data)
-        else:
-            response = self._call_admin_ccid_legacy(command, data)
+        response = self.connection.call_admin_app_legacy(
+            command=command, data=data, response_len=response_len
+        )
 
         if response_len is not None and response_len != len(response):
             raise ValueError(
@@ -115,97 +79,8 @@ class TrussedDevice(TrussedBase):
             )
         return response
 
-    def _call_admin_ccid_legacy(
-        self, command: int, data: bytes, response_len: Optional[int] = None
-    ) -> bytes:
-        assert not isinstance(self.device, CtapHidDevice)
-        app = App.ADMIN
-        select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
-        _, sw1, sw2 = self.device.transmit(list(select))
-        while True:
-            if sw1 == 0x61:
-                _, sw1, sw2 = self.device.transmit(
-                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
-                )
-                continue
-            break
-        if sw1 != 0x90 or sw2 != 0x00:
-            raise PcscError(sw1, sw2)
-        p1 = 0
-        if len(data) >= 1:
-            p1 = data[0]
-        apdu = Iso7816Apdu(0x00, command, 0, p1, data, le=response_len)
-        data, sw1, sw2 = self.device.transmit(list(apdu.to_bytes()))
-        accumulator = bytes(data)
-        while True:
-            if sw1 == 0x61:
-                data, sw1, sw2 = self.device.transmit(
-                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
-                )
-                accumulator += bytes(data)
-                continue
-            break
-        if sw1 != 0x90 or sw2 != 0x00:
-            raise PcscError(sw1, sw2)
-
-        return accumulator
-
-    def _call_ccid(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
-        assert not isinstance(self.device, CtapHidDevice)
-        # SELECT resets the PIN verification status of secrets-app, so we skip the next select
-        # within 100 ms of a PIN verification
-        skip_perform_select = (
-            self._secrets_pin_cache
-            and (datetime.now() - self._secrets_pin_cache) < timedelta(milliseconds=100)
-            and app == App.SECRETS
-        )
-        if not skip_perform_select:
-            select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
-            tmpbytes, sw1, sw2 = self.device.transmit(list(select))
-            while True:
-                if sw1 == 0x61:
-                    _, sw1, sw2 = self.device.transmit(
-                        list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
-                    )
-                    continue
-                break
-            if sw1 != 0x90 or sw2 != 0x00:
-                raise PcscError(sw1, sw2)
-
-        command = None
-        if app == App.ADMIN or app == App.PROVISIONER:
-            command = list(Iso7816Apdu(0x00, data[0], 0, 0, data[1:], le=response_len).to_bytes())
-        elif app == App.SECRETS:
-            command = list(data)
-
-        data, sw1, sw2 = self.device.transmit(command)
-        accumulator = bytes(data)
-        while True:
-            if sw1 == 0x61:
-                data, sw1, sw2 = self.device.transmit(
-                    list(Iso7816Apdu(0x00, 0xC0, 0, 0, None, sw2).to_bytes())
-                )
-                accumulator += bytes(data)
-                continue
-            break
-
-        self._secrets_pin_cache = None  # Running any command removes the pin auth cache
-        if app == App.SECRETS:
-            accumulator = bytes([sw1, sw2]) + accumulator
-            # Let the secret app handle the error
-            return accumulator
-
-        if sw1 != 0x90 or sw2 != 0x00:
-            raise PcscError(sw1, sw2)
-
-        return accumulator
-
     def _call_app(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
-        response: bytes = bytes()
-        if isinstance(self.device, CtapHidDevice):
-            response = self.device.call(app.value, data=data)
-        else:
-            response = self._call_ccid(app, response_len, data)
+        response = self.connection.call_app(app, data, response_len)
 
         if response_len is not None and response_len != len(response):
             raise ValueError(
@@ -216,30 +91,37 @@ class TrussedDevice(TrussedBase):
 
     @classmethod
     @abstractmethod
-    def from_device(
-        cls: type[T],
-        device: CtapHidDevice | ExclusiveTransmitCardConnection | ExclusiveConnectCardConnection,
-    ) -> T: ...
+    def from_connection(cls: type[T], connection: Connection) -> T: ...
 
     @classmethod
     def open(cls: type[T], path: str) -> Optional[T]:
         try:
-            if platform.system() == "Windows":
-                device = open_device(bytes(path, "utf-8"))
-            else:
-                device = open_device(path)
+            connection = open_ctaphid(path)
         except Exception:
             logger.warning(f"No CTAPHID device at path {path}", exc_info=sys.exc_info())
             return None
         try:
-            return cls.from_device(device)
+            return cls.from_connection(connection)
         except ValueError:
             logger.warning(f"No Nitrokey device at path {path}", exc_info=sys.exc_info())
             return None
 
     @classmethod
+    def list(cls: type[T], transport: Transport | None = None, exclusive: bool = True) -> List[T]:
+        if transport is None:
+            transport = Transport.CTAPHID
+
+        if transport == Transport.CCID:
+            return cls.list_ccid(exclusive=exclusive)
+        elif transport == Transport.CTAPHID:
+            return cls.list_ctaphid()
+        else:
+            # TODO: use typing.assert_never
+            raise ValueError(transport)
+
+    @classmethod
     @abstractmethod
-    def list_ccid(cls: type[T]) -> List[T]: ...
+    def list_ccid(cls: type[T], exclusive: bool = True) -> List[T]: ...
 
     @classmethod
     @abstractmethod
@@ -247,55 +129,10 @@ class TrussedDevice(TrussedBase):
 
     @classmethod
     def _list_vid_pid(cls: type[T], vid: int, pid: int) -> List[T]:
-        descriptors = [
-            desc
-            for desc in list_descriptors()  # type: ignore
-            if desc.vid == vid and desc.pid == pid
-        ]
-        return [cls.from_device(open_device(desc.path)) for desc in descriptors]
+        connections = list_ctaphid(vid, pid)
+        return [cls.from_connection(connection) for connection in connections]
 
     @classmethod
     def _list_pcsc_atr(cls: type[T], atr: List[int], exclusive: bool) -> List[T]:
-        try:
-            from smartcard.Exceptions import CardConnectionException, NoCardException
-            from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
-            from smartcard.System import readers
-
-            devices = []
-            for r in readers():
-                raw_connection = r.createConnection()
-                connection: Union[ExclusiveConnectCardConnection, ExclusiveTransmitCardConnection]
-                if exclusive:
-                    connection = ExclusiveConnectCardConnection(raw_connection)
-                else:
-                    connection = ExclusiveTransmitCardConnection(raw_connection)
-
-                try:
-                    connection.connect()
-                except NoCardException:
-                    continue
-                except CardConnectionException:
-                    continue
-                if atr != connection.getATR():
-                    connection.disconnect()
-                    connection.release()
-                    continue
-                devices.append(cls.from_device(connection))
-
-            return devices
-        except ImportError:
-            return []
-
-
-def _device_path_to_str(path: Union[bytes, str]) -> str:
-    """
-    Converts a device path as returned by the fido2 library to a string.
-
-    Typically, the path already is a string.  Only on Windows, a bytes object
-    using an ANSI encoding is used instead.  We use the ISO 8859-1 encoding to
-    decode the string which should work for all systems.
-    """
-    if isinstance(path, bytes):
-        return path.decode("iso-8859-1", errors="ignore")
-    else:
-        return path
+        connections = list_ccid(atr, exclusive)
+        return [cls.from_connection(connection) for connection in connections]
