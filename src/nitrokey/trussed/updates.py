@@ -14,7 +14,7 @@ import time
 import typing
 from abc import ABC, abstractmethod
 from collections.abc import Set
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from importlib.metadata import PackageNotFoundError
 from io import BytesIO
 from typing import Any, Callable, Iterator, List, Optional, Tuple, Union
@@ -234,7 +234,7 @@ class UpdateUi(ABC):
 
 class DeviceHandler(ABC):
     @abstractmethod
-    def await_bootloader(self, model: Model) -> TrussedBootloader: ...
+    def await_bootloader(self, model: Model) -> AbstractContextManager[TrussedBootloader]: ...
 
     @abstractmethod
     def await_device(
@@ -242,7 +242,7 @@ class DeviceHandler(ABC):
         model: Model,
         wait_retries: Optional[int],
         callback: Optional[Callable[[int, int], None]],
-    ) -> TrussedDevice: ...
+    ) -> AbstractContextManager[TrussedDevice]: ...
 
 
 class Updater:

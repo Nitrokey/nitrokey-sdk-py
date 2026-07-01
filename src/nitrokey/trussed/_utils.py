@@ -309,3 +309,15 @@ class Iso7816Apdu:
         # 3: data present, no Le
         # 4: data present, Le present
         return header + lc + self.data + le
+
+
+@dataclass(kw_only=True, frozen=True)
+class VidPid:
+    vid: int
+    pid: int
+
+    def __repr__(self) -> str:
+        return f"VidPid(vid={self.vid:#02x}, pid={self.pid:#02x})"
+
+    def __str__(self) -> str:
+        return f"VID {self.vid:#02x}, PID {self.pid:#02x}"

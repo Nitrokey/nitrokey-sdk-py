@@ -5,11 +5,13 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
-from typing import List, Optional, Union
+from collections.abc import Sequence
+from contextlib import AbstractContextManager
 
 from nitrokey.trussed._bootloader import ModelData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey
 from nitrokey.trussed._connection import Transport
+from nitrokey.trussed._device import DeviceInfo
 
 from ._bootloader import NK3Bootloader as NK3Bootloader
 from ._device import NK3 as NK3
@@ -36,22 +38,9 @@ _NK3_DATA = ModelData(
 )
 
 
-def list(
-    transport: Transport | None = None, exclusive: bool = True
-) -> List[Union[NK3, NK3Bootloader]]:
-    devices: List[Union[NK3, NK3Bootloader]] = []
-    devices.extend(NK3Bootloader.list())
-    devices.extend(NK3.list(transport=transport, exclusive=exclusive))
-    return devices
+def list_devices(transport: Transport | None = None) -> Sequence[DeviceInfo]:
+    return NK3._list(transport=transport)
 
 
-def open(path: str) -> Optional[Union[NK3, NK3Bootloader]]:
-    device = NK3.open(path)
-    bootloader_device = NK3Bootloader.open(path)
-    if device and bootloader_device:
-        raise Exception(f"Found multiple devices at path {path}")
-    if device:
-        return device
-    if bootloader_device:
-        return bootloader_device
-    return None
+def open_device(info: DeviceInfo) -> AbstractContextManager[NK3]:
+    return NK3._open(info=info)

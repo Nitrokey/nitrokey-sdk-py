@@ -15,7 +15,8 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from io import BytesIO
 from re import Pattern
-from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple, Union
+from types import TracebackType
+from typing import TYPE_CHECKING, Callable, Dict, Optional, Self, Tuple, Union
 from zipfile import ZipFile
 
 from .._base import Model, TrussedBase
@@ -117,6 +118,20 @@ class FirmwareMetadata:
 
 
 class TrussedBootloader(TrussedBase):
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        self.close()
+
+    @abstractmethod
+    def close(self) -> None: ...
+
     @abstractmethod
     def update(self, image: bytes, callback: Optional[ProgressCallback] = None) -> None: ...
 

@@ -7,7 +7,8 @@
 
 import ctypes
 import sys
-from typing import List, Optional
+import typing
+from contextlib import AbstractContextManager
 
 from ._base import Model as Model
 from ._base import TrussedBase as TrussedBase
@@ -18,7 +19,9 @@ from ._bootloader import Variant as Variant
 from ._bootloader import parse_firmware_image as parse_firmware_image
 from ._connection import HAS_CCID_SUPPORT as HAS_CCID_SUPPORT
 from ._connection import App as App
+from ._connection import DeviceConnectionInfo as DeviceConnectionInfo
 from ._connection import Transport as Transport
+from ._device import DeviceInfo as DeviceInfo
 from ._device import TrussedDevice as TrussedDevice
 from ._exceptions import CcidErrorCode as CcidErrorCode
 from ._exceptions import ConnectionError as ConnectionError
@@ -29,6 +32,7 @@ from ._exceptions import TrussedException as TrussedException
 from ._utils import Fido2Certs as Fido2Certs
 from ._utils import Uuid as Uuid
 from ._utils import Version as Version
+from ._utils import VidPid as VidPid
 
 # module-level constants have no docstrings in Python, so this is documented in
 # docs/api/nitrokey.trussed.rst
@@ -54,43 +58,22 @@ def recommended_transport() -> Transport:
     return Transport.CTAPHID
 
 
-def list(
-    transport: Transport | None = None, model: Optional[Model] = None, exclusive: bool = True
-) -> List[TrussedBase]:
-    devices: List[TrussedBase] = []
-
-    if model is None or model == Model.NK3:
-        from nitrokey import nk3
-
-        devices.extend(nk3.list(transport=transport, exclusive=exclusive))
-
-    if model is None or model == Model.NKPK:
-        from nitrokey import nkpk
-
-        devices.extend(nkpk.list(transport=transport, exclusive=exclusive))
-
-    return devices
+def list_devices(
+    transport: Transport | None = None, model: Model | None = None
+) -> list[DeviceInfo]:
+    models = [model] if model is not None else Model.all()
+    return DeviceInfo._list(transport=transport, models=models)
 
 
-def open(path: str, *, model: Optional[Model] = None) -> Optional[TrussedBase]:
-    devices: List[TrussedBase] = []
+def open_device(info: DeviceInfo) -> AbstractContextManager[TrussedDevice]:
+    if info.model == Model.NK3:
+        from nitrokey.nk3 import NK3
 
-    if model is None or model == Model.NK3:
-        from nitrokey import nk3
+        return NK3._open(info)
 
-        nk3_device = nk3.open(path)
-        if nk3_device is not None:
-            devices.append(nk3_device)
+    if info.model == Model.NKPK:
+        from nitrokey.nkpk import NKPK
 
-    if model is None or model == Model.NKPK:
-        from nitrokey import nkpk
+        return NKPK._open(info)
 
-        nkpk_device = nkpk.open(path)
-        if nkpk_device is not None:
-            devices.append(nkpk_device)
-
-    if len(devices) > 1:
-        raise Exception(f"Found multiple devices at path {path}")
-    if len(devices) == 1:
-        return devices[0]
-    return None
+    typing.assert_never(info.model)

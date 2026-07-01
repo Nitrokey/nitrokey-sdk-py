@@ -5,16 +5,14 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
+import typing
 from abc import ABC, abstractmethod
 from enum import Enum
-from types import TracebackType
-from typing import Optional, TypeVar
+from typing import Self
 
 from nitrokey import _VID_NITROKEY
 
-from ._utils import Uuid
-
-T = TypeVar("T", bound="TrussedBase")
+from ._utils import Uuid, VidPid
 
 
 class Model(Enum):
@@ -24,6 +22,29 @@ class Model(Enum):
     def __str__(self) -> str:
         return self.value
 
+    @property
+    def name(self) -> str:
+        return self.value
+
+    @property
+    def _device_vid_pid(self) -> VidPid:
+        if self == Model.NK3:
+            from nitrokey.nk3 import _PID_NK3_DEVICE
+
+            pid = _PID_NK3_DEVICE
+        elif self == Model.NKPK:
+            from nitrokey.nkpk import _PID_NKPK_DEVICE
+
+            pid = _PID_NKPK_DEVICE
+        else:
+            typing.assert_never(self)
+
+        return VidPid(vid=_VID_NITROKEY, pid=pid)
+
+    @property
+    def _device_atr(self) -> bytes:
+        return bytes.fromhex("3B8F01805D4E6974726F6B657900000000006A")
+
     @classmethod
     def from_str(cls, s: str) -> "Model":
         for model in cls:
@@ -31,23 +52,16 @@ class Model(Enum):
                 return model
         raise ValueError(f"Unknown model {s}")
 
+    @classmethod
+    def all(cls) -> list[Self]:
+        return list(cls)
+
 
 class TrussedBase(ABC):
     """
     Base class for Nitrokey devices using the Trussed framework and running
     the firmware or the bootloader.
     """
-
-    def __enter__(self: T) -> T:
-        return self
-
-    def __exit__(
-        self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> None:
-        self.close()
 
     def _validate_vid_pid(self, vid: int, pid: int) -> None:
         if (vid, pid) != (self.vid, self.pid):
@@ -70,17 +84,14 @@ class TrussedBase(ABC):
 
     @property
     @abstractmethod
-    def path(self) -> Optional[str]: ...
+    def path(self) -> str | None: ...
 
     @property
     @abstractmethod
     def name(self) -> str: ...
 
     @abstractmethod
-    def close(self) -> None: ...
-
-    @abstractmethod
     def reboot(self) -> bool: ...
 
     @abstractmethod
-    def uuid(self) -> Optional[Uuid]: ...
+    def uuid(self) -> Uuid | None: ...

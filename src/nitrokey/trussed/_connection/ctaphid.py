@@ -1,11 +1,13 @@
 import platform
-from typing import Optional
+from contextlib import contextmanager
+from typing import Iterator, Optional
 
 from fido2.ctap import CtapError
 from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
 from .._exceptions import ConnectionError, CtapErrorCode, DeviceError
-from . import App, Connection, Transport, VidPid
+from .._utils import VidPid
+from . import App, Connection, CtapHidConnectionInfo, Transport
 
 
 class CtapHidConnection(Connection):
@@ -66,18 +68,31 @@ def _device_path_to_str(path: bytes | str) -> str:
         return path
 
 
-def open_ctaphid(path: str) -> CtapHidConnection:
+@contextmanager
+def open_ctaphid(info: CtapHidConnectionInfo) -> Iterator[CtapHidConnection]:
     if platform.system() == "Windows":
-        device = open_device(bytes(path, "utf-8"))
+        device = open_device(bytes(info.path, "utf-8"))
     else:
-        device = open_device(path)
-    return CtapHidConnection(device)
+        device = open_device(info.path)
+    try:
+        vid = device.descriptor.vid
+        pid = device.descriptor.pid
+        vid_pid = VidPid(vid=vid, pid=pid)
+        if vid_pid != info.vid_pid:
+            raise Exception(
+                "Failed to open CTAPHID device at '{info.path}': expected {info.vid_pid}, got {vid_pid}"
+            )
+        yield CtapHidConnection(device)
+    finally:
+        device.close()
 
 
-def list_ctaphid(vid: int, pid: int) -> list[CtapHidConnection]:
-    descriptors = [
-        desc
-        for desc in list_descriptors()  # type: ignore
-        if desc.vid == vid and desc.pid == pid
-    ]
-    return [CtapHidConnection(open_device(desc.path)) for desc in descriptors]
+def list_ctaphid(*, filter: frozenset[VidPid]) -> list[CtapHidConnectionInfo]:
+    infos = []
+    for descriptor in list_descriptors():  # type: ignore
+        vid_pid = VidPid(vid=descriptor.vid, pid=descriptor.pid)
+        if vid_pid not in filter:
+            continue
+        path = _device_path_to_str(descriptor.path)
+        infos.append(CtapHidConnectionInfo(vid_pid=vid_pid, path=path))
+    return infos

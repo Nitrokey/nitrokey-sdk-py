@@ -5,8 +5,9 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
-import builtins
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union
+from collections.abc import Sequence
+from contextlib import AbstractContextManager
+from typing import TYPE_CHECKING
 
 from nitrokey import _VID_NITROKEY
 from nitrokey.trussed import Fido2Certs, TrussedDevice, Version
@@ -14,6 +15,7 @@ from nitrokey.trussed._base import Model
 from nitrokey.trussed._bootloader import ModelData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey, TrussedBootloaderNrf52
 from nitrokey.trussed._connection import Connection, Transport
+from nitrokey.trussed._device import DeviceInfo
 
 _PID_NKPK_DEVICE = 0x42F3
 _PID_NKPK_BOOTLOADER = 0x42F4
@@ -47,31 +49,17 @@ class NKPK(TrussedDevice):
     def __init__(self, connection: Connection) -> None:
         super().__init__(connection, _FIDO2_CERTS)
 
+    @staticmethod
+    def _model() -> Model:
+        return Model.NKPK
+
     @property
     def model(self) -> Model:
         return Model.NKPK
 
-    @property
-    def pid(self) -> int:
-        return _PID_NKPK_DEVICE
-
-    @property
-    def name(self) -> str:
-        return "Nitrokey Passkey"
-
     @classmethod
-    def from_connection(cls, connection: Connection) -> "NKPK":
-        return cls(connection)
-
-    @classmethod
-    def list_ctaphid(cls) -> List["NKPK"]:
-        return cls._list_vid_pid(_VID_NITROKEY, _PID_NKPK_DEVICE)
-
-    @classmethod
-    def list_ccid(cls, exclusive: bool = True) -> List["NKPK"]:
-        return cls._list_pcsc_atr(
-            builtins.list(bytes.fromhex("3B8F01805D4E6974726F6B657900000000006A")), exclusive
-        )
+    def _from_connection(cls, connection: Connection) -> "NKPK":
+        return NKPK(connection)
 
 
 class NKPKBootloader(TrussedBootloaderNrf52):
@@ -88,11 +76,11 @@ class NKPKBootloader(TrussedBootloaderNrf52):
         return _PID_NKPK_BOOTLOADER
 
     @classmethod
-    def list(cls) -> List["NKPKBootloader"]:
+    def list(cls) -> list["NKPKBootloader"]:
         return cls._list_vid_pid(_VID_NITROKEY, _PID_NKPK_BOOTLOADER)
 
     @classmethod
-    def open(cls, path: str) -> Optional["NKPKBootloader"]:
+    def open(cls, path: str) -> "NKPKBootloader | None":
         return cls._open_vid_pid(_VID_NITROKEY, _PID_NKPK_BOOTLOADER, path)
 
     @property
@@ -100,29 +88,15 @@ class NKPKBootloader(TrussedBootloaderNrf52):
         return _NKPK_DATA.nrf52_signature_keys
 
 
-def list(
-    transport: Transport | None = None, exclusive: bool = True
-) -> List[Union[NKPK, NKPKBootloader]]:
-    devices: List[Union[NKPK, NKPKBootloader]] = []
-    devices.extend(NKPKBootloader.list())
-    devices.extend(NKPK.list(transport=transport, exclusive=exclusive))
-    return devices
+def list_devices(transport: Transport | None = None) -> Sequence[DeviceInfo]:
+    return NKPK._list(transport=transport)
 
 
-def open(path: str) -> Optional[Union[NKPK, NKPKBootloader]]:
-    device = NKPK.open(path)
-    bootloader_device = NKPKBootloader.open(path)
-    if device and bootloader_device:
-        raise Exception(f"Found multiple devices at path {path}")
-    if device:
-        return device
-    if bootloader_device:
-        return bootloader_device
-    return None
+def open_device(info: DeviceInfo) -> AbstractContextManager[NKPK]:
+    return NKPK._open(info=info)
 
 
 if TYPE_CHECKING:
     from contextlib import AbstractContextManager
 
-    _ACM_DEV: type[AbstractContextManager[NKPK]] = NKPK
     _ACM_BL: type[AbstractContextManager[NKPKBootloader]] = NKPKBootloader
