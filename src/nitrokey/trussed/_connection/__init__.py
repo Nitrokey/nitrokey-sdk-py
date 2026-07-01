@@ -2,9 +2,11 @@ import enum
 import importlib.util
 import typing
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
+from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Optional, TypeAlias
 
 from fido2.hid import CtapHidDevice
 
@@ -41,6 +43,22 @@ class App(Enum):
             return bytes.fromhex("A00000084700000001")
         else:
             typing.assert_never(self)
+
+
+@dataclass(kw_only=True, frozen=True)
+class CcidConnectionInfo:
+    reader: str
+    atr: bytes
+
+
+@dataclass(kw_only=True, frozen=True)
+class CtapHidConnectionInfo:
+    path: str
+    vid: int
+    pid: int
+
+
+ConnectionInfo: TypeAlias = CcidConnectionInfo | CtapHidConnectionInfo
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -81,3 +99,33 @@ class Connection(ABC):
 
     def set_secrets_pin_cache(self) -> None:
         return
+
+
+def list_connections(
+    transport: Transport, *, vid_pid: VidPid | None, atr: bytes | None
+) -> Sequence[ConnectionInfo]:
+    if transport == Transport.CCID:
+        from .ccid import list_ccid
+
+        return list_ccid(atr=atr, exclusive=True)
+
+    if transport == Transport.CTAPHID:
+        from .ctaphid import list_ctaphid
+
+        return list_ctaphid(filter=vid_pid)
+
+    typing.assert_never(transport)
+
+
+def open_connection(info: ConnectionInfo) -> AbstractContextManager[Connection]:
+    if isinstance(info, CcidConnectionInfo):
+        from .ccid import open_ccid
+
+        return open_ccid(info=info, exclusive=True)
+
+    if isinstance(info, CtapHidConnectionInfo):
+        from .ctaphid import open_ctaphid
+
+        return open_ctaphid(info=info)
+
+    typing.assert_never(info)

@@ -6,21 +6,35 @@
 # copied, modified, or distributed except according to those terms.
 
 import logging
-import sys
 from abc import abstractmethod
-from typing import List, Optional, Sequence, TypeVar
+from contextlib import contextmanager
+from dataclasses import dataclass
+from typing import Iterator, Optional, Self, Sequence, TypeVar
 
 from fido2.hid import CtapHidDevice
 
-from ._base import TrussedBase
-from ._connection import App, Connection, Transport
-from ._connection.ccid import list_ccid
-from ._connection.ctaphid import list_ctaphid, open_ctaphid
+from . import DEFAULT_TRANSPORT
+from ._base import Model, TrussedBase
+from ._connection import (
+    App,
+    Connection,
+    ConnectionInfo,
+    Transport,
+    VidPid,
+    list_connections,
+    open_connection,
+)
 from ._utils import Fido2Certs, Uuid
 
 T = TypeVar("T", bound="TrussedDevice")
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(kw_only=True, frozen=True)
+class DeviceInfo:
+    model: Model
+    connection: ConnectionInfo
 
 
 class TrussedDevice(TrussedBase):
@@ -94,45 +108,32 @@ class TrussedDevice(TrussedBase):
     def from_connection(cls: type[T], connection: Connection) -> T: ...
 
     @classmethod
-    def open(cls: type[T], path: str) -> Optional[T]:
-        try:
-            connection = open_ctaphid(path)
-        except Exception:
-            logger.warning(f"No CTAPHID device at path {path}", exc_info=sys.exc_info())
-            return None
-        try:
-            return cls.from_connection(connection)
-        except ValueError:
-            logger.warning(f"No Nitrokey device at path {path}", exc_info=sys.exc_info())
-            return None
+    @contextmanager
+    def open(cls, info: DeviceInfo) -> Iterator[Self]:
+        model = cls._model()
+        if info.model != model:
+            raise Exception("Cannot open {info.model} device as {model}")
+        with open_connection(info.connection) as connection:
+            yield cls.from_connection(connection)
 
     @classmethod
-    def list(cls: type[T], transport: Transport | None = None, exclusive: bool = True) -> List[T]:
+    def list(cls, *, transport: Transport | None = None) -> Sequence[DeviceInfo]:
         if transport is None:
-            transport = Transport.CTAPHID
+            transport = DEFAULT_TRANSPORT
+        connections = list_connections(
+            transport, vid_pid=cls._expected_vid_pid(), atr=cls._expected_atr()
+        )
+        model = cls._model()
+        return [DeviceInfo(model=model, connection=connection) for connection in connections]
 
-        if transport == Transport.CCID:
-            return cls.list_ccid(exclusive=exclusive)
-        elif transport == Transport.CTAPHID:
-            return cls.list_ctaphid()
-        else:
-            # TODO: use typing.assert_never
-            raise ValueError(transport)
-
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def list_ccid(cls: type[T], exclusive: bool = True) -> List[T]: ...
+    def _model() -> Model: ...
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def list_ctaphid(cls: type[T]) -> List[T]: ...
+    def _expected_vid_pid() -> VidPid: ...
 
-    @classmethod
-    def _list_vid_pid(cls: type[T], vid: int, pid: int) -> List[T]:
-        connections = list_ctaphid(vid, pid)
-        return [cls.from_connection(connection) for connection in connections]
-
-    @classmethod
-    def _list_pcsc_atr(cls: type[T], atr: List[int], exclusive: bool) -> List[T]:
-        connections = list_ccid(atr, exclusive)
-        return [cls.from_connection(connection) for connection in connections]
+    @staticmethod
+    @abstractmethod
+    def _expected_atr() -> bytes: ...

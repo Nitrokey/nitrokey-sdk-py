@@ -1,11 +1,12 @@
 import platform
-from typing import Optional
+from contextlib import contextmanager
+from typing import Iterator, Optional
 
 from fido2.ctap import CtapError
 from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
 from .._exceptions import ConnectionError, CtapErrorCode, DeviceError
-from . import App, Connection, Transport, VidPid
+from . import App, Connection, CtapHidConnectionInfo, Transport, VidPid
 
 
 class CtapHidConnection(Connection):
@@ -66,18 +67,30 @@ def _device_path_to_str(path: bytes | str) -> str:
         return path
 
 
-def open_ctaphid(path: str) -> CtapHidConnection:
+@contextmanager
+def open_ctaphid(info: CtapHidConnectionInfo) -> Iterator[CtapHidConnection]:
     if platform.system() == "Windows":
-        device = open_device(bytes(path, "utf-8"))
+        device = open_device(bytes(info.path, "utf-8"))
     else:
-        device = open_device(path)
-    return CtapHidConnection(device)
+        device = open_device(info.path)
+    try:
+        vid = device.descriptor.vid
+        pid = device.descriptor.pid
+        if vid != info.vid or pid != info.pid:
+            raise Exception(
+                "Failed to open CTAPHID device at '{info.path}': expected VID/PID {info.vid:02x}/{info.pid:02x}, got {vid:02x}/{pid:02x}"
+            )
+        yield CtapHidConnection(device)
+    finally:
+        device.close()
 
 
-def list_ctaphid(vid: int, pid: int) -> list[CtapHidConnection]:
-    descriptors = [
-        desc
-        for desc in list_descriptors()  # type: ignore
-        if desc.vid == vid and desc.pid == pid
-    ]
-    return [CtapHidConnection(open_device(desc.path)) for desc in descriptors]
+def list_ctaphid(*, filter: VidPid | None) -> list[CtapHidConnectionInfo]:
+    infos = []
+    for desc in list_descriptors():  # type: ignore
+        if filter is not None:
+            if desc.vid != filter.vid or desc.pid != filter.pid:
+                continue
+        path = _device_path_to_str(desc.path)
+        infos.append(CtapHidConnectionInfo(vid=desc.vid, pid=desc.pid, path=path))
+    return infos

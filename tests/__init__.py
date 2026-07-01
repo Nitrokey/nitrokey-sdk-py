@@ -13,14 +13,16 @@ class TestBasic(unittest.TestCase):
         self.assertIsInstance(nitrokey, ModuleType)
 
     def test_list_nk3(self) -> None:
-        from nitrokey.nk3 import list
+        from nitrokey.nk3 import NK3, NK3Bootloader
 
-        list()
+        NK3.list()
+        NK3Bootloader.list()
 
     def test_list_nkpk(self) -> None:
-        from nitrokey.nkpk import list
+        from nitrokey.nkpk import NKPK, NKPKBootloader
 
-        list()
+        NKPK.list()
+        NKPKBootloader.list()
 
 
 class TestNk3Updates(unittest.TestCase):

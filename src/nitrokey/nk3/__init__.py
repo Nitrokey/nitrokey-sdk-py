@@ -5,11 +5,8 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
-from typing import List, Optional, Union
-
 from nitrokey.trussed._bootloader import ModelData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey
-from nitrokey.trussed._connection import Transport
 
 from ._bootloader import NK3Bootloader as NK3Bootloader
 from ._device import NK3 as NK3
@@ -34,24 +31,3 @@ _NK3_DATA = ModelData(
         ),
     ],
 )
-
-
-def list(
-    transport: Transport | None = None, exclusive: bool = True
-) -> List[Union[NK3, NK3Bootloader]]:
-    devices: List[Union[NK3, NK3Bootloader]] = []
-    devices.extend(NK3Bootloader.list())
-    devices.extend(NK3.list(transport=transport, exclusive=exclusive))
-    return devices
-
-
-def open(path: str) -> Optional[Union[NK3, NK3Bootloader]]:
-    device = NK3.open(path)
-    bootloader_device = NK3Bootloader.open(path)
-    if device and bootloader_device:
-        raise Exception(f"Found multiple devices at path {path}")
-    if device:
-        return device
-    if bootloader_device:
-        return bootloader_device
-    return None

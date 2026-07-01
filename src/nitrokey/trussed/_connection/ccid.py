@@ -1,10 +1,11 @@
 import typing
+from contextlib import AbstractContextManager, contextmanager
 from datetime import datetime, timedelta
-from typing import Optional, Sequence
+from typing import Iterator
 
 from .._exceptions import CcidErrorCode, ConnectionError, DeviceError
 from .._utils import Iso7816Apdu
-from . import HAS_CCID_SUPPORT, App, Connection, Transport
+from . import HAS_CCID_SUPPORT, App, CcidConnectionInfo, Connection, Transport
 
 if HAS_CCID_SUPPORT:
     from smartcard.Exceptions import CardConnectionException, NoCardException
@@ -82,7 +83,7 @@ if HAS_CCID_SUPPORT:
             return accumulator
 
         def call_admin_app_legacy(
-            self, command: int, data: bytes, response_len: Optional[int]
+            self, command: int, data: bytes, response_len: int | None
         ) -> bytes:
             p1 = 0
             if len(data) >= 1:
@@ -90,7 +91,7 @@ if HAS_CCID_SUPPORT:
             apdu = Iso7816Apdu(0x00, command, 0, p1, data, le=response_len)
             return self._call(App.ADMIN, apdu)
 
-        def call_app(self, app: App, data: bytes, response_len: Optional[int]) -> bytes:
+        def call_app(self, app: App, data: bytes, response_len: int | None) -> bytes:
             self._select(app)
             command: bytes | Iso7816Apdu
             if app == App.ADMIN or app == App.PROVISIONER:
@@ -104,8 +105,41 @@ if HAS_CCID_SUPPORT:
         def set_secrets_pin_cache(self) -> None:
             self._secrets_pin_cache = datetime.now()
 
-    def _list(atr: list[int], exclusive: bool) -> list[CcidConnection]:
-        connections = []
+    @contextmanager
+    def _open_ccid_impl(info: CcidConnectionInfo, exclusive: bool) -> Iterator[CcidConnection]:
+        for r in readers():
+            if r.name != info.reader:
+                continue
+            raw_connection = r.createConnection()
+            connection: ExclusiveConnectCardConnection | ExclusiveTransmitCardConnection
+            if exclusive:
+                connection = ExclusiveConnectCardConnection(raw_connection)
+            else:
+                connection = ExclusiveTransmitCardConnection(raw_connection)
+
+            try:
+                connection.connect()
+            except NoCardException as e:
+                raise Exception(f"Failed to connect to reader {info.reader}: no card") from e
+            except CardConnectionException as e:
+                raise Exception(f"Failed to connect to reader {info.reader}: {e}") from e
+
+            try:
+                atr = bytes(connection.getATR())
+                if atr != info.atr:
+                    raise Exception(
+                        f"Failed to connect to reader {info.reader}: expected ATR {info.atr.hex()}, got {atr.hex()}"
+                    )
+
+                yield CcidConnection(connection)
+            finally:
+                connection.disconnect()
+                connection.release()
+
+        raise Exception(f"Failed to connect to reader {info.reader}: reader not found")
+
+    def _list_ccid_impl(atr: bytes | None, exclusive: bool) -> list[CcidConnectionInfo]:
+        infos = []
 
         for r in readers():
             raw_connection = r.createConnection()
@@ -121,16 +155,27 @@ if HAS_CCID_SUPPORT:
                 continue
             except CardConnectionException:
                 continue
-            if atr != connection.getATR():
-                connection.disconnect()
-                connection.release()
+
+            connection_atr = bytes(connection.getATR())
+
+            connection.disconnect()
+            connection.release()
+
+            if atr is not None and atr != connection_atr:
                 continue
-            connections.append(CcidConnection(connection))
 
-        return connections
+            infos.append(CcidConnectionInfo(reader=r.name, atr=connection_atr))
+
+        return infos
 
 
-def list_ccid(atr: list[int], exclusive: bool) -> Sequence[Connection]:
+def open_ccid(info: CcidConnectionInfo, *, exclusive: bool) -> AbstractContextManager[Connection]:
+    if not HAS_CCID_SUPPORT:
+        raise Exception("Failed to open CCID connection: pyscard dependency is not installed")
+    return _open_ccid_impl(info=info, exclusive=exclusive)
+
+
+def list_ccid(*, atr: bytes | None, exclusive: bool) -> list[CcidConnectionInfo]:
     if HAS_CCID_SUPPORT:
-        return _list(atr, exclusive)
+        return _list_ccid_impl(atr, exclusive)
     return []

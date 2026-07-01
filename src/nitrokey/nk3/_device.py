@@ -5,11 +5,11 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from nitrokey import _VID_NITROKEY
 from nitrokey.trussed import Fido2Certs, Model, TrussedDevice, Version
-from nitrokey.trussed._connection import Connection
+from nitrokey.trussed._connection import Connection, VidPid
 
 FIDO2_CERTS = [
     Fido2Certs(
@@ -33,6 +33,10 @@ class NK3(TrussedDevice):
     def __init__(self, connection: Connection) -> None:
         super().__init__(connection, FIDO2_CERTS)
 
+    @staticmethod
+    def _model() -> Model:
+        return Model.NK3
+
     @property
     def model(self) -> Model:
         return Model.NK3
@@ -51,17 +55,15 @@ class NK3(TrussedDevice):
     def from_connection(cls, connection: Connection) -> "NK3":
         return cls(connection)
 
-    @classmethod
-    def list_ctaphid(cls) -> List["NK3"]:
+    @staticmethod
+    def _expected_vid_pid() -> VidPid:
         from . import _PID_NK3_DEVICE
 
-        return cls._list_vid_pid(_VID_NITROKEY, _PID_NK3_DEVICE)
+        return VidPid(vid=_VID_NITROKEY, pid=_PID_NK3_DEVICE)
 
-    @classmethod
-    def list_ccid(cls, exclusive: bool = True) -> List["NK3"]:
-        return cls._list_pcsc_atr(
-            list(bytes.fromhex("3B8F01805D4E6974726F6B657900000000006A")), exclusive
-        )
+    @staticmethod
+    def _expected_atr() -> bytes:
+        return bytes.fromhex("3B8F01805D4E6974726F6B657900000000006A")
 
 
 if TYPE_CHECKING:

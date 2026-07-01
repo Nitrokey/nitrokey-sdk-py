@@ -7,7 +7,8 @@
 
 import ctypes
 import sys
-from typing import List, Optional
+import typing
+from contextlib import AbstractContextManager
 
 from ._base import Model as Model
 from ._base import TrussedBase as TrussedBase
@@ -18,7 +19,9 @@ from ._bootloader import Variant as Variant
 from ._bootloader import parse_firmware_image as parse_firmware_image
 from ._connection import HAS_CCID_SUPPORT as HAS_CCID_SUPPORT
 from ._connection import App as App
+from ._connection import ConnectionInfo as ConnectionInfo
 from ._connection import Transport as Transport
+from ._device import DeviceInfo as DeviceInfo
 from ._device import TrussedDevice as TrussedDevice
 from ._exceptions import CcidErrorCode as CcidErrorCode
 from ._exceptions import ConnectionError as ConnectionError
@@ -54,43 +57,36 @@ def recommended_transport() -> Transport:
     return Transport.CTAPHID
 
 
-def list(
-    transport: Transport | None = None, model: Optional[Model] = None, exclusive: bool = True
-) -> List[TrussedBase]:
-    devices: List[TrussedBase] = []
+def list_devices(
+    *, transport: Transport | None = None, model: Model | None = None
+) -> list[DeviceInfo]:
+    # TODO: list only once
+    # TODO: fix model detection with CCID
+
+    infos: list[DeviceInfo] = []
 
     if model is None or model == Model.NK3:
-        from nitrokey import nk3
+        from nitrokey.nk3 import NK3
 
-        devices.extend(nk3.list(transport=transport, exclusive=exclusive))
-
-    if model is None or model == Model.NKPK:
-        from nitrokey import nkpk
-
-        devices.extend(nkpk.list(transport=transport, exclusive=exclusive))
-
-    return devices
-
-
-def open(path: str, *, model: Optional[Model] = None) -> Optional[TrussedBase]:
-    devices: List[TrussedBase] = []
-
-    if model is None or model == Model.NK3:
-        from nitrokey import nk3
-
-        nk3_device = nk3.open(path)
-        if nk3_device is not None:
-            devices.append(nk3_device)
+        infos.extend(NK3.list(transport=transport))
 
     if model is None or model == Model.NKPK:
-        from nitrokey import nkpk
+        from nitrokey.nkpk import NKPK
 
-        nkpk_device = nkpk.open(path)
-        if nkpk_device is not None:
-            devices.append(nkpk_device)
+        infos.extend(NKPK.list(transport=transport))
 
-    if len(devices) > 1:
-        raise Exception(f"Found multiple devices at path {path}")
-    if len(devices) == 1:
-        return devices[0]
-    return None
+    return infos
+
+
+def open_device(info: DeviceInfo) -> AbstractContextManager[TrussedDevice]:
+    if info.model == Model.NK3:
+        from nitrokey.nk3 import NK3
+
+        return NK3.open(info)
+
+    if info.model == Model.NKPK:
+        from nitrokey.nkpk import NKPK
+
+        return NKPK.open(info)
+
+    typing.assert_never(info.model)
