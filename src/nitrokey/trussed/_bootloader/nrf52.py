@@ -10,9 +10,10 @@ import logging
 import re
 import time
 from abc import abstractmethod
+from contextlib import contextmanager
 from dataclasses import dataclass
 from io import BytesIO
-from typing import Optional, Sequence, TypeVar
+from typing import Iterator, Optional, Self, Sequence, TypeVar
 from zipfile import ZipFile
 
 from cryptography.exceptions import InvalidSignature
@@ -21,12 +22,14 @@ from cryptography.hazmat.primitives.asymmetric import ec, utils
 
 from nitrokey.trussed import Uuid, Version
 
+from .._utils import VidPid
 from . import FirmwareMetadata, ProgressCallback, TrussedBootloader, Variant
 from .nrf52_upload.dfu.dfu_transport import DfuEvent
 from .nrf52_upload.dfu.dfu_transport_serial import DfuTransportSerial
 from .nrf52_upload.dfu.init_packet_pb import InitPacketPB
 from .nrf52_upload.dfu.manifest import Manifest
 from .nrf52_upload.lister.device_lister import DeviceLister
+from .nrf52_upload.lister.enumerated_device import EnumeratedDevice
 
 logger = logging.getLogger(__name__)
 
@@ -132,9 +135,6 @@ class TrussedBootloaderNrf52(TrussedBootloader):
     @abstractmethod
     def _signature_keys(self) -> Sequence[SignatureKey]: ...
 
-    def close(self) -> None:
-        pass
-
     def reboot(self) -> bool:
         return False
 
@@ -162,16 +162,36 @@ class TrussedBootloaderNrf52(TrussedBootloader):
         dfu.send_firmware(parsed_image.firmware_bin)
         dfu.close()
 
-    @classmethod
-    def _list_vid_pid(cls: type[T], vid: int, pid: int) -> list[T]:
-        return [cls(port, serial) for port, serial in _list_ports(vid, pid)]
+    @staticmethod
+    def _variant() -> Variant:
+        return Variant.NRF52
+
+    @staticmethod
+    @abstractmethod
+    def _expected_vid_pid() -> VidPid: ...
 
     @classmethod
-    def _open_vid_pid(cls: type[T], vid: int, pid: int, path: str) -> Optional[T]:
-        for port, serial in _list_ports(vid, pid):
-            if path == port:
-                return cls(path, serial)
-        return None
+    def _list_paths(cls) -> Sequence[str]:
+        vid_pid = cls._expected_vid_pid()
+        return [device.com_ports[0] for device in _list_devices(vid_pid)]
+
+    @classmethod
+    @contextmanager
+    def _open_path(cls, path: str) -> Iterator[Self]:
+        vid_pid = cls._expected_vid_pid()
+        devices = [device for device in _list_devices(vid_pid) if device.com_ports[0] == path]
+        if len(devices) == 0:
+            raise Exception(f"No NRF52 bootloader found at {path}")
+        if len(devices) > 1:
+            raise Exception(f"Multiple NRF52 bootloaders found at {path}")
+        device = devices[0]
+
+        serial = int(device.serial_number, base=16)
+        yield cls._from_path_and_serial(path, serial)
+
+    @classmethod
+    @abstractmethod
+    def _from_path_and_serial(cls, path: str, serial: int) -> Self: ...
 
 
 @dataclass
@@ -185,7 +205,7 @@ class CallbackWrapper:
         self.callback(self.n, self.total)
 
 
-def _list_ports(vid: int, pid: int) -> list[tuple[str, int]]:
+def _list_devices(vid_pid: VidPid) -> list[EnumeratedDevice]:
     ports = []
     for device in DeviceLister().enumerate():
         vendor_id = int(device.vendor_id, base=16)
@@ -195,11 +215,10 @@ def _list_ports(vid: int, pid: int) -> list[tuple[str, int]]:
             logger.warning(
                 f"Nitrokey 3 NRF52 bootloader has multiple com ports: {device.com_ports}"
             )
-        if vendor_id == vid and product_id == pid:
+        if vendor_id == vid_pid.vid and product_id == vid_pid.pid:
             port = device.com_ports[0]
-            serial = int(device.serial_number, base=16)
             logger.debug(f"Found Nitrokey 3 NRF52 bootloader with port {port}")
-            ports.append((port, serial))
+            ports.append(device)
         else:
             logger.debug(
                 f"Skipping device {vendor_id:x}:{product_id:x} with ports {device.com_ports}"

@@ -12,6 +12,7 @@ from contextlib import AbstractContextManager
 
 from ._base import Model as Model
 from ._base import TrussedBase as TrussedBase
+from ._bootloader import BootloaderInfo as BootloaderInfo
 from ._bootloader import FirmwareContainer as FirmwareContainer
 from ._bootloader import FirmwareMetadata as FirmwareMetadata
 from ._bootloader import TrussedBootloader as TrussedBootloader
@@ -75,5 +76,35 @@ def open_device(info: DeviceInfo) -> AbstractContextManager[TrussedDevice]:
         from nitrokey.nkpk import NKPK
 
         return NKPK._open(info)
+
+    typing.assert_never(info.model)
+
+
+def list_bootloaders(model: Model | None = None) -> list[BootloaderInfo]:
+    infos = []
+
+    if model is None or model == Model.NK3:
+        from nitrokey import nk3
+
+        infos.extend(nk3.list_bootloaders())
+
+    if model is None or model == Model.NKPK:
+        from nitrokey import nkpk
+
+        infos.extend(nkpk.list_bootloaders())
+
+    return infos
+
+
+def open_bootloader(info: BootloaderInfo) -> AbstractContextManager[TrussedBootloader]:
+    if info.model == Model.NK3:
+        from nitrokey import nk3
+
+        return nk3.open_bootloader(info)
+
+    if info.model == Model.NKPK:
+        from nitrokey import nkpk
+
+        return nkpk.open_bootloader(info)
 
     typing.assert_never(info.model)

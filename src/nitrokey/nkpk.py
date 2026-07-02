@@ -7,15 +7,15 @@
 
 from collections.abc import Sequence
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING
 
 from nitrokey import _VID_NITROKEY
 from nitrokey.trussed import Fido2Certs, TrussedDevice, Version
 from nitrokey.trussed._base import Model
-from nitrokey.trussed._bootloader import ModelData
+from nitrokey.trussed._bootloader import BootloaderInfo, ModelData
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey, TrussedBootloaderNrf52
 from nitrokey.trussed._connection import Connection, Transport
 from nitrokey.trussed._device import DeviceInfo
+from nitrokey.trussed._utils import VidPid
 
 _PID_NKPK_DEVICE = 0x42F3
 _PID_NKPK_BOOTLOADER = 0x42F4
@@ -75,17 +75,21 @@ class NKPKBootloader(TrussedBootloaderNrf52):
     def pid(self) -> int:
         return _PID_NKPK_BOOTLOADER
 
-    @classmethod
-    def list(cls) -> list["NKPKBootloader"]:
-        return cls._list_vid_pid(_VID_NITROKEY, _PID_NKPK_BOOTLOADER)
-
-    @classmethod
-    def open(cls, path: str) -> "NKPKBootloader | None":
-        return cls._open_vid_pid(_VID_NITROKEY, _PID_NKPK_BOOTLOADER, path)
-
     @property
     def _signature_keys(self) -> Sequence[SignatureKey]:
         return _NKPK_DATA.nrf52_signature_keys
+
+    @staticmethod
+    def _model() -> Model:
+        return Model.NKPK
+
+    @staticmethod
+    def _expected_vid_pid() -> VidPid:
+        return VidPid(vid=_VID_NITROKEY, pid=_PID_NKPK_BOOTLOADER)
+
+    @classmethod
+    def _from_path_and_serial(cls, path: str, serial: int) -> "NKPKBootloader":
+        return NKPKBootloader(path, serial)
 
 
 def list_devices(transport: Transport | None = None) -> Sequence[DeviceInfo]:
@@ -96,7 +100,9 @@ def open_device(info: DeviceInfo) -> AbstractContextManager[NKPK]:
     return NKPK._open(info=info)
 
 
-if TYPE_CHECKING:
-    from contextlib import AbstractContextManager
+def list_bootloaders() -> list[BootloaderInfo]:
+    return NKPKBootloader._list()
 
-    _ACM_BL: type[AbstractContextManager[NKPKBootloader]] = NKPKBootloader
+
+def open_bootloader(info: BootloaderInfo) -> AbstractContextManager[NKPKBootloader]:
+    return NKPKBootloader._open(info=info)

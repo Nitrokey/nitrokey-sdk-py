@@ -12,11 +12,12 @@ import logging
 import sys
 import typing
 from abc import abstractmethod
+from collections.abc import Sequence
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from io import BytesIO
 from re import Pattern
-from types import TracebackType
-from typing import TYPE_CHECKING, Callable, Dict, Optional, Self, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Iterator, Self
 from zipfile import ZipFile
 
 from .._base import Model, TrussedBase
@@ -76,12 +77,12 @@ def _validate_checksum(checksums: dict[str, str], path: str, data: bytes) -> Non
 @dataclass
 class FirmwareContainer:
     version: Version
-    pynitrokey: Optional[Version]
-    sdk: Optional[Version]
-    images: Dict[Variant, bytes]
+    pynitrokey: Version | None
+    sdk: Version | None
+    images: dict[Variant, bytes]
 
     @classmethod
-    def parse(cls, path: Union[str, BytesIO], model: Model) -> "FirmwareContainer":
+    def parse(cls, path: str | BytesIO, model: Model) -> "FirmwareContainer":
         with ZipFile(path) as z:
             checksum_lines = z.read("sha256sums").decode("utf-8").splitlines()
             checksum_pairs = [line.split("  ", maxsplit=1) for line in checksum_lines]
@@ -113,31 +114,55 @@ class FirmwareContainer:
 @dataclass
 class FirmwareMetadata:
     version: Version
-    signed_by: Optional[str] = None
+    signed_by: str | None = None
     signed_by_nitrokey: bool = False
 
 
+@dataclass(kw_only=True, frozen=True)
+class BootloaderInfo:
+    model: Model
+    variant: Variant
+    path: str
+
+
 class TrussedBootloader(TrussedBase):
-    def __enter__(self) -> Self:
-        return self
-
-    def __exit__(
-        self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> None:
-        self.close()
-
     @abstractmethod
-    def close(self) -> None: ...
-
-    @abstractmethod
-    def update(self, image: bytes, callback: Optional[ProgressCallback] = None) -> None: ...
+    def update(self, image: bytes, callback: ProgressCallback | None = None) -> None: ...
 
     @property
     @abstractmethod
     def variant(self) -> Variant: ...
+
+    @staticmethod
+    @abstractmethod
+    def _variant() -> Variant: ...
+
+    @classmethod
+    def _list(cls) -> list[BootloaderInfo]:
+        model = cls._model()
+        variant = cls._variant()
+        return [
+            BootloaderInfo(model=model, variant=variant, path=path) for path in cls._list_paths()
+        ]
+
+    @classmethod
+    @abstractmethod
+    def _list_paths(cls) -> Sequence[str]: ...
+
+    @classmethod
+    def _open(cls, info: BootloaderInfo) -> AbstractContextManager[Self]:
+        model = cls._model()
+        variant = cls._variant()
+        if info.model != model:
+            raise Exception("Cannot open {info.model} bootloader as {model}")
+        if info.variant != variant:
+            raise Exception("Cannot open {info.variant} bootloader as {info.variant}")
+        return cls._open_path(info.path)
+
+    @classmethod
+    @contextmanager
+    @abstractmethod
+    def _open_path(cls, path: str) -> Iterator[Self]: ...
 
 
 def get_firmware_filename_pattern(variant: Variant) -> Pattern[str]:
@@ -152,7 +177,7 @@ def get_firmware_filename_pattern(variant: Variant) -> Pattern[str]:
         typing.assert_never(variant)
 
 
-def parse_filename(filename: str) -> Optional[Tuple[Variant, Version]]:
+def parse_filename(filename: str) -> tuple[Variant, Version] | None:
     for variant in Variant:
         pattern = get_firmware_filename_pattern(variant)
         match = pattern.search(filename)
@@ -163,7 +188,7 @@ def parse_filename(filename: str) -> Optional[Tuple[Variant, Version]]:
 
 
 def validate_firmware_image(
-    variant: Variant, data: bytes, version: Optional[Version], model: Model
+    variant: Variant, data: bytes, version: Version | None, model: Model
 ) -> FirmwareMetadata:
     try:
         metadata = parse_firmware_image(variant, data, model)

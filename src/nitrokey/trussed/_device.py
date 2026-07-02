@@ -173,7 +173,3 @@ class TrussedDevice(TrussedBase):
     @classmethod
     def _list(cls, transport: Transport | None) -> Sequence[DeviceInfo]:
         return DeviceInfo._list(transport=transport, models=[cls._model()])
-
-    @staticmethod
-    @abstractmethod
-    def _model() -> Model: ...

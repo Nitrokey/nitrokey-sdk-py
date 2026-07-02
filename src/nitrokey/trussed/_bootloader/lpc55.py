@@ -8,11 +8,13 @@
 import logging
 import platform
 import re
-import sys
-from typing import Optional, TypeVar
+from abc import abstractmethod
+from contextlib import contextmanager
+from typing import Iterator, Optional, Self, TypeVar
 
 from nitrokey.trussed import Uuid, Version
 
+from .._utils import VidPid
 from . import FirmwareMetadata, ProgressCallback, TrussedBootloader, Variant
 from .lpc55_upload.mboot.interfaces.usb import MbootUSBInterface
 from .lpc55_upload.mboot.mcuboot import McuBoot
@@ -38,10 +40,6 @@ class TrussedBootloaderLpc55(TrussedBootloader):
         self._path = device.path
         self.device = McuBoot(MbootUSBInterface(device))
 
-    def __enter__(self: T) -> T:
-        self.device.open()
-        return self
-
     @property
     def variant(self) -> Variant:
         return Variant.LPC55
@@ -55,9 +53,6 @@ class TrussedBootloaderLpc55(TrussedBootloader):
     @property
     def status(self) -> str:
         return self.device.status_string
-
-    def close(self) -> None:
-        self.device.close()
 
     def reboot(self) -> bool:
         if not self.device.reset(reopen=False):
@@ -94,32 +89,37 @@ class TrussedBootloaderLpc55(TrussedBootloader):
             raise Exception(f"Firmware update failed with status {self.status}")
 
     @classmethod
-    def _list_vid_pid(cls: type[T], vid: int, pid: int) -> list[T]:
-        devices = []
-        for device in UsbDevice.enumerate(vid=vid, pid=pid):
-            try:
-                devices.append(cls(device))
-            except ValueError:
-                logger.warning(
-                    f"Invalid Nitrokey 3 LPC55 bootloader returned by enumeration: {device}"
-                )
-        return devices
-
-    @classmethod
-    def _open(cls: type[T], path: str) -> Optional[T]:
+    @contextmanager
+    def _open_path(cls, path: str) -> Iterator[Self]:
         devices = UsbDevice.enumerate(path=path)
         if len(devices) == 0:
-            logger.warning(f"No HID device at {path}")
-            return None
+            raise Exception(f"No HID device at {path}")
         if len(devices) > 1:
-            logger.warning(f"Multiple HID devices at {path}: {devices}")
-            return None
+            raise Exception(f"Multiple HID devices at {path}")
+        device = devices[0]
 
         try:
-            return cls(devices[0])
-        except ValueError:
-            logger.warning(f"No Nitrokey 3 bootloader at path {path}", exc_info=sys.exc_info())
-            return None
+            yield cls._from_device(device)
+        finally:
+            device.close()
+
+    @classmethod
+    @abstractmethod
+    def _from_device(cls, device: UsbDevice) -> Self: ...
+
+    @staticmethod
+    def _variant() -> Variant:
+        return Variant.LPC55
+
+    @staticmethod
+    @abstractmethod
+    def _expected_vid_pid() -> VidPid: ...
+
+    @classmethod
+    def _list_paths(cls) -> list[str]:
+        vid_pid = cls._expected_vid_pid()
+        paths = [device.path for device in UsbDevice.enumerate(vid=vid_pid.vid, pid=vid_pid.pid)]
+        return [path.decode() for path in paths]
 
 
 def parse_firmware_image(data: bytes) -> FirmwareMetadata:

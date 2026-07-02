@@ -14,6 +14,8 @@ from nitrokey.trussed._connection import Transport
 from nitrokey.trussed._device import DeviceInfo
 
 from ._bootloader import NK3Bootloader as NK3Bootloader
+from ._bootloader import list_bootloaders as list_bootloaders
+from ._bootloader import open_bootloader as open_bootloader
 from ._device import NK3 as NK3
 
 _PID_NK3_DEVICE = 0x42B2

@@ -5,13 +5,17 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
-from typing import TYPE_CHECKING, List, Optional, Sequence
+import typing
+from collections.abc import Sequence
+from contextlib import AbstractContextManager
 
 from nitrokey import _VID_NITROKEY
 from nitrokey.trussed._base import Model
-from nitrokey.trussed._bootloader import TrussedBootloader
+from nitrokey.trussed._bootloader import BootloaderInfo, TrussedBootloader, Variant
 from nitrokey.trussed._bootloader.lpc55 import TrussedBootloaderLpc55
+from nitrokey.trussed._bootloader.lpc55_upload.utils.interfaces.device.usb_device import UsbDevice
 from nitrokey.trussed._bootloader.nrf52 import SignatureKey, TrussedBootloaderNrf52
+from nitrokey.trussed._utils import VidPid
 
 
 class NK3Bootloader(TrussedBootloader):
@@ -20,23 +24,8 @@ class NK3Bootloader(TrussedBootloader):
         return Model.NK3
 
     @staticmethod
-    def list() -> List["NK3Bootloader"]:
-        devices: List[NK3Bootloader] = []
-        devices.extend(NK3BootloaderLpc55._list())
-        devices.extend(NK3BootloaderNrf52._list())
-        return devices
-
-    @staticmethod
-    def open(path: str) -> Optional["NK3Bootloader"]:
-        lpc55 = NK3BootloaderLpc55._open(path)
-        if lpc55:
-            return lpc55
-
-        nrf52 = NK3BootloaderNrf52._open(path)
-        if nrf52:
-            return nrf52
-
-        return None
+    def _model() -> Model:
+        return Model.NK3
 
 
 class NK3BootloaderLpc55(TrussedBootloaderLpc55, NK3Bootloader):
@@ -50,11 +39,15 @@ class NK3BootloaderLpc55(TrussedBootloaderLpc55, NK3Bootloader):
 
         return _PID_NK3_LPC55_BOOTLOADER
 
-    @classmethod
-    def _list(cls) -> List["NK3BootloaderLpc55"]:
+    @staticmethod
+    def _expected_vid_pid() -> VidPid:
         from . import _PID_NK3_LPC55_BOOTLOADER
 
-        return cls._list_vid_pid(_VID_NITROKEY, _PID_NK3_LPC55_BOOTLOADER)
+        return VidPid(vid=_VID_NITROKEY, pid=_PID_NK3_LPC55_BOOTLOADER)
+
+    @classmethod
+    def _from_device(cls, device: UsbDevice) -> "NK3BootloaderLpc55":
+        return NK3BootloaderLpc55(device)
 
 
 class NK3BootloaderNrf52(TrussedBootloaderNrf52, NK3Bootloader):
@@ -68,27 +61,35 @@ class NK3BootloaderNrf52(TrussedBootloaderNrf52, NK3Bootloader):
 
         return _PID_NK3_NRF52_BOOTLOADER
 
-    @classmethod
-    def _list(cls) -> List["NK3BootloaderNrf52"]:
-        from . import _PID_NK3_NRF52_BOOTLOADER
-
-        return cls._list_vid_pid(_VID_NITROKEY, _PID_NK3_NRF52_BOOTLOADER)
-
-    @classmethod
-    def _open(cls, path: str) -> Optional["NK3BootloaderNrf52"]:
-        from . import _PID_NK3_NRF52_BOOTLOADER
-
-        return cls._open_vid_pid(_VID_NITROKEY, _PID_NK3_NRF52_BOOTLOADER, path)
-
     @property
     def _signature_keys(self) -> Sequence[SignatureKey]:
         from . import _NK3_DATA
 
         return _NK3_DATA.nrf52_signature_keys
 
+    @staticmethod
+    def _expected_vid_pid() -> VidPid:
+        from . import _PID_NK3_NRF52_BOOTLOADER
 
-if TYPE_CHECKING:
-    from contextlib import AbstractContextManager
+        return VidPid(vid=_VID_NITROKEY, pid=_PID_NK3_NRF52_BOOTLOADER)
 
-    _ACM_NRF52: type[AbstractContextManager[NK3BootloaderNrf52]] = NK3BootloaderNrf52
-    _ACM_LPC55: type[AbstractContextManager[NK3BootloaderLpc55]] = NK3BootloaderLpc55
+    @classmethod
+    def _from_path_and_serial(cls, path: str, serial: int) -> "NK3BootloaderNrf52":
+        return NK3BootloaderNrf52(path, serial)
+
+
+def list_bootloaders() -> list[BootloaderInfo]:
+    infos = []
+    infos.extend(NK3BootloaderLpc55._list())
+    infos.extend(NK3BootloaderNrf52._list())
+    return infos
+
+
+def open_bootloader(info: BootloaderInfo) -> AbstractContextManager[NK3Bootloader]:
+    if info.variant == Variant.LPC55:
+        return NK3BootloaderLpc55._open(info=info)
+
+    if info.variant == Variant.NRF52:
+        return NK3BootloaderNrf52._open(info=info)
+
+    typing.assert_never(info.variant)

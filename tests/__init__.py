@@ -16,18 +16,19 @@ class TestBasic(unittest.TestCase):
         from nitrokey import nk3
 
         nk3.list_devices()
-        nk3.NK3Bootloader.list()
+        nk3.list_bootloaders()
 
     def test_list_nkpk(self) -> None:
         from nitrokey import nkpk
 
         nkpk.list_devices()
-        nkpk.NKPKBootloader.list()
+        nkpk.list_bootloaders()
 
     def test_list_trussed(self) -> None:
         from nitrokey import trussed
 
         trussed.list_devices()
+        trussed.list_bootloaders()
 
 
 class TestNk3Updates(unittest.TestCase):

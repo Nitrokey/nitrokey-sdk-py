@@ -95,3 +95,7 @@ class TrussedBase(ABC):
 
     @abstractmethod
     def uuid(self) -> Uuid | None: ...
+
+    @staticmethod
+    @abstractmethod
+    def _model() -> Model: ...
