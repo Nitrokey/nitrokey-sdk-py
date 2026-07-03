@@ -1,4 +1,5 @@
 import enum
+import typing
 from dataclasses import dataclass
 from enum import Enum, IntFlag
 from typing import Optional
@@ -187,8 +188,7 @@ class ConfigFieldType(Enum):
             except ValueError:
                 return False
         else:
-            # TODO: use typing.assert_never from Python 3.11
-            raise ValueError(self)
+            typing.assert_never(self)
 
     def __str__(self) -> str:
         if self == ConfigFieldType.BOOL:
@@ -196,8 +196,7 @@ class ConfigFieldType(Enum):
         elif self == ConfigFieldType.U8:
             return "u8"
         else:
-            # TODO: use typing.assert_never from Python 3.11
-            raise ValueError(self)
+            typing.assert_never(self)
 
 
 @dataclass

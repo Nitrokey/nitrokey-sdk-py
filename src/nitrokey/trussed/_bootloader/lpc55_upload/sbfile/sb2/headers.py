@@ -9,15 +9,12 @@
 
 from datetime import datetime
 from struct import calcsize, unpack_from
-from typing import TYPE_CHECKING, Optional
+from typing import Optional, Self
 
 from ...exceptions import SPSDKError
 from ...sbfile.misc import BcdVersion3, unpack_timestamp
 from ...utils.abstract import BaseClass
 from ...utils.misc import swap16
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 
 ########################################################################################################################
@@ -102,7 +99,7 @@ class ImageHeaderV2(BaseClass):
 
     # pylint: disable=too-many-locals
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Deserialization from binary form.
 
         :param data: binary representation

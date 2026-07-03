@@ -11,12 +11,13 @@ import logging
 import platform
 import re
 import time
+import typing
 from abc import ABC, abstractmethod
 from collections.abc import Set
 from contextlib import contextmanager
 from importlib.metadata import PackageNotFoundError
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, Union
+from typing import Any, Callable, Iterator, List, Optional, Tuple, Union
 
 from nitrokey._helpers import Retries
 from nitrokey.trussed import TimeoutException, TrussedBase, Version
@@ -33,9 +34,6 @@ from nitrokey.trussed._device import TrussedDevice
 from nitrokey.trussed.admin_app import BootMode, Status
 from nitrokey.trussed.admin_app import Variant as AdminAppVariant
 from nitrokey.updates import Asset, Release, Repository
-
-if TYPE_CHECKING:
-    import typing_extensions
 
 logger = logging.getLogger(__name__)
 
@@ -79,10 +77,7 @@ class Warning(enum.Enum):
                 " https://github.com/Nitrokey/nitrokey-3-firmware/releases"
             )
 
-        if TYPE_CHECKING:
-            typing_extensions.assert_never(self)
-
-        return self.value
+        typing.assert_never(self)
 
     @classmethod
     def from_str(cls, s: str) -> "Warning":
@@ -118,10 +113,7 @@ class _Migration(enum.Enum):
             elif variant == AdminAppVariant.NRF52:
                 variant = Variant.NRF52
             else:
-                if TYPE_CHECKING:
-                    typing_extensions.assert_never(variant)
-
-                raise ValueError(f"Unsupported device variant: {variant}")
+                typing.assert_never(variant)
 
         migrations = set()
 

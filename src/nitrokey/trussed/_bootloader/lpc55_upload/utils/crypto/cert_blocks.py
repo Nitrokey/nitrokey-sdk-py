@@ -9,16 +9,13 @@
 
 import re
 from struct import calcsize, unpack_from
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import List, Optional, Self, Union
 
 from ...crypto.certificate import Certificate
 from ...exceptions import SPSDKError
 from ...utils.abstract import BaseClass
 from ...utils.crypto.rkht import RKHTv1
 from ...utils.misc import Endianness, align
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 
 class CertBlock(BaseClass):
@@ -74,7 +71,7 @@ class CertBlockHeader(BaseClass):
         return nfo
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Deserialize object from bytes array.
 
         :param data: Input data as bytes
@@ -294,7 +291,7 @@ class CertBlockV1(CertBlock):
         return pub_key.verify_signature(signature=signature, data=data)
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Deserialize CertBlockV1 from binary file.
 
         :param data: Binary data

@@ -9,13 +9,10 @@
 
 from abc import ABC, abstractmethod
 from types import TracebackType
-from typing import TYPE_CHECKING, Optional, Type, Union
+from typing import Optional, Self, Type, Union
 
 from ....utils.interfaces.commands import CmdPacketBase, CmdResponseBase
 from ....utils.interfaces.device.base import DeviceBase
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 
 class ProtocolBase(ABC):
@@ -34,7 +31,7 @@ class ProtocolBase(ABC):
     def __str__(self) -> str:
         return f"identifier='{self.identifier}', device={self.device}"
 
-    def __enter__(self) -> "Self":
+    def __enter__(self) -> Self:
         self.open()
         return self
 

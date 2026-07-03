@@ -8,13 +8,10 @@
 """The module provides support for Root Key Hash table."""
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, List
+from typing import List, Self
 
 from ...crypto.hash import EnumHashAlgorithm, get_hash
 from ...exceptions import SPSDKError
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 
 class RKHT:
@@ -85,7 +82,7 @@ class RKHTv1(RKHT):
         return rotk_table
 
     @classmethod
-    def parse(cls, rkht: bytes) -> "Self":
+    def parse(cls, rkht: bytes) -> Self:
         """Parse Root Key Hash Table into RKHTv1 object.
 
         :param rkht: Valid RKHT table

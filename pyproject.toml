@@ -14,7 +14,7 @@ readme = "README.md"
 packages = [
     { include = "nitrokey", from = "src" },
 ]
-requires-python = ">=3.10, <4"
+requires-python = ">=3.11, <4"
 dynamic = ["classifiers"]
 
 dependencies = [
@@ -56,7 +56,6 @@ sphinx = "^7"
 ty = "^0.0.29"
 types-protobuf = ">=5.26, <7"
 types-requests = "^2.16"
-typing-extensions = "^4.1"
 # fake-winreg does not work with wrapt v2 so we need to add an additional upper bound
 wrapt = "<2"
 
@@ -78,11 +77,14 @@ dev-dependencies = [
     # fake-winreg does not work with wrapt v2 so we need to add an additional upper bound
     "wrapt <2",
 ]
+exclude-newer = "7 days"
+# Can be used to update packages to a version more recent what exclude-newer allows
+exclude-newer-package = { }
 
 [tool.mypy]
 mypy_path = "stubs"
 show_error_codes = true
-python_version = "3.10"
+python_version = "3.11"
 strict = true
 
 [tool.rstcheck]

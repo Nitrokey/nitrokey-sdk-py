@@ -10,7 +10,7 @@
 import math
 from abc import abstractmethod
 from struct import calcsize, pack, unpack_from
-from typing import TYPE_CHECKING, Mapping, Optional, Type
+from typing import Mapping, Optional, Self, Type
 
 from crcmod.predefined import mkPredefinedCrcFun
 
@@ -20,9 +20,6 @@ from ...sbfile.misc import SecBootBlckSize
 from ...utils.abstract import BaseClass
 from ...utils.misc import Endianness
 from ...utils.spsdk_enum import SpsdkEnum
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 ########################################################################################################################
 # Constants
@@ -116,7 +113,7 @@ class CmdHeader(BaseClass):
         return pack(self.FORMAT, crc, self.tag, self.flags, self.address, self.count, self.data)
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Parse command header from bytes.
 
         :param data: Input data as bytes
@@ -171,7 +168,7 @@ class CmdBaseClass(BaseClass):
 
     @classmethod
     @abstractmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Deserialize object from bytes array."""
 
 
@@ -183,7 +180,7 @@ class CmdNop(CmdBaseClass):
         super().__init__(EnumCmdTag.NOP)
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Parse command from bytes.
 
         :param data: Input data as bytes
@@ -207,7 +204,7 @@ class CmdTag(CmdBaseClass):
         super().__init__(EnumCmdTag.TAG)
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Parse command from bytes.
 
         :param data: Input data as bytes
@@ -294,7 +291,7 @@ class CmdLoad(CmdBaseClass):
         self._header.data = crc32_function(self.data, 0xFFFFFFFF)
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Parse command from bytes.
 
         :param data: Input data as bytes
@@ -392,7 +389,7 @@ class CmdFill(CmdBaseClass):
         )
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Parse command from bytes.
 
         :param data: Input data as bytes
@@ -462,7 +459,7 @@ class CmdJump(CmdBaseClass):
         return nfo
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Parse command from bytes.
 
         :param data: Input data as bytes
@@ -514,7 +511,7 @@ class CmdCall(CmdBaseClass):
         return f"CALL: Address=0x{self.address:08X}, Argument=0x{self.argument:08X}"
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Parse command from bytes.
 
         :param data: Input data as bytes
@@ -588,7 +585,7 @@ class CmdErase(CmdBaseClass):
         )
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Parse command from bytes.
 
         :param data: Input data as bytes
@@ -612,7 +609,7 @@ class CmdReset(CmdBaseClass):
         super().__init__(EnumCmdTag.RESET)
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Parse command from bytes.
 
         :param data: Input data as bytes
@@ -688,7 +685,7 @@ class CmdMemEnable(CmdBaseClass):
         )
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Parse command from bytes.
 
         :param data: Input data as bytes
@@ -797,7 +794,7 @@ class CmdProg(CmdBaseClass):
         )
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Parse command from bytes.
 
         :param data: Input data as bytes
@@ -855,7 +852,7 @@ class CmdVersionCheck(CmdBaseClass):
         )
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Parse command from bytes.
 
         :param data: Input data as bytes
@@ -919,7 +916,7 @@ class CmdKeyStoreBackupRestore(CmdBaseClass):
         return (self.header.flags & self.ROM_MEM_DEVICE_ID_MASK) >> self.ROM_MEM_DEVICE_ID_SHIFT
 
     @classmethod
-    def parse(cls, data: bytes) -> "Self":
+    def parse(cls, data: bytes) -> Self:
         """Parse command from bytes.
 
         :param data: Input data as bytes
