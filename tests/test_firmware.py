@@ -1,16 +1,28 @@
 import unittest
+from typing import Optional
 
 from nitrokey.trussed import FirmwareContainer, Model, Variant, parse_firmware_image
 
 
 class TestFirmwareContainer(unittest.TestCase):
     def test_parse_nk3(self) -> None:
-        self._test(Model.NK3, "v1.7.2", [Variant.LPC55, Variant.NRF52])
+        self._test(
+            Model.NK3,
+            "v1.7.2",
+            [Variant.LPC55, Variant.NRF52],
+            {Variant.LPC55: "51b76ef121d3e44270a65d8fe09165b133ecbdf85601e5dfb9d1cab19a988758"},
+        )
 
     def test_parse_nkpk(self) -> None:
         self._test(Model.NKPK, "v1.0.0", [Variant.NRF52])
 
-    def _test(self, model: Model, version: str, variants: list[Variant]) -> None:
+    def _test(
+        self,
+        model: Model,
+        version: str,
+        variants: list[Variant],
+        checksum: Optional[dict[Variant, str]] = None,
+    ) -> None:
         path = f"./tests/data/firmware-{model.name.lower()}-{version}.zip"
         container = FirmwareContainer.parse(path, model)
         self.assertEqual(str(container.version), version)
@@ -22,3 +34,8 @@ class TestFirmwareContainer(unittest.TestCase):
             self.assertEqual(str(metadata.version), version)
             self.assertEqual(metadata.signed_by, "Nitrokey")
             self.assertTrue(metadata.signed_by_nitrokey)
+            if checksum and variant in checksum:
+                self.assertEqual(
+                    metadata.inner_checksum.hex() if metadata.inner_checksum else "",
+                    checksum[variant],
+                )

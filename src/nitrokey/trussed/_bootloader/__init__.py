@@ -114,6 +114,7 @@ class FirmwareMetadata:
     version: Version
     signed_by: Optional[str] = None
     signed_by_nitrokey: bool = False
+    inner_checksum: bytes | None = None
 
 
 class TrussedBootloader(TrussedBase):
