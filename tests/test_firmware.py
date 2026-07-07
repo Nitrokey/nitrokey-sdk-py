@@ -1,5 +1,4 @@
 import unittest
-from typing import Optional
 
 from nitrokey.trussed import FirmwareContainer, Model, Variant, parse_firmware_image
 
@@ -10,18 +9,22 @@ class TestFirmwareContainer(unittest.TestCase):
             Model.NK3,
             "v1.7.2",
             [Variant.LPC55, Variant.NRF52],
-            {Variant.LPC55: "51b76ef121d3e44270a65d8fe09165b133ecbdf85601e5dfb9d1cab19a988758"},
+            {
+                Variant.LPC55: "51b76ef121d3e44270a65d8fe09165b133ecbdf85601e5dfb9d1cab19a988758",
+                Variant.NRF52: "57315be2e84ff6184171c96a09861441047e21b73abdc63a4a9f19fe2ccac3ff",
+            },
         )
 
     def test_parse_nkpk(self) -> None:
-        self._test(Model.NKPK, "v1.0.0", [Variant.NRF52])
+        self._test(
+            Model.NKPK,
+            "v1.0.0",
+            [Variant.NRF52],
+            {Variant.NRF52: "d4f4dbe7a49e60d6f41b16fb62e8a4430580c2884d09626cb72c47498146f2a1"},
+        )
 
     def _test(
-        self,
-        model: Model,
-        version: str,
-        variants: list[Variant],
-        checksum: Optional[dict[Variant, str]] = None,
+        self, model: Model, version: str, variants: list[Variant], checksum: dict[Variant, str]
     ) -> None:
         path = f"./tests/data/firmware-{model.name.lower()}-{version}.zip"
         container = FirmwareContainer.parse(path, model)
@@ -34,8 +37,6 @@ class TestFirmwareContainer(unittest.TestCase):
             self.assertEqual(str(metadata.version), version)
             self.assertEqual(metadata.signed_by, "Nitrokey")
             self.assertTrue(metadata.signed_by_nitrokey)
-            if checksum and variant in checksum:
-                self.assertEqual(
-                    metadata.inner_checksum.hex() if metadata.inner_checksum else "",
-                    checksum[variant],
-                )
+            self.assertEqual(
+                metadata.inner_checksum.hex() if metadata.inner_checksum else "", checksum[variant]
+            )

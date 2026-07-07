@@ -112,9 +112,9 @@ class FirmwareContainer:
 @dataclass
 class FirmwareMetadata:
     version: Version
+    inner_checksum: bytes
     signed_by: Optional[str] = None
     signed_by_nitrokey: bool = False
-    inner_checksum: bytes | None = None
 
 
 class TrussedBootloader(TrussedBase):

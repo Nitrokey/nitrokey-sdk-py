@@ -162,12 +162,12 @@ def parse_firmware_image(data: bytes) -> FirmwareMetadata:
     image = BootImageV21.parse(data, kek=KEK)
     bcd_version = image.header.product_version
     version = Version(major=bcd_version.major, minor=bcd_version.minor, patch=bcd_version.service)
-    metadata = FirmwareMetadata(version=version)
+    inner_checksum = _inner_checksum(image)
+    metadata = FirmwareMetadata(version=version, inner_checksum=inner_checksum)
     if image.cert_block:
         if image.cert_block.rkth == RKTH:
             metadata.signed_by = "Nitrokey"
             metadata.signed_by_nitrokey = True
         else:
             metadata.signed_by = f"unknown issuer (RKTH: {image.cert_block.rkth.hex()})"
-    metadata.inner_checksum = _inner_checksum(image)
     return metadata
