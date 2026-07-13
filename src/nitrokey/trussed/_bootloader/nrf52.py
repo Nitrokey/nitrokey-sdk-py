@@ -207,10 +207,18 @@ def _list_ports(vid: int, pid: int) -> list[tuple[str, int]]:
     return ports
 
 
+def _inner_checksum(image: Image) -> bytes:
+    raw_image = image.firmware_bin
+    h = hashlib.sha256()
+    h.update(raw_image)
+    return h.digest()
+
+
 def parse_firmware_image(data: bytes, keys: Sequence[SignatureKey]) -> FirmwareMetadata:
     image = Image.parse(data, keys)
     version = Version.from_int(image.init_packet.init_command.fw_version)
-    metadata = FirmwareMetadata(version=version)
+    inner_checksum = _inner_checksum(image)
+    metadata = FirmwareMetadata(version=version, inner_checksum=inner_checksum)
 
     if image.is_signed:
         metadata.signed_by = image.signature_key.name if image.signature_key else "unknown"

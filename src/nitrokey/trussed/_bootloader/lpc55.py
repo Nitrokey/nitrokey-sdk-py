@@ -5,6 +5,7 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
+import hashlib
 import logging
 import platform
 import re
@@ -17,6 +18,7 @@ from . import FirmwareMetadata, ProgressCallback, TrussedBootloader, Variant
 from .lpc55_upload.mboot.interfaces.usb import MbootUSBInterface
 from .lpc55_upload.mboot.mcuboot import McuBoot
 from .lpc55_upload.mboot.properties import PropertyTag
+from .lpc55_upload.sbfile.sb2.commands import CmdLoad
 from .lpc55_upload.sbfile.sb2.images import BootImageV21
 from .lpc55_upload.utils.interfaces.device.usb_device import UsbDevice
 
@@ -122,11 +124,46 @@ class TrussedBootloaderLpc55(TrussedBootloader):
             return None
 
 
+def _inner_checksum(image: BootImageV21) -> bytes:
+    """
+    Calculates the checksum of the raw (unsigned) image from a SB2 file containing a Master Boot
+    Image (MBI). We assume that there is only a single Load command containing the full image and
+    that it is an MBI type 4 image. To produce the unsigned image from the MBI, we have to clear
+    the MBI header (placed in the vector table) and cut off the certificate block (at the location
+    indicated in the MBI header).
+
+    See: https://spsdk.readthedocs.io/en/latest/examples/_knowledge_base/mbi_summary.html
+    """
+    MBI_PATCH_START = 0x20
+    MBI_PATCH_LEN = 0xB
+
+    loads = [cmd for section in image.boot_sections for cmd in section if isinstance(cmd, CmdLoad)]
+    assert len(loads) == 1
+    mbi = memoryview(loads[0].data)
+
+    assert len(mbi) > MBI_PATCH_START + MBI_PATCH_LEN
+    assert mbi[0x24] == 0x04  # SPT-Xip
+    offset_loc = 0x28
+    header_size = 4
+    marker = int.from_bytes(mbi[offset_loc:][:header_size], "little")
+
+    # cut off certificate block
+    raw_image = mbi[:marker]
+
+    h = hashlib.sha256()
+    h.update(raw_image[:MBI_PATCH_START])
+    # zero out MBI header
+    h.update(b"\x00" * MBI_PATCH_LEN)
+    h.update(raw_image[MBI_PATCH_START:][MBI_PATCH_LEN:])
+    return h.digest()
+
+
 def parse_firmware_image(data: bytes) -> FirmwareMetadata:
     image = BootImageV21.parse(data, kek=KEK)
     bcd_version = image.header.product_version
     version = Version(major=bcd_version.major, minor=bcd_version.minor, patch=bcd_version.service)
-    metadata = FirmwareMetadata(version=version)
+    inner_checksum = _inner_checksum(image)
+    metadata = FirmwareMetadata(version=version, inner_checksum=inner_checksum)
     if image.cert_block:
         if image.cert_block.rkth == RKTH:
             metadata.signed_by = "Nitrokey"
