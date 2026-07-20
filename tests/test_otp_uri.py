@@ -14,7 +14,7 @@ class TestOTPUri(unittest.TestCase):
         self.assertEqual(totp.secret, b"\x08(k\x98\t\xcd\xec\x1a\xc8&\xc3\nf\x86\xe2\xe2\xab\xe5<?")
         self.assertEqual(totp.issuer, "demo")
         self.assertEqual(totp.algorithm, Algorithm.Sha1)
-        self.assertEqual(totp.type_, Kind.Totp)
+        self.assertEqual(totp.cred_type, Kind.Totp)
         self.assertEqual(totp.digits, 6)
         self.assertEqual(totp.period, 30)
 
@@ -28,6 +28,6 @@ class TestOTPUri(unittest.TestCase):
         )
         self.assertEqual(hotp.issuer, "demoapp")
         self.assertEqual(hotp.algorithm, Algorithm.Sha1)
-        self.assertEqual(hotp.type_, Kind.Hotp)
+        self.assertEqual(hotp.cred_type, Kind.Hotp)
         self.assertEqual(hotp.digits, 6)
         self.assertEqual(hotp.counter, 4)

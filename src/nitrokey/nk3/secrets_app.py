@@ -296,7 +296,7 @@ class OTP_Uri:
     secret: bytes
     issuer: str
     algorithm: Algorithm
-    type_: Kind
+    cred_type: Kind
     digits: int = 6
     counter: int = 0
     period: int = 30
@@ -340,7 +340,7 @@ class OTP_Uri:
             secret=secret,
             issuer=issuer,
             algorithm=algorithm,
-            type_=type_,
+            cred_type=type_,
             digits=digits,
             counter=counter,
             period=period,
@@ -619,7 +619,7 @@ class SecretsApp:
             credid=credid.encode(),
             secret=otp.secret,
             digits=otp.digits,
-            kind=otp.type_,
+            kind=otp.cred_type,
             algo=otp.algorithm,
             initial_counter_value=otp.counter,
             touch_button_required=touch_button_required,
