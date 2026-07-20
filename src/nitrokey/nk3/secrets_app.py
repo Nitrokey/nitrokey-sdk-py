@@ -308,8 +308,8 @@ class OTP_Uri:
         type_ = Kind[parsed.netloc.capitalize()]
         label = unquote(parsed.path.lstrip("/"))
 
-        params = parse_qs(parsed.query)
-        params = {k: v[0] if len(v) == 1 else v for k, v in params.items()}
+        params_parsed = parse_qs(parsed.query)
+        params = {k: v[0] for k, v in params_parsed.items()}
 
         assert "secret" in params, "Secret is required"
         if type_ == Kind.Hotp:
