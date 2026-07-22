@@ -5,6 +5,7 @@ Used through CTAPHID transport, via the custom vendor command.
 Can be used directly over CCID as well.
 """
 
+import base64
 import dataclasses
 import hmac
 import logging
@@ -15,6 +16,7 @@ from hashlib import pbkdf2_hmac
 from secrets import token_bytes
 from struct import pack
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
+from urllib.parse import parse_qs, unquote, urlparse
 
 import tlv8
 from semver.version import Version
@@ -288,6 +290,63 @@ class Algorithm(Enum):
 ALGORITHM_TO_KIND = {"SHA1": Algorithm.Sha1, "SHA256": Algorithm.Sha256}
 
 
+@dataclasses.dataclass
+class OTP_Uri:
+    label: str
+    secret: bytes
+    issuer: str
+    algorithm: Algorithm
+    cred_type: Kind
+    digits: int = 6
+    counter: int = 0
+    period: int = 30
+
+    @staticmethod
+    def from_uri(uri: str) -> "OTP_Uri":
+        parsed = urlparse(uri)
+        assert parsed.scheme == "otpauth", "Scheme not otpauth"
+        type_ = Kind[parsed.netloc.capitalize()]
+        label = unquote(parsed.path.lstrip("/"))
+
+        params_parsed = parse_qs(parsed.query)
+        params = {k: v[0] for k, v in params_parsed.items()}
+
+        assert "secret" in params, "Secret is required"
+        if type_ == Kind.Hotp:
+            assert "counter" in params, "Counter required for HOTP"
+
+        if "issuer" in params:
+            issuer = unquote(str(params.get("issuer")))
+        elif ":" in label:
+            issuer = label[: label.index(":")]
+        else:
+            raise ValueError("Issuer is required")
+
+        algorithm = Algorithm[str(params.get("algorithm", "Sha1")).capitalize()]
+        digits = int(str(params.get("digits", "6")))
+        assert digits == 6 or digits == 8, "Digits must be 6 or 8"
+
+        counter = int(str(params.get("counter", "0")))
+        period = int(str(params.get("period", "30")))
+
+        secret_encoded = str(params.get("secret"))
+        padding = (8 - len(secret_encoded) % 8) % 8
+        secret_encoded = secret_encoded + "=" * padding
+
+        secret = base64.b32decode(secret_encoded)
+
+        return OTP_Uri(
+            label=label,
+            secret=secret,
+            issuer=issuer,
+            algorithm=algorithm,
+            cred_type=type_,
+            digits=digits,
+            counter=counter,
+            period=period,
+        )
+
+
 class SecretsApp:
     """
     This is a Secrets App client
@@ -541,6 +600,31 @@ class SecretsApp:
         """
         assert slot in [1, 2]
         self.register(f"HmacSlot{slot}".encode(), secret, kind=Kind.Hmac)
+
+    def register_uri(
+        self, uri: str, touch_button_required: bool = False, pin_based_encryption: bool = False
+    ) -> None:
+        """
+        Register new OTP credential from URI
+        :param uri: URI String
+        :param touch_button_required: User Presence confirmation is required to use this Credential
+        :param pin_based_encryption: User preference for additional PIN-based encryption
+        """
+        otp = OTP_Uri.from_uri(uri)
+        credid = otp.label
+        if not credid.startswith(otp.issuer + ":"):
+            credid = otp.issuer + ":" + credid
+
+        self.register(
+            credid=credid.encode(),
+            secret=otp.secret,
+            digits=otp.digits,
+            kind=otp.cred_type,
+            algo=otp.algorithm,
+            initial_counter_value=otp.counter,
+            touch_button_required=touch_button_required,
+            pin_based_encryption=pin_based_encryption,
+        )
 
     def register(
         self,
