@@ -14,6 +14,8 @@ import requests
 
 API_BASE_URL = "https://api.github.com"
 
+REQUEST_TIMEOUT = 30
+
 
 ProgressCallback = Callable[[int, int], None]
 
@@ -74,7 +76,7 @@ class Asset:
             yield chunk
 
     def _get(self, stream: bool = False) -> requests.Response:
-        response = requests.get(self.url, stream=stream)
+        response = requests.get(self.url, stream=stream, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response
 
@@ -144,7 +146,7 @@ class Repository:
             errors = {}
 
         url = self._get_url(path)
-        response = requests.get(url)
+        response = requests.get(url, timeout=REQUEST_TIMEOUT)
         for code in errors:
             if response.status_code == code:
                 raise ValueError(errors[code])
