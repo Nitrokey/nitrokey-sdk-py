@@ -5,6 +5,7 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
+import contextlib
 import enum
 import logging
 import platform
@@ -281,7 +282,24 @@ class TrussedDevice(TrussedBase):
             if desc.vid == vid and desc.pid == pid
         ]
         logger.debug(f"Found {len(descriptors)} CTAPHID device(s) with VID:PID {vid:04x}:{pid:04x}")
-        return [cls.from_device(open_device(desc.path)) for desc in descriptors]
+        devices = []
+        for desc in descriptors:
+            try:
+                device = open_device(desc.path)
+            except Exception:
+                logger.warning(
+                    f"Failed to open CTAPHID device at path {desc.path!r}", exc_info=sys.exc_info()
+                )
+                continue
+            try:
+                devices.append(cls.from_device(device))
+            except Exception:
+                logger.warning(
+                    f"Failed to connect to device at path {desc.path!r}", exc_info=sys.exc_info()
+                )
+                with contextlib.suppress(Exception):
+                    device.close()
+        return devices
 
     @classmethod
     def _list_pcsc_atr(cls: type[T], atr: List[int], exclusive: bool) -> List[T]:
@@ -311,16 +329,36 @@ class TrussedDevice(TrussedBase):
                     continue
                 if atr != connection.getATR():
                     logger.debug(f"Skipping reader {r}: unexpected ATR")
-                    connection.disconnect()
-                    connection.release()
+                    _release_connection(connection)
                     continue
-                devices.append(cls.from_device(connection))
+                try:
+                    devices.append(cls.from_device(connection))
+                except Exception:
+                    logger.warning(
+                        f"Failed to connect to device at reader {r}", exc_info=sys.exc_info()
+                    )
+                    _release_connection(connection)
 
             logger.debug(f"Found {len(devices)} CCID device(s)")
             return devices
         except ImportError:
             logger.debug("Skipping CCID enumeration: pyscard is not available")
             return []
+
+
+def _release_connection(
+    connection: Union[ExclusiveConnectCardConnection, ExclusiveTransmitCardConnection],
+) -> None:
+    """
+    Disconnects and releases a card connection, ignoring any errors.
+
+    Exclusive connections keep the card locked for all other applications until they are
+    released, so this must also happen for cards that turned out to be unusable.
+    """
+    with contextlib.suppress(Exception):
+        connection.disconnect()
+    with contextlib.suppress(Exception):
+        connection.release()
 
 
 def _device_path_to_str(path: Union[bytes, str]) -> str:
