@@ -105,6 +105,7 @@ class TrussedBootloaderLpc55(TrussedBootloader):
                 logger.warning(
                     f"Invalid Nitrokey 3 LPC55 bootloader returned by enumeration: {device}"
                 )
+        logger.debug(f"Found {len(devices)} Nitrokey 3 LPC55 bootloader(s)")
         return devices
 
     @classmethod

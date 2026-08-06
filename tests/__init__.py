@@ -23,6 +23,35 @@ class TestBasic(unittest.TestCase):
         list()
 
 
+class TestLogging(unittest.TestCase):
+    def test_secrets_app_logger_name(self) -> None:
+        from typing import cast
+
+        from nitrokey.nk3 import NK3
+        from nitrokey.nk3.secrets_app import SecretsApp
+
+        app = SecretsApp(cast(NK3, None))
+
+        self.assertEqual(app.log.name, "nitrokey.nk3.secrets_app")
+
+    def test_logger_names(self) -> None:
+        import importlib
+
+        module_names = [
+            "nitrokey.trussed._bootloader",
+            "nitrokey.trussed._bootloader.lpc55",
+            "nitrokey.trussed._bootloader.nrf52",
+            "nitrokey.trussed._device",
+            "nitrokey.trussed.updates",
+        ]
+
+        for module_name in module_names:
+            module = importlib.import_module(module_name)
+            # All SDK loggers must use __name__ so that they can be filtered by the nitrokey.
+            # prefix by applications embedding the SDK.
+            self.assertEqual(module.logger.name, module_name)
+
+
 class TestNk3Updates(unittest.TestCase):
     def test_update_path_default(self) -> None:
         from nitrokey.trussed import Model, Variant, Version

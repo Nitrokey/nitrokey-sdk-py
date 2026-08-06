@@ -64,8 +64,10 @@ class TrussedDevice(TrussedBase):
             self._validate_vid_pid(device.descriptor.vid, device.descriptor.pid)
             self._path = _device_path_to_str(device.descriptor.path)
             self._logger = logger.getChild(self._path)
+            self._logger.debug(f"Opening CTAPHID device at path {self._path}")
         else:
             self._logger = logger.getChild(str(device.getReader()))
+            self._logger.debug(f"Opening CCID device at reader {device.getReader()}")
 
         self.device = device
         self.fido2_certs = fido2_certs
@@ -81,6 +83,7 @@ class TrussedDevice(TrussedBase):
         return self._path
 
     def close(self) -> None:
+        self._logger.debug("Closing device")
         if isinstance(self.device, CtapHidDevice):
             self.device.close()
         else:
@@ -102,11 +105,17 @@ class TrussedDevice(TrussedBase):
     def _call_admin_legacy(
         self, command: int, command_name: str, response_len: Optional[int] = None, data: bytes = b""
     ) -> bytes:
+        self._logger.debug(f"Sending legacy admin command {command_name} (data: {len(data)} bytes)")
         response: bytes = bytes()
-        if isinstance(self.device, CtapHidDevice):
-            response = self.device.call(command, data=data)
-        else:
-            response = self._call_admin_ccid_legacy(command, data)
+        try:
+            if isinstance(self.device, CtapHidDevice):
+                response = self.device.call(command, data=data)
+            else:
+                response = self._call_admin_ccid_legacy(command, data)
+        except Exception as e:
+            self._logger.debug(f"Legacy admin command {command_name} failed: {e}")
+            raise
+        self._logger.debug(f"Received response for {command_name} (data: {len(response)} bytes)")
 
         if response_len is not None and response_len != len(response):
             raise ValueError(
@@ -130,6 +139,7 @@ class TrussedDevice(TrussedBase):
                 continue
             break
         if sw1 != 0x90 or sw2 != 0x00:
+            self._logger.debug(f"SELECT for {app.name} failed with status {sw1:02x}{sw2:02x}")
             raise PcscError(sw1, sw2)
         p1 = 0
         if len(data) >= 1:
@@ -146,6 +156,9 @@ class TrussedDevice(TrussedBase):
                 continue
             break
         if sw1 != 0x90 or sw2 != 0x00:
+            self._logger.debug(
+                f"Legacy admin command {command:02x} failed with status {sw1:02x}{sw2:02x}"
+            )
             raise PcscError(sw1, sw2)
 
         return accumulator
@@ -159,7 +172,10 @@ class TrussedDevice(TrussedBase):
             and (datetime.now() - self._secrets_pin_cache) < timedelta(milliseconds=100)
             and app == App.SECRETS
         )
-        if not skip_perform_select:
+        if skip_perform_select:
+            self._logger.debug("Skipping SELECT to keep the secrets-app PIN verification")
+        else:
+            self._logger.debug(f"Selecting {app.name} applet")
             select = bytes([0x00, 0xA4, 0x04, 0x00, len(app.aid())]) + app.aid()
             tmpbytes, sw1, sw2 = self.device.transmit(list(select))
             while True:
@@ -170,6 +186,7 @@ class TrussedDevice(TrussedBase):
                     continue
                 break
             if sw1 != 0x90 or sw2 != 0x00:
+                self._logger.debug(f"SELECT for {app.name} failed with status {sw1:02x}{sw2:02x}")
                 raise PcscError(sw1, sw2)
 
         command = None
@@ -190,6 +207,10 @@ class TrussedDevice(TrussedBase):
             break
 
         self._secrets_pin_cache = None  # Running any command removes the pin auth cache
+        self._logger.debug(
+            f"Received CCID response for {app.name} [{sw1:02x}{sw2:02x}] "
+            f"(data: {len(accumulator)} bytes)"
+        )
         if app == App.SECRETS:
             accumulator = bytes([sw1, sw2]) + accumulator
             # Let the secret app handle the error
@@ -201,11 +222,17 @@ class TrussedDevice(TrussedBase):
         return accumulator
 
     def _call_app(self, app: App, response_len: Optional[int] = None, data: bytes = b"") -> bytes:
+        self._logger.debug(f"Sending {app.name} command (data: {len(data)} bytes)")
         response: bytes = bytes()
-        if isinstance(self.device, CtapHidDevice):
-            response = self.device.call(app.value, data=data)
-        else:
-            response = self._call_ccid(app, response_len, data)
+        try:
+            if isinstance(self.device, CtapHidDevice):
+                response = self.device.call(app.value, data=data)
+            else:
+                response = self._call_ccid(app, response_len, data)
+        except Exception as e:
+            self._logger.debug(f"{app.name} command failed: {e}")
+            raise
+        self._logger.debug(f"Received {app.name} response (data: {len(response)} bytes)")
 
         if response_len is not None and response_len != len(response):
             raise ValueError(
@@ -223,6 +250,7 @@ class TrussedDevice(TrussedBase):
 
     @classmethod
     def open(cls: type[T], path: str) -> Optional[T]:
+        logger.debug(f"Opening CTAPHID device at path {path}")
         try:
             if platform.system() == "Windows":
                 device = open_device(bytes(path, "utf-8"))
@@ -252,6 +280,7 @@ class TrussedDevice(TrussedBase):
             for desc in list_descriptors()  # type: ignore
             if desc.vid == vid and desc.pid == pid
         ]
+        logger.debug(f"Found {len(descriptors)} CTAPHID device(s) with VID:PID {vid:04x}:{pid:04x}")
         return [cls.from_device(open_device(desc.path)) for desc in descriptors]
 
     @classmethod
@@ -262,7 +291,9 @@ class TrussedDevice(TrussedBase):
             from smartcard.System import readers
 
             devices = []
-            for r in readers():
+            all_readers = readers()
+            logger.debug(f"Found {len(all_readers)} PCSC reader(s)")
+            for r in all_readers:
                 raw_connection = r.createConnection()
                 connection: Union[ExclusiveConnectCardConnection, ExclusiveTransmitCardConnection]
                 if exclusive:
@@ -273,17 +304,22 @@ class TrussedDevice(TrussedBase):
                 try:
                     connection.connect()
                 except NoCardException:
+                    logger.debug(f"Skipping reader {r}: no card present")
                     continue
                 except CardConnectionException:
+                    logger.debug(f"Skipping reader {r}: connection failed", exc_info=sys.exc_info())
                     continue
                 if atr != connection.getATR():
+                    logger.debug(f"Skipping reader {r}: unexpected ATR")
                     connection.disconnect()
                     connection.release()
                     continue
                 devices.append(cls.from_device(connection))
 
+            logger.debug(f"Found {len(devices)} CCID device(s)")
             return devices
         except ImportError:
+            logger.debug("Skipping CCID enumeration: pyscard is not available")
             return []
 
 
