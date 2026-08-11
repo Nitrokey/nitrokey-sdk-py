@@ -9,6 +9,7 @@ nitrokey.trussed
    :maxdepth: 1
 
    nitrokey.trussed.admin_app
+   nitrokey.trussed.nrfutils
    nitrokey.trussed.provisioner_app
    nitrokey.trussed.updates
 

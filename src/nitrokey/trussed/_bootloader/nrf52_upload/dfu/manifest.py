@@ -37,7 +37,87 @@
 
 # Python libraries
 import json
+import os
+from enum import Enum
 from typing import Any, Optional, Union
+
+
+class HexType(Enum):
+    SOFTDEVICE = 1
+    BOOTLOADER = 2
+    SD_BL = 3
+    APPLICATION = 4
+    EXTERNAL_APPLICATION = 5
+
+
+class FirmwareKeys(Enum):
+    ENCRYPT = 1
+    FIRMWARE_FILENAME = 2
+    BIN_FILENAME = 3
+    DAT_FILENAME = 4
+    INIT_PACKET_DATA = 5
+    SD_SIZE = 6
+    BL_SIZE = 7
+    BOOT_VALIDATION_TYPE = 8
+
+
+class ManifestGenerator:
+    def __init__(self, firmwares_data: dict[Any, Any]) -> None:
+        """
+        The Manifest Generator constructor. Needs a data structure to generate a manifest from.
+
+        :type dict firmwares_data: The firmwares data structure describing the Nordic DFU package
+        """
+        self.firmwares_data = firmwares_data
+        self.manifest: Optional[Manifest] = None
+
+    def generate_manifest(self) -> str:
+        self.manifest = Manifest()
+
+        for key in self.firmwares_data:
+            firmware_dict = self.firmwares_data[key]
+
+            if key == HexType.SD_BL:
+                _firmware: Any = SoftdeviceBootloaderFirmware()
+                _firmware.info_read_only_metadata = FWMetaData()
+                _firmware.info_read_only_metadata.bl_size = firmware_dict[FirmwareKeys.BL_SIZE]
+                _firmware.info_read_only_metadata.sd_size = firmware_dict[FirmwareKeys.SD_SIZE]
+            else:
+                _firmware = Firmware()
+
+            # Strip path, add only filename
+            _firmware.bin_file = os.path.basename(firmware_dict[FirmwareKeys.BIN_FILENAME])
+            _firmware.dat_file = os.path.basename(firmware_dict[FirmwareKeys.DAT_FILENAME])
+
+            if key == HexType.APPLICATION or key == HexType.EXTERNAL_APPLICATION:
+                self.manifest.application = _firmware
+            elif key == HexType.BOOTLOADER:
+                self.manifest.bootloader = _firmware
+            elif key == HexType.SOFTDEVICE:
+                self.manifest.softdevice = _firmware
+            elif key == HexType.SD_BL:
+                self.manifest.softdevice_bootloader = _firmware
+            else:
+                raise NotImplementedError(
+                    "Support for firmware type {0} not implemented yet.".format(key)
+                )
+
+        return self.to_json()
+
+    def to_json(self) -> str:
+        def remove_none_entries(d: dict[str, Any]) -> dict[str, Any]:
+            if not isinstance(d, dict):
+                return d
+
+            return {k: remove_none_entries(v) for k, v in d.items() if v is not None}
+
+        return json.dumps(
+            {"manifest": self.manifest},
+            default=lambda o: remove_none_entries(o.__dict__),
+            sort_keys=True,
+            indent=4,
+            separators=(",", ": "),
+        )
 
 
 class FWMetaData:
