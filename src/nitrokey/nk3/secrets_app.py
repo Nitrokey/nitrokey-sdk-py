@@ -405,7 +405,7 @@ class SecretsApp:
     def __init__(self, dev: NK3, logfn: Optional[LogFn] = None) -> None:
         self._cache_status = None
         self.write_corpus_fn = None
-        self.log = logging.getLogger("otpapp")
+        self.log = logging.getLogger(__name__)
         if logfn is not None:
             self.logfn = logfn
         else:

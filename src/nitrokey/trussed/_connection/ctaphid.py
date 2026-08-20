@@ -1,6 +1,7 @@
 # Copyright (C) Nitrokey GmbH
 # SPDX-License-Identifier: Apache-2.0 or MIT
 
+import logging
 import platform
 from typing import Optional
 
@@ -10,11 +11,14 @@ from fido2.hid import CtapHidDevice, list_descriptors, open_device
 from .._exceptions import ConnectionError, CtapErrorCode, DeviceError
 from . import App, Connection, Transport, VidPid
 
+logger = logging.getLogger(__name__)
+
 
 class CtapHidConnection(Connection):
     def __init__(self, device: CtapHidDevice) -> None:
         self.device = device
         self._path = _device_path_to_str(device.descriptor.path)
+        self._logger = logger.getChild(self._path)
 
     def transport(self) -> Transport:
         return Transport.CTAPHID
@@ -33,18 +37,26 @@ class CtapHidConnection(Connection):
         return self.device
 
     def close(self) -> None:
+        self._logger.debug("Closing CTAPHID connection")
         self.device.close()
 
     def wink(self) -> None:
         self.device.wink()
 
     def _call(self, command: int, data: bytes) -> bytes:
+        self._logger.debug(f"Sending CTAPHID command {command:02x} (data: {len(data)} bytes)")
         try:
-            return self.device.call(command, data=data)
+            response = self.device.call(command, data=data)
         except CtapError as e:
+            self._logger.debug(f"CTAPHID command {command:02x} failed: {e}")
             raise DeviceError(CtapErrorCode(error=e.code.value)) from e
         except OSError as e:
+            self._logger.debug(f"CTAPHID command {command:02x} lost the connection: {e}")
             raise ConnectionError() from e
+        self._logger.debug(
+            f"Received CTAPHID response for {command:02x} (data: {len(response)} bytes)"
+        )
+        return response
 
     def call_admin_app_legacy(
         self, command: int, data: bytes, response_len: Optional[int]
@@ -70,6 +82,7 @@ def _device_path_to_str(path: bytes | str) -> str:
 
 
 def open_ctaphid(path: str) -> CtapHidConnection:
+    logger.debug(f"Opening CTAPHID device at path {path}")
     if platform.system() == "Windows":
         device = open_device(bytes(path, "utf-8"))
     else:
@@ -83,4 +96,5 @@ def list_ctaphid(vid: int, pid: int) -> list[CtapHidConnection]:
         for desc in list_descriptors()  # type: ignore
         if desc.vid == vid and desc.pid == pid
     ]
+    logger.debug(f"Found {len(descriptors)} CTAPHID device(s) with VID:PID {vid:04x}:{pid:04x}")
     return [CtapHidConnection(open_device(desc.path)) for desc in descriptors]

@@ -31,6 +31,7 @@ class TrussedDevice(TrussedBase):
         self._transport = connection.transport()
         self._path = connection.path()
         self._logger = logger.getChild(connection.logger_name())
+        self._logger.debug(f"Opening {self._transport.value} device")
 
         self.connection = connection
         self.fido2_certs = fido2_certs
@@ -52,6 +53,7 @@ class TrussedDevice(TrussedBase):
         return self.connection.ctaphid_device()
 
     def close(self) -> None:
+        self._logger.debug("Closing device")
         self.connection.close()
 
     def reboot(self) -> bool:

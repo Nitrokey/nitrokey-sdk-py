@@ -1,6 +1,8 @@
 # Copyright (C) Nitrokey GmbH
 # SPDX-License-Identifier: Apache-2.0 or MIT
 
+import logging
+import sys
 import typing
 from datetime import datetime, timedelta
 from typing import Optional, Sequence
@@ -8,6 +10,8 @@ from typing import Optional, Sequence
 from .._exceptions import CcidErrorCode, ConnectionError, DeviceError
 from .._utils import Iso7816Apdu
 from . import HAS_CCID_SUPPORT, App, Connection, Transport
+
+logger = logging.getLogger(__name__)
 
 if HAS_CCID_SUPPORT:
     from smartcard.Exceptions import CardConnectionException, NoCardException
@@ -21,6 +25,7 @@ if HAS_CCID_SUPPORT:
         ) -> None:
             self.card = card
             self._secrets_pin_cache: datetime | None = None
+            self._logger = logger.getChild(self.logger_name())
 
         def transport(self) -> Transport:
             return Transport.CCID
@@ -29,6 +34,7 @@ if HAS_CCID_SUPPORT:
             return str(self.card.getReader())
 
         def close(self) -> None:
+            self._logger.debug("Closing CCID connection")
             self.card.disconnect()
             self.card.release()
 
@@ -42,6 +48,7 @@ if HAS_CCID_SUPPORT:
                 data, sw1, sw2 = self.card.transmit(list(data))
                 return bytes(data), sw1, sw2
             except CardConnectionException as e:
+                self._logger.debug(f"CCID transmit lost the connection: {e}")
                 raise ConnectionError() from e
 
         def _select(self, app: App) -> None:
@@ -53,6 +60,7 @@ if HAS_CCID_SUPPORT:
                     continue
                 break
             if sw1 != 0x90 or sw2 != 0x00:
+                self._logger.debug(f"SELECT for {app.name} failed with status {sw1:02x}{sw2:02x}")
                 raise DeviceError(CcidErrorCode(sw1=sw1, sw2=sw2))
 
         def _call(self, app: App, command: bytes | Iso7816Apdu) -> bytes:
@@ -63,7 +71,10 @@ if HAS_CCID_SUPPORT:
                 and (datetime.now() - self._secrets_pin_cache) < timedelta(milliseconds=100)
                 and app == App.SECRETS
             )
-            if not skip_perform_select:
+            if skip_perform_select:
+                self._logger.debug("Skipping SELECT to keep the secrets-app PIN verification")
+            else:
+                self._logger.debug(f"Selecting {app.name} applet")
                 self._select(app)
 
             accumulator, sw1, sw2 = self._transmit(command)
@@ -74,6 +85,10 @@ if HAS_CCID_SUPPORT:
                     continue
                 break
 
+            self._logger.debug(
+                f"Received CCID response for {app.name} [{sw1:02x}{sw2:02x}] "
+                f"(data: {len(accumulator)} bytes)"
+            )
             if app == App.SECRETS:
                 accumulator = bytes([sw1, sw2]) + accumulator
                 # Let the secret app handle the error
@@ -109,7 +124,9 @@ if HAS_CCID_SUPPORT:
     def _list(atr: list[int], exclusive: bool) -> list[CcidConnection]:
         connections = []
 
-        for r in readers():
+        all_readers = readers()
+        logger.debug(f"Found {len(all_readers)} PCSC reader(s)")
+        for r in all_readers:
             raw_connection = r.createConnection()
             connection: ExclusiveConnectCardConnection | ExclusiveTransmitCardConnection
             if exclusive:
@@ -120,15 +137,19 @@ if HAS_CCID_SUPPORT:
             try:
                 connection.connect()
             except NoCardException:
+                logger.debug(f"Skipping reader {r}: no card present")
                 continue
             except CardConnectionException:
+                logger.debug(f"Skipping reader {r}: connection failed", exc_info=sys.exc_info())
                 continue
             if atr != connection.getATR():
+                logger.debug(f"Skipping reader {r}: unexpected ATR")
                 connection.disconnect()
                 connection.release()
                 continue
             connections.append(CcidConnection(connection))
 
+        logger.debug(f"Found {len(connections)} CCID device(s)")
         return connections
 
 
