@@ -5,6 +5,7 @@
 # http://opensource.org/licenses/MIT>, at your option. This file may not be
 # copied, modified, or distributed except according to those terms.
 
+import contextlib
 import logging
 import sys
 from abc import abstractmethod
@@ -128,11 +129,24 @@ class TrussedDevice(TrussedBase):
     def list_ctaphid(cls: type[T]) -> List[T]: ...
 
     @classmethod
+    def _from_connections(cls: type[T], connections: Sequence[Connection]) -> List[T]:
+        devices = []
+        for connection in connections:
+            try:
+                devices.append(cls.from_connection(connection))
+            except Exception:
+                logger.warning(
+                    f"Failed to connect to device at {connection.logger_name()}",
+                    exc_info=sys.exc_info(),
+                )
+                with contextlib.suppress(Exception):
+                    connection.close()
+        return devices
+
+    @classmethod
     def _list_vid_pid(cls: type[T], vid: int, pid: int) -> List[T]:
-        connections = list_ctaphid(vid, pid)
-        return [cls.from_connection(connection) for connection in connections]
+        return cls._from_connections(list_ctaphid(vid, pid))
 
     @classmethod
     def _list_pcsc_atr(cls: type[T], atr: List[int], exclusive: bool) -> List[T]:
-        connections = list_ccid(atr, exclusive)
-        return [cls.from_connection(connection) for connection in connections]
+        return cls._from_connections(list_ccid(atr, exclusive))

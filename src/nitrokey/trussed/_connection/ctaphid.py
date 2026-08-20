@@ -1,7 +1,9 @@
 # Copyright (C) Nitrokey GmbH
 # SPDX-License-Identifier: Apache-2.0 or MIT
 
+import logging
 import platform
+import sys
 from typing import Optional
 
 from fido2.ctap import CtapError
@@ -9,6 +11,8 @@ from fido2.hid import CtapHidDevice, list_descriptors, open_device
 
 from .._exceptions import ConnectionError, CtapErrorCode, DeviceError
 from . import App, Connection, Transport, VidPid
+
+logger = logging.getLogger(__name__)
 
 
 class CtapHidConnection(Connection):
@@ -83,4 +87,14 @@ def list_ctaphid(vid: int, pid: int) -> list[CtapHidConnection]:
         for desc in list_descriptors()  # type: ignore
         if desc.vid == vid and desc.pid == pid
     ]
-    return [CtapHidConnection(open_device(desc.path)) for desc in descriptors]
+    connections = []
+    for desc in descriptors:
+        try:
+            device = open_device(desc.path)
+        except Exception:
+            logger.warning(
+                f"Failed to open CTAPHID device at path {desc.path!r}", exc_info=sys.exc_info()
+            )
+            continue
+        connections.append(CtapHidConnection(device))
+    return connections
