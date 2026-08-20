@@ -6,6 +6,20 @@ See the files in the [changelog.d](./changelog.d) directory for unreleased chang
 
 <!-- scriv-insert-here -->
 
+## [v0.5.0-rc.3](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.0-rc.3) (2026-08-20)
+
+- `nitrokey.nk3.secrets_app`: Fix discarded authentication when using `SecretsApp` over CCID
+- Bump minimum Python version to 3.11.
+- `nitrokey.trussed`: Add the `inner_checksum` field to `FirmwareMetadata` with the checksum of the unsigned firmware image.
+- `nitrokey.trussed.nrfutils`: Add support for NRF52 package signing and upload
+- Wrap `OSError` in `ConnectionError` and `CtapError` in `DeviceError` for transport-agnostic error types.
+- Move connection handling into separate classes.
+- Rename `TrussedDevice.from_device` to `TrussedDevice.from_connection`.
+- Add `TrussedDevice.list` classmethod.
+- Add `Transport` enum and update list functions to use it instead of the `use_ccid` argument.
+- Replace `should_default_ccid` function with `recommended_transport` function.
+- Add `TrussedDevice.ctaphid_device` function.
+
 ## [v0.5.0-rc.2](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.0-rc.2) (2026-05-06)
 
 - Fix SDK version check during firmware update to correctly handle release candidates
