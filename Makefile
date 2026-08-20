@@ -65,3 +65,11 @@ generate-api-docs:
 .PHONY: build-docs
 build-docs:
 	poetry run sphinx-build --fail-on-warning docs _build
+
+.PHONY: add-changelog-entry
+add-changelog-entry:
+	poetry run scriv create --edit
+
+.PHONY: update-changelog
+update-changelog:
+	poetry run scriv collect

@@ -52,6 +52,7 @@ fake-winreg = "^1.9"
 mypy = "^1.20"
 rstcheck = { version = "^6", extras = ["sphinx"] }
 ruff = "^0.14"
+scriv = "^1.8"
 sphinx = "^7"
 ty = "^0.0.29"
 types-protobuf = ">=5.26, <7"

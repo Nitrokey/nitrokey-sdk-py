@@ -37,6 +37,18 @@ files = [
 ]
 
 [[package]]
+name = "attrs"
+version = "26.1.0"
+description = "Classes Without Boilerplate"
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "attrs-26.1.0-py3-none-any.whl", hash = "sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309"},
+    {file = "attrs-26.1.0.tar.gz", hash = "sha256:d03ceb89cb322a8fd706d4fb91940737b6642aa36998fe130a9bc96c985eff32"},
+]
+
+[[package]]
 name = "babel"
 version = "2.18.0"
 description = "Internationalization utilities"
@@ -314,6 +326,21 @@ files = [
 
 [package.dependencies]
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
+
+[[package]]
+name = "click-log"
+version = "0.4.0"
+description = "Logging integration for Click"
+optional = false
+python-versions = "*"
+groups = ["dev"]
+files = [
+    {file = "click-log-0.4.0.tar.gz", hash = "sha256:3970f8570ac54491237bcdb3d8ab5e3eef6c057df29f8c3d1151a51a9c23b975"},
+    {file = "click_log-0.4.0-py2.py3-none-any.whl", hash = "sha256:a43e394b528d52112af599f2fc9e4b7cf3c15f94e53581f74fa6867e68c91756"},
+]
+
+[package.dependencies]
+click = "*"
 
 [[package]]
 name = "colorama"
@@ -1587,6 +1614,30 @@ files = [
 ]
 
 [[package]]
+name = "scriv"
+version = "1.8.0"
+description = "Scriv changelog management tool"
+optional = false
+python-versions = ">=3.10"
+groups = ["dev"]
+files = [
+    {file = "scriv-1.8.0-py3-none-any.whl", hash = "sha256:f00f51325b2f4bc96b16fbb1239d4ab577cc2422301a5dd4f5f9378aae2549e0"},
+    {file = "scriv-1.8.0.tar.gz", hash = "sha256:7b1a105dd411ac541998250fc8594742419f94cee984ca1257c5ebf5af21918b"},
+]
+
+[package.dependencies]
+attrs = "*"
+click = "*"
+click-log = "*"
+jinja2 = ">=2.7"
+markdown-it-py = "*"
+requests = "*"
+
+[package.extras]
+toml = ["tomli ; python_version < \"3.11\""]
+yaml = ["pyyaml"]
+
+[[package]]
 name = "semver"
 version = "3.0.4"
 description = "Python helper for Semantic Versioning (https://semver.org)"
@@ -2003,4 +2054,4 @@ pcsc = ["pyscard"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <4"
-content-hash = "f403f68b2aaaa00b37c57654d8d73210d07d3ffe86fa1ca886b107ca41e388ab"
+content-hash = "51a265ba9b074fb2222a15718cfb987284650fdb311179cadc0ec0ed774fc74c"
