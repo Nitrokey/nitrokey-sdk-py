@@ -460,7 +460,7 @@ win = ["pywin32 (>=311) ; sys_platform == \"win32\""]
 type = "git"
 url = "https://github.com/AdityaMitra5102/python-fido2.git"
 reference = "namedpipe"
-resolved_reference = "197767a1f7eeb990ae6504f2ef990b5a2747a6cb"
+resolved_reference = "5c233b23d6e62adbcef1068b9ce0d780615ba743"
 
 [[package]]
 name = "hidapi"
