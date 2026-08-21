@@ -441,21 +441,26 @@ dev = ["bandit (>=1.9.4)", "build (>=1.4.2)", "codecov-cli (>=11.2.8)", "httpx (
 
 [[package]]
 name = "fido2"
-version = "2.2.0"
+version = "2.2.2.dev0"
 description = "FIDO2/WebAuthn library for implementing clients and servers."
 optional = false
-python-versions = "<4,>=3.10"
+python-versions = ">=3.10, <4"
 groups = ["main"]
-files = [
-    {file = "fido2-2.2.0-py3-none-any.whl", hash = "sha256:3587ccf0af7b71b5dd73f17e1dbec9f0fd157292f9163f02e7778f46d0d25fe5"},
-    {file = "fido2-2.2.0.tar.gz", hash = "sha256:0d8122e690096ad82afde42ac9d6433a4eeffda64084f36341ea02546b181dd1"},
-]
+files = []
+develop = false
 
 [package.dependencies]
-cryptography = ">=2.6,<35 || >35,<49"
+cryptography = ">=2.6,<35 || >35,<52"
 
 [package.extras]
 pcsc = ["pyscard (>=1.9,<3)"]
+win = ["pywin32 (>=311) ; sys_platform == \"win32\""]
+
+[package.source]
+type = "git"
+url = "https://github.com/AdityaMitra5102/python-fido2.git"
+reference = "namedpipe"
+resolved_reference = "197767a1f7eeb990ae6504f2ef990b5a2747a6cb"
 
 [[package]]
 name = "hidapi"
@@ -2003,4 +2008,4 @@ pcsc = ["pyscard"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <4"
-content-hash = "f403f68b2aaaa00b37c57654d8d73210d07d3ffe86fa1ca886b107ca41e388ab"
+content-hash = "6a41ea8dbb56cf08095b66d33c508098d6048498a28ae9f685f7c23c6daaf3ef"

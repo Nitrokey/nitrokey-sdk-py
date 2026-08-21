@@ -30,6 +30,14 @@ from ._utils import Fido2Certs as Fido2Certs
 from ._utils import Uuid as Uuid
 from ._utils import Version as Version
 
+try:
+    from fido2.hid import ipc_available  # ty: ignore[unresolved-import]
+
+    # If import fails, it automatically runs the except block. Type checker does not have to flag it
+    ctap_ipc = ipc_available()
+except ImportError:
+    ctap_ipc = False
+
 # module-level constants have no docstrings in Python, so this is documented in
 # docs/api/nitrokey.trussed.rst
 DEFAULT_TRANSPORT = Transport.CTAPHID
@@ -46,7 +54,7 @@ def recommended_transport() -> Transport:
         # Linux or MacOS don't need admin to access with CTAPHID
         if sys.platform == "win32" or sys.platform == "cygwin":
             try:
-                if not ctypes.windll.shell32.IsUserAnAdmin():
+                if not ctypes.windll.shell32.IsUserAnAdmin() and not ctap_ipc:
                     return Transport.CCID
             except Exception:
                 pass
