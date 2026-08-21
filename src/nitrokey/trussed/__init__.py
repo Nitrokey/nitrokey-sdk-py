@@ -31,7 +31,7 @@ from ._utils import Uuid as Uuid
 from ._utils import Version as Version
 
 try:
-    from fido2.hid import ipc_available  # ty: ignore[unresolved-import]
+    from fido2.hid import ipc_available  # type: ignore
 
     # If import fails, it automatically runs the except block. Type checker does not have to flag it
     ctap_ipc = ipc_available()
