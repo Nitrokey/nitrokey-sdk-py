@@ -12,3 +12,4 @@ API Reference
    nitrokey.nkpk
    nitrokey.trussed
    nitrokey.updates
+   nitrokey.checksum

@@ -12,6 +12,8 @@ from typing import Any, BinaryIO, Callable, Dict, Generator, Optional, Pattern
 
 import requests
 
+from nitrokey.checksum import FirmwareChecksum
+
 API_BASE_URL = "https://api.github.com"
 
 
@@ -59,6 +61,10 @@ class Asset:
         for chunk in self._get_chunks(callback=callback):
             result += chunk
         return result
+
+    def checksum(self, callback: Optional[ProgressCallback] = None) -> bytes:
+        content = self.read(callback)
+        return FirmwareChecksum(self.url, content).calculate_checksum()
 
     def _get_chunks(
         self, chunk_size: int = 1024, callback: Optional[ProgressCallback] = None
