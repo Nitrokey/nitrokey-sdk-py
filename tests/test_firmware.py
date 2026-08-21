@@ -1,5 +1,7 @@
 import unittest
+from pathlib import Path
 
+from nitrokey.checksum import FirmwareChecksum
 from nitrokey.trussed import FirmwareContainer, Model, Variant, parse_firmware_image
 
 
@@ -40,3 +42,16 @@ class TestFirmwareContainer(unittest.TestCase):
             self.assertEqual(
                 metadata.inner_checksum.hex() if metadata.inner_checksum else "", checksum[variant]
             )
+
+    def test_ihex_checksum(self) -> None:
+        data_dir = Path("./tests/data")
+        container_file = data_dir / "firmware-nk3-v1.7.2.zip"
+        ihex_file = data_dir / "firmware-nk3am-nrf52-v1.7.2.ihex"
+
+        container = FirmwareContainer.parse(str(container_file), Model.NK3)
+        assert Variant.NRF52 in container.images
+        metadata = parse_firmware_image(Variant.NRF52, container.images[Variant.NRF52], Model.NK3)
+
+        checksum = FirmwareChecksum(ihex_file.name, ihex_file.read_bytes()).calculate_checksum()
+
+        self.assertEqual(metadata.inner_checksum, checksum)
