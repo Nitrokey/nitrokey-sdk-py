@@ -42,7 +42,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-pcsc = ["pyscard >=2, <3"]
+ccid = ["pyscard >=2, <3"]
 
 [tool.poetry.group.dev]
 optional = true

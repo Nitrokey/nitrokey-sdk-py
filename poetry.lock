@@ -1314,7 +1314,7 @@ description = "Smartcard module for Python."
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"pcsc\""
+markers = "extra == \"ccid\""
 files = [
     {file = "pyscard-2.3.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:5bd277142644441cba8fe71bc991fe83108147f3ba22c01e8b9a5a3f41a31f69"},
     {file = "pyscard-2.3.1-cp310-cp310-win32.whl", hash = "sha256:717ea958ee77d7d4514ff0a6eb238082f9437e7882479ee6f742bb9db54419d4"},
@@ -1998,9 +1998,9 @@ files = [
 ]
 
 [extras]
-pcsc = ["pyscard"]
+ccid = ["pyscard"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <4"
-content-hash = "f403f68b2aaaa00b37c57654d8d73210d07d3ffe86fa1ca886b107ca41e388ab"
+content-hash = "590d110d6b4de64e721104b312b9ead1fa73a5c2994d5e4998aa693bb8df002d"
