@@ -15,6 +15,7 @@
 - Replace `should_default_ccid` function with `recommended_transport` function.
 - Add `TrussedDevice.ctaphid_device` function.
 - Add support for credentials import and export in FIDO CXF format.
+- Add support for CTAP without admin privileges if IPC Service is running
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.2...HEAD)
 
