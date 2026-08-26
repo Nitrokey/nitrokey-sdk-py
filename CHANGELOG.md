@@ -16,6 +16,7 @@
 - Add `TrussedDevice.ctaphid_device` function.
 - Add support for credentials import and export in FIDO CXF format.
 - Rename `pcsc` extra to `ccid`.
+- Add `vid` and `pid` properties to `Model` enum.
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.2...HEAD)
 

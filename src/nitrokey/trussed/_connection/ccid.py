@@ -156,4 +156,5 @@ if HAS_CCID_SUPPORT:
 def list_ccid(atr: list[int], exclusive: bool) -> Sequence[Connection]:
     if HAS_CCID_SUPPORT:
         return _list(atr, exclusive)
+    logger.warning("pyscard is not installed.")
     return []

@@ -8,7 +8,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from types import TracebackType
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, assert_never
 
 from nitrokey import _VID_NITROKEY
 
@@ -30,6 +30,23 @@ class Model(Enum):
             if model.value == s:
                 return model
         raise ValueError(f"Unknown model {s}")
+
+    @property
+    def vid(self) -> int:
+        return _VID_NITROKEY
+
+    @property
+    def pid(self) -> int:
+        if self == Model.NK3:
+            import nitrokey.nk3
+
+            return nitrokey.nk3._PID_NK3_DEVICE
+        elif self == Model.NKPK:
+            import nitrokey.nkpk
+
+            return nitrokey.nkpk._PID_NKPK_DEVICE
+        else:
+            assert_never(self)
 
 
 class TrussedBase(ABC):
