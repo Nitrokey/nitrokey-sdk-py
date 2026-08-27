@@ -333,7 +333,7 @@ class CXFBackupCombined:
 
 
 @dataclasses.dataclass
-class OTP_Uri:
+class _OTPUri:
     label: str
     secret: bytes
     issuer: str
@@ -344,7 +344,7 @@ class OTP_Uri:
     period: int = 30
 
     @staticmethod
-    def from_uri(uri: str) -> "OTP_Uri":
+    def from_uri(uri: str) -> "_OTPUri":
         parsed = urlparse(uri)
         assert parsed.scheme == "otpauth", "Scheme not otpauth"
         type_ = Kind[parsed.netloc.capitalize()]
@@ -377,7 +377,7 @@ class OTP_Uri:
 
         secret = base64.b32decode(secret_encoded)
 
-        return OTP_Uri(
+        return _OTPUri(
             label=label,
             secret=secret,
             issuer=issuer,
@@ -762,7 +762,7 @@ class SecretsApp:
         :param touch_button_required: User Presence confirmation is required to use this Credential
         :param pin_based_encryption: User preference for additional PIN-based encryption
         """
-        otp = OTP_Uri.from_uri(uri)
+        otp = _OTPUri.from_uri(uri)
         credid = otp.label
         if not credid.startswith(otp.issuer + ":"):
             credid = otp.issuer + ":" + credid

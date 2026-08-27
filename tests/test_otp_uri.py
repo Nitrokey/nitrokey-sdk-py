@@ -1,6 +1,6 @@
 import unittest
 
-from nitrokey.nk3.secrets_app import Algorithm, Kind, OTP_Uri
+from nitrokey.nk3.secrets_app import Algorithm, Kind, _OTPUri
 
 # Test URIs generated with https://devutl.com/hmac-based-one-time-password-tester/
 
@@ -8,7 +8,7 @@ from nitrokey.nk3.secrets_app import Algorithm, Kind, OTP_Uri
 class TestOTPUri(unittest.TestCase):
     def test_totp(self) -> None:
         totp_uri = "otpauth://totp/demo:test%40nitrokey.com?secret=BAUGXGAJZXWBVSBGYMFGNBXC4KV6KPB7&algorithm=SHA1&digits=6&period=30&issuer=demo"
-        totp = OTP_Uri.from_uri(totp_uri)
+        totp = _OTPUri.from_uri(totp_uri)
 
         self.assertEqual(totp.label, "demo:test@nitrokey.com")
         self.assertEqual(totp.secret, b"\x08(k\x98\t\xcd\xec\x1a\xc8&\xc3\nf\x86\xe2\xe2\xab\xe5<?")
@@ -20,7 +20,7 @@ class TestOTPUri(unittest.TestCase):
 
     def test_hotp(self) -> None:
         hotp_uri = "otpauth://hotp/demoapp:test%40nitrokey.com?secret=AREPMG7CXJCXLPJQRTFWDACEDFNLCEED&issuer=demoapp&algorithm=SHA1&digits=6&counter=4"
-        hotp = OTP_Uri.from_uri(hotp_uri)
+        hotp = _OTPUri.from_uri(hotp_uri)
 
         self.assertEqual(hotp.label, "demoapp:test@nitrokey.com")
         self.assertEqual(

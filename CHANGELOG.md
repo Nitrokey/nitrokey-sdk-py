@@ -17,6 +17,7 @@
 - Add support for credentials import and export in FIDO CXF format.
 - Rename `pcsc` extra to `ccid`.
 - Add `vid` and `pid` properties to `Model` enum.
+- `nitrokey.nk3.secrets_app`: Add `register_uri` function
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.2...HEAD)
 
