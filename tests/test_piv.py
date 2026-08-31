@@ -24,6 +24,34 @@ class TestPivTlv(unittest.TestCase):
             self.assertEqual(len(value), size)
 
 
+class TestPivTlvRobustness(unittest.TestCase):
+    def test_truncated_input_raises(self) -> None:
+        from nitrokey.nk3.piv_app import PivError, Tlv
+
+        for encoded in ("5381", "538201", "5381ff", "530a4142"):
+            with self.assertRaises(PivError):
+                Tlv.parse(bytes.fromhex(encoded))
+
+    def test_long_form_lengths(self) -> None:
+        from nitrokey.nk3.piv_app import Tlv
+
+        ((tag, value),) = Tlv.parse(bytes.fromhex("53830001 00") + b"A" * 256)
+        self.assertEqual(tag, 0x53)
+        self.assertEqual(len(value), 256)
+
+    def test_indefinite_length_rejected(self) -> None:
+        from nitrokey.nk3.piv_app import PivError, Tlv
+
+        with self.assertRaises(PivError):
+            Tlv.parse(bytes.fromhex("5380"))
+
+    def test_oversized_value_rejected(self) -> None:
+        from nitrokey.nk3.piv_app import PivError, Tlv
+
+        with self.assertRaises(PivError):
+            Tlv.build([(0x53, bytes(0x10000))])
+
+
 class TestPivPkcs1(unittest.TestCase):
     def test_prepare_pkcs1v15_sizes(self) -> None:
         from nitrokey.nk3.piv_app import _prepare_pkcs1v15_sha256
@@ -34,6 +62,13 @@ class TestPivPkcs1(unittest.TestCase):
             self.assertTrue(block.startswith(b"\x00\x01\xff"))
             # DigestInfo prefix for SHA-256 precedes the 32-byte hash
             self.assertIn(bytes.fromhex("3031300d060960864801650304020105000420"), block)
+
+    def test_key_too_small_rejected(self) -> None:
+        from nitrokey.nk3.piv_app import PivError, _prepare_pkcs1v15_sha256
+
+        # Fewer than 8 padding bytes would violate PKCS#1 v1.5
+        with self.assertRaises(PivError):
+            _prepare_pkcs1v15_sha256(b"data", 55)
 
 
 class TestPivPin(unittest.TestCase):
