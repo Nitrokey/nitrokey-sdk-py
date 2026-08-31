@@ -13,6 +13,10 @@ from nitrokey.trussed._connection import Transport
 
 from ._bootloader import NK3Bootloader as NK3Bootloader
 from ._device import NK3 as NK3
+from .piv_app import PivApp as PivApp
+from .piv_app import PivCertInfo as PivCertInfo
+from .piv_app import PivError as PivError
+from .piv_app import PivSlotInfo as PivSlotInfo
 
 _PID_NK3_DEVICE = 0x42B2
 _PID_NK3_LPC55_BOOTLOADER = 0x42DD
