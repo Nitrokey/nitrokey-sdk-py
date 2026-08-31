@@ -1,5 +1,7 @@
 import datetime
 import unittest
+from types import SimpleNamespace
+from typing import Any
 
 
 class TestPivTlv(unittest.TestCase):
@@ -67,7 +69,7 @@ class TestPivSignRsa(unittest.TestCase):
     def test_unsupported_bits(self) -> None:
         from nitrokey.nk3.piv_app import PivApp, PivError
 
-        app = PivApp.__new__(PivApp)  # bypass __init__ (no hardware)
+        app = PivApp.__new__(PivApp)
         with self.assertRaises(PivError):
             app.sign_rsa(b"data", 0x9A, 1024)
 
@@ -101,6 +103,22 @@ class TestPivCertInfo(unittest.TestCase):
         self.assertEqual(info.serial, "1234")
         self.assertEqual(info.not_before, "2020-01-01")
         self.assertEqual(info.not_after, "2030-01-01")
+
+
+def _device(transport: object) -> Any:
+    """Stands in for an NK3 opened with the given transport"""
+    return SimpleNamespace(transport=transport)
+
+
+class TestPivTransport(unittest.TestCase):
+    def test_rejects_non_ccid_transport(self) -> None:
+        from nitrokey.nk3.piv_app import PivApp, PivError
+        from nitrokey.trussed._connection import Transport
+
+        device = _device(Transport.CTAPHID)
+        with self.assertRaises(PivError) as ctx:
+            PivApp(device)
+        self.assertIn("CCID", str(ctx.exception))
 
 
 if __name__ == "__main__":

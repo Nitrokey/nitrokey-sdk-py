@@ -6,18 +6,17 @@
 # copied, modified, or distributed except according to those terms.
 
 """
-PIV application client for Nitrokey 3.
+PIV application client for the Nitrokey 3.
 
-Talks to the NK3 PIV applet over CCID (smartcard). Requires the optional
-``ccid`` dependency (pyscard); without it, :meth:`PivApp.open` and
-:meth:`PivApp.list` raise a :class:`PivError`.
+The PIV applet is only reachable over CCID, which requires the optional ccid
+dependency (pyscard).
 """
 
 import datetime
 import logging
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
+from typing import Any, Optional, Protocol, Sequence, Union, cast
 
 from cryptography import x509
 from cryptography.hazmat.decrepit.ciphers.algorithms import TripleDES
@@ -26,43 +25,25 @@ from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.serialization import Encoding, pkcs12
 
+from nitrokey.nk3._device import NK3
+from nitrokey.trussed._connection import Transport
 from nitrokey.trussed._utils import Iso7816Apdu
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
-    from smartcard.ExclusiveConnectCardConnection import ExclusiveConnectCardConnection
-    from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
 
-    # Only needed for type checking, at runtime pyscard is imported lazily
-    # in PivApp.open
-    CardConnection = Union[ExclusiveTransmitCardConnection, ExclusiveConnectCardConnection]
+class _CcidTransmit(Protocol):
+    """The raw APDU exchange offered by the CCID connection of a device"""
+
+    def _transmit(self, data: Union[bytes, Iso7816Apdu]) -> tuple[bytes, int, int]: ...
+
 
 # Matches the supertype of the cryptography sign methods we override
 _SignData = Union[bytes, bytearray, "memoryview[int]"]
 
 DEFAULT_ADMIN_KEY = bytes.fromhex("010203040506070801020304050607080102030405060708")
-NK3_ATR = bytes.fromhex("3B8F01805D4E6974726F6B657900000000006A")
 
-PIV_SELECT_APDU = [
-    0x00,
-    0xA4,
-    0x04,
-    0x00,
-    0x0C,
-    0xA0,
-    0x00,
-    0x00,
-    0x03,
-    0x08,
-    0x00,
-    0x00,
-    0x10,
-    0x00,
-    0x01,
-    0x00,
-    0x00,
-]
+PIV_SELECT_APDU = bytes.fromhex("00a404000ca00000030800001000010000")
 
 # The four main slots plus the retired key management slots 82-95
 KEY_TO_CERT_OBJ_ID = {
@@ -259,79 +240,42 @@ class PivError(Exception):
 
 
 class PivApp:
-    """PIV APDU session over a smartcard (CCID) connection."""
+    """
+    This is a PIV application client.
 
-    def __init__(self, connection: "CardConnection") -> None:
-        self._conn = connection
+    The PIV applet is only available over CCID, so the device must have been
+    opened with the CCID transport. The device keeps owning its connection, so
+    closing it is left to the caller.
+    """
+
+    def __init__(self, device: NK3) -> None:
+        if device.transport != Transport.CCID:
+            raise PivError(
+                0x0000,
+                "The PIV application is only available over the CCID transport, but the "
+                f"device uses {device.transport.value}",
+            )
+        self.device = device
         self._select_piv()
 
-    def close(self) -> None:
-        try:
-            self._conn.disconnect()
-        except Exception:
-            pass
-        try:
-            self._conn.release()
-        except Exception:
-            pass
-
-    def __enter__(self) -> "PivApp":
-        return self
-
-    def __exit__(self, *args: Any) -> None:
-        self.close()
-
-    @classmethod
-    def open(cls) -> "PivApp":
-        """Open a PIV session on the first NK3 found via the smartcard interface."""
-        try:
-            from smartcard.Exceptions import CardConnectionException, NoCardException
-            from smartcard.ExclusiveTransmitCardConnection import ExclusiveTransmitCardConnection
-            from smartcard.System import readers as list_readers
-        except ModuleNotFoundError:
-            raise PivError(
-                0x0000, "pyscard is not installed. Install the 'ccid' extra to use PIV."
-            ) from None
-
-        nk3_atr = list(NK3_ATR)
-        for reader in list_readers():
-            conn = ExclusiveTransmitCardConnection(reader.createConnection())
-            try:
-                conn.connect()
-            except (NoCardException, CardConnectionException):
-                continue
-            try:
-                atr = conn.getATR()
-            except (NoCardException, CardConnectionException):
-                _release(conn)
-                continue
-            if atr != nk3_atr:
-                _disconnect(conn)
-                continue
-            try:
-                return cls(conn)
-            except Exception:
-                _disconnect(conn)
-                raise
-
-        raise PivError(0x0000, "No NK3 device found via smartcard interface")
+    def _transmit(self, apdu: Union[bytes, Iso7816Apdu]) -> tuple[bytes, int, int]:
+        # The transport is checked in __init__, so this is a CCID connection
+        connection = cast(_CcidTransmit, self.device.connection)
+        return connection._transmit(apdu)
 
     def _select_piv(self) -> None:
-        data, sw1, sw2 = self._conn.transmit(PIV_SELECT_APDU)
+        _, sw1, sw2 = self._transmit(PIV_SELECT_APDU)
         while sw1 == 0x61:
-            data, sw1, sw2 = self._conn.transmit([0x00, 0xC0, 0x00, 0x00, sw2 or 0xFF])
+            _, sw1, sw2 = self._transmit(Iso7816Apdu(0x00, 0xC0, 0x00, 0x00, le=sw2 or 0xFF))
         if sw1 != 0x90 or sw2 != 0x00:
             raise PivError((sw1 << 8) | sw2, "Failed to select PIV application")
 
     def send_receive(self, ins: int, p1: int, p2: int, data: bytes = b"") -> bytes:
-        apdu = Iso7816Apdu(0x00, ins, p1, p2, data or None)
-        result_list, sw1, sw2 = self._conn.transmit(list(apdu.to_bytes()))
-        result = bytes(result_list)
+        result, sw1, sw2 = self._transmit(Iso7816Apdu(0x00, ins, p1, p2, data or None))
 
         while sw1 == 0x61:
-            get_response = Iso7816Apdu(0x00, 0xC0, 0x00, 0x00, le=sw2 if sw2 != 0 else 0xFF)
-            more_list, sw1, sw2 = self._conn.transmit(list(get_response.to_bytes()))
-            result += bytes(more_list)
+            more, sw1, sw2 = self._transmit(Iso7816Apdu(0x00, 0xC0, 0x00, 0x00, le=sw2 or 0xFF))
+            result += more
 
         if sw1 != 0x90 or sw2 != 0x00:
             raise PivError((sw1 << 8) | sw2)
@@ -394,7 +338,8 @@ class PivApp:
 
     def get_pin_retries(self) -> int:
         """Return the remaining PIN attempts, or -1 if unknown."""
-        _, sw1, sw2 = self._conn.transmit([0x00, 0x20, 0x00, 0x80])
+        # Case-1 VERIFY without data queries the counter instead of checking a PIN
+        _, sw1, sw2 = self._transmit(Iso7816Apdu(0x00, 0x20, 0x00, 0x80))
         if sw1 == 0x63:
             return sw2 & 0x0F
         if sw1 == 0x69 and sw2 == 0x83:
@@ -609,21 +554,6 @@ class PivApp:
                 )
             )
         return slots
-
-
-def _disconnect(conn: "CardConnection") -> None:
-    try:
-        conn.disconnect()
-    except Exception:
-        pass
-    _release(conn)
-
-
-def _release(conn: "CardConnection") -> None:
-    try:
-        conn.release()
-    except Exception:
-        pass
 
 
 def _encode_pin(pin: str) -> bytes:
