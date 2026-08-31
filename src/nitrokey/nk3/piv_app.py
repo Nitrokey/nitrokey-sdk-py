@@ -98,16 +98,20 @@ _RSA_BITS_TO_ALGO = {2048: 0x07, 3072: 0x05, 4096: 0x16}
 def _tlv_build_one(tag: int, data: bytes) -> bytes:
     if tag <= 0xFF:
         tag_bytes = bytes([tag])
-    else:
+    elif tag <= 0xFFFF:
         tag_bytes = bytes([(tag >> 8) & 0xFF, tag & 0xFF])
+    else:
+        raise PivError(0x0000, f"TLV tag too large: {tag:#x}")
 
     length = len(data)
     if length <= 127:
         len_bytes = bytes([length])
-    elif length <= 255:
+    elif length <= 0xFF:
         len_bytes = bytes([0x81, length])
-    else:
+    elif length <= 0xFFFF:
         len_bytes = bytes([0x82, (length >> 8) & 0xFF, length & 0xFF])
+    else:
+        raise PivError(0x0000, f"TLV value too long: {length} bytes")
 
     return tag_bytes + len_bytes + data
 
@@ -141,15 +145,20 @@ class Tlv:
 
             lb = data[i]
             i += 1
-            if lb == 0x81:
-                length = data[i]
-                i += 1
-            elif lb == 0x82:
-                length = (data[i] << 8) | data[i + 1]
-                i += 2
+            if lb & 0x80:
+                # Long form, the low bits give the number of length bytes
+                count = lb & 0x7F
+                if count == 0 or count > 4:
+                    raise PivError(0x0000, f"Unsupported TLV length format {lb:#04x}")
+                if i + count > len(data):
+                    raise PivError(0x0000, "Truncated TLV length")
+                length = int.from_bytes(data[i : i + count], "big")
+                i += count
             else:
                 length = lb
 
+            if i + length > len(data):
+                raise PivError(0x0000, "Truncated TLV value")
             result.append((tag, data[i : i + length]))
             i += length
 
@@ -318,10 +327,10 @@ class PivApp:
         response = decryptor.update(challenge) + decryptor.finalize()
 
         decryptor = cipher.decryptor()
-        our_challenge_encrypted = decryptor.update(our_challenge) + decryptor.finalize()
+        our_challenge_decrypted = decryptor.update(our_challenge) + decryptor.finalize()
 
         response_body = Tlv.build(
-            [(0x7C, Tlv.build([(0x80, response), (0x81, our_challenge_encrypted)]))]
+            [(0x7C, Tlv.build([(0x80, response), (0x81, our_challenge_decrypted)]))]
         )
         final_response = self.send_receive(0x87, algo_byte, 0x9B, response_body)
 
@@ -422,6 +431,8 @@ class PivApp:
         self, key_ref: int, algo_id: bytes, pin: str, admin_key: bytes = DEFAULT_ADMIN_KEY
     ) -> None:
         """Generate a keypair and write a self-signed certificate to the slot."""
+        if not algo_id:
+            raise PivError(0x0000, "Empty algorithm identifier")
         response = self.generate_key(key_ref, algo_id)
 
         # The device resets the PIN authentication after key generation, so log in again
@@ -445,23 +456,32 @@ class PivApp:
             if point is None:
                 raise PivError(0x0000, "No EC point in generate key response")
             coord_size = 32 if algo_byte == 0x11 else 48
-            raw = point[1:]  # strip 0x04 uncompressed marker
+            # An uncompressed point is the 0x04 marker followed by both coordinates
+            if len(point) != 1 + 2 * coord_size or point[0] != 0x04:
+                raise PivError(0x0000, "Malformed EC point in generate key response")
+            raw = point[1:]
             curve: ec.EllipticCurve = ec.SECP256R1() if algo_byte == 0x11 else ec.SECP384R1()
-            public_key = ec.EllipticCurvePublicNumbers(
-                int.from_bytes(raw[:coord_size], "big"),
-                int.from_bytes(raw[coord_size:], "big"),
-                curve,
-            ).public_key()
+            try:
+                public_key = ec.EllipticCurvePublicNumbers(
+                    int.from_bytes(raw[:coord_size], "big"),
+                    int.from_bytes(raw[coord_size:], "big"),
+                    curve,
+                ).public_key()
+            except ValueError as e:
+                raise PivError(0x0000, f"Invalid EC public key: {e}") from e
             hash_algo = hashes.SHA256() if algo_byte == 0x11 else hashes.SHA384()
             signer = _EccPivSigner(self, key_ref, public_key, algo_byte)
         elif algo_byte in _RSA_ALGO_TO_BITS:
             modulus_data = find_by_id(0x81, pub_key_data)
             exponent_data = find_by_id(0x82, pub_key_data)
-            if modulus_data is None or exponent_data is None:
+            if not modulus_data or not exponent_data:
                 raise PivError(0x0000, "No RSA key data in generate key response")
-            public_key = rsa.RSAPublicNumbers(
-                int.from_bytes(exponent_data, "big"), int.from_bytes(modulus_data, "big")
-            ).public_key()
+            try:
+                public_key = rsa.RSAPublicNumbers(
+                    int.from_bytes(exponent_data, "big"), int.from_bytes(modulus_data, "big")
+                ).public_key()
+            except ValueError as e:
+                raise PivError(0x0000, f"Invalid RSA public key: {e}") from e
             hash_algo = hashes.SHA256()
             signer = _RsaPivSigner(self, key_ref, public_key, _RSA_ALGO_TO_BITS[algo_byte])
         else:
@@ -502,7 +522,9 @@ class PivApp:
         )
 
     def write_certificate(self, slot_id: str, cert_der: bytes) -> None:
-        container_id = KEY_TO_CERT_OBJ_ID[slot_id.upper()]
+        container_id = KEY_TO_CERT_OBJ_ID.get(slot_id.upper())
+        if container_id is None:
+            raise PivError(0x0000, f"Unknown PIV slot: {slot_id}")
         payload = Tlv.build(
             [(0x5C, container_id), (0x53, Tlv.build([(0x70, cert_der), (0x71, bytes([0]))]))]
         )
@@ -573,11 +595,12 @@ def _prepare_pkcs1v15_sha256(data: bytes, key_size_bytes: int) -> bytes:
     digest.update(data)
     hashed = digest.finalize()
     prefix = bytes.fromhex("3031300d060960864801650304020105000420")
+    # PKCS#1 v1.5 requires at least 8 bytes of padding
     padding_len = key_size_bytes - 3 - len(prefix) - len(hashed)
+    if padding_len < 8:
+        raise PivError(0x0000, f"RSA key of {key_size_bytes} bytes is too small for SHA-256")
     padding = b"\x00\x01" + (b"\xff" * padding_len) + b"\x00"
-    total = padding + prefix + hashed
-    assert len(total) == key_size_bytes
-    return total
+    return padding + prefix + hashed
 
 
 class _RsaPivSigner(rsa.RSAPrivateKey):
