@@ -32,13 +32,13 @@ def _get_random_id() -> b64url:
     return id_b64
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Version:
     major: uint
     minor: uint
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Header:
     version: Version
     exporterRpId: tstr
@@ -62,7 +62,7 @@ class Header:
             accounts.append(Account.from_dict(acc))
         version = d.get("version", {})
         return Header(
-            version=Version(version.get("major", 1), version.get("minor", 0)),
+            version=Version(major=version.get("major", 1), minor=version.get("minor", 0)),
             exporterRpId=d.get("exporterRpId", ""),
             exporterDisplayName=d.get("exporterDisplayName", ""),
             timestamp=d.get("timestamp", 0),
@@ -72,7 +72,7 @@ class Header:
     @staticmethod
     def from_items(items: List[Item]) -> Header:
         return Header(
-            version=Version(1, 0),  # v1.0
+            version=Version(major=1, minor=0),  # v1.0
             exporterRpId="nitrokey.com",  # Exporting from authenticator
             exporterDisplayName="Nitrokey NK3",
             accounts=[
@@ -115,7 +115,7 @@ class Header:
         return cxfpayload
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Account:
     id: b64url
     username: tstr
@@ -143,7 +143,7 @@ class Account:
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Collection:
     id: b64url
     title: tstr
@@ -155,7 +155,7 @@ class Collection:
     extensions: Optional[List[Extension]] = None
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Item:
     id: b64url
     title: tstr
@@ -267,25 +267,25 @@ class Item:
                 )
             )
             list_item = list_item_serializable.to_list_item()
-            pse = PasswordSafeEntry(login, password, metadata)
+            pse = PasswordSafeEntry(login=login, password=password, metadata=metadata)
             pr = PasswordRepresentation(item=list_item, pse=pse)
             pr_list.append(pr)
 
         return pr_list
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CredentialScope:
     urls: List[uri]
     androidApps: List[dict[str, Any]]  # Not defining AndroidAppId since it is not used.
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Extension:
     name: tstr
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Credential:
     type: CredentialType = field(init=False)
 
@@ -309,7 +309,7 @@ class FieldType(str, Enum):
     SUBDIVISION_CODE = "subdivision-code"
 
 
-@dataclass
+@dataclass(kw_only=True)
 class EditableField:
     fieldType: FieldType
     value: tstr
@@ -328,7 +328,7 @@ class EditableField:
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class BasicAuth(Credential):
     urls: List[tstr]
     username: Optional[EditableField]
@@ -349,7 +349,7 @@ class BasicAuth(Credential):
 # TODO other credentials like Credit Card and Passkey Dict
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SecretsAppMetadata(Extension):
     metadata: tstr
     item: "ListItemSerializable"
@@ -382,13 +382,13 @@ class SecretsAppMetadata(Extension):
 CXFPayload: TypeAlias = Header
 
 
-@dataclass
+@dataclass(kw_only=True)
 class PasswordRepresentation:  # Nitrokey specific for format. Not defined in CXF
     item: "ListItem"
     pse: "PasswordSafeEntry"
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CXFKey:
     _key: bytes
 
