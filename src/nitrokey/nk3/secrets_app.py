@@ -185,6 +185,7 @@ class SecretsAppExceptionID(IntEnum):
     Success = 0x9000
 
 
+# Not raised by the SDK, but imported by pynitrokey's secrets CLI
 class SecretsAppHealthCheckException(Exception):
     pass
 
@@ -280,15 +281,6 @@ class Kind(IntEnum):
     HotpReverse = 0x30
     Hmac = 0x40
     NotSet = 0xF0
-
-    @classmethod
-    def from_attribute_byte(cls, attribute_byte: bytes) -> str:
-        a = int(attribute_byte)
-        k = cls.from_attribute_byte_type(a)
-        if k != Kind.NotSet:
-            return str(k).split(".")[-1].upper()
-        else:
-            return "PWS"
 
     @classmethod
     def from_attribute_byte_type(cls, a: int) -> "Kind":
@@ -400,7 +392,6 @@ class SecretsApp:
     dev: NK3
     write_corpus_fn: Optional[WriteCorpusFn]
     _cache_status: Optional[SelectResponse]
-    _metadata: dict[Any, Any]
 
     def __init__(self, dev: NK3, logfn: Optional[LogFn] = None) -> None:
         self._cache_status = None
@@ -411,7 +402,6 @@ class SecretsApp:
         else:
             self.logfn = self.log.info
         self.dev = dev
-        self._metadata = {}
 
     def _custom_encode(
         self, structure: Optional[Sequence[Union[tlv8.Entry, RawBytes, None]]] = None
@@ -486,14 +476,6 @@ class SecretsApp:
             self.logfn(
                 f"Received final data: [{status_bytes.hex()}] (data: {len(data_final)} bytes)"
             )
-
-        if data_final:
-            try:
-                tlv8.decode(data_final)
-                self.logfn("TLV-decoding of data successful")
-            except Exception:
-                self.logfn("TLV-decoding of data failed")
-                pass
 
         return data_final
 
