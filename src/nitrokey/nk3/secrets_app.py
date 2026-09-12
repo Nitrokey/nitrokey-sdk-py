@@ -19,11 +19,10 @@ from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 from urllib.parse import parse_qs, unquote, urlparse
 
 import tlv8
-from semver.version import Version
 
 from nitrokey.nk3 import NK3
 from nitrokey.nk3.credential_exchange_format import CXFKey, CXFPayload, Item, PasswordRepresentation
-from nitrokey.trussed import App
+from nitrokey.trussed import App, Version
 
 LogFn = Callable[[str], Any]
 WriteCorpusFn = Callable[[typing.Union["Instruction", "CCIDInstruction"], bytes], Any]
@@ -147,7 +146,7 @@ class SelectResponse:
     serial_number: Optional[bytes]
 
     def version_str(self) -> str:
-        if self.version:
+        if self.version and len(self.version) >= 3:
             return f"{self.version[0]}.{self.version[1]}.{self.version[2]}"
         else:
             return "unknown"
@@ -1031,9 +1030,14 @@ class SecretsApp:
         return not (counter is None or counter == 0)
 
     def _semver_equal_or_newer(self, required_version: str) -> bool:
-        current = Version.parse(self.get_feature_status_cached().version_str())
-        semver_req_version = Version.parse(required_version)
-        return current >= semver_req_version
+        version_str = self.get_feature_status_cached().version_str()
+        try:
+            current = Version.from_str(version_str)
+        except ValueError:
+            # The device did not report a usable version, so assume the feature is missing
+            return False
+        required = Version.from_str(required_version)
+        return current >= required
 
 
 def _iso7816_compose(ins: int, p1: int, p2: int, data: bytes = b"") -> bytes:
