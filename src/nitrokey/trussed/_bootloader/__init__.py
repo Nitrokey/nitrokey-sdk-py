@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 ProgressCallback = Callable[[int, int], None]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ModelData:
     firmware_repository_name: str
     firmware_pattern_string: str
@@ -72,7 +72,7 @@ def _validate_checksum(checksums: dict[str, str], path: str, data: bytes) -> Non
         raise ValueError(f"Invalid checksum for file {path} in firmware container")
 
 
-@dataclass
+@dataclass(kw_only=True)
 class FirmwareContainer:
     version: Version
     pynitrokey: Optional[Version]
@@ -109,7 +109,7 @@ class FirmwareContainer:
             return cls(version=version, pynitrokey=pynitrokey, sdk=sdk, images=images)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class FirmwareMetadata:
     version: Version
     inner_checksum: bytes
