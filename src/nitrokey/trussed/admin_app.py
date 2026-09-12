@@ -119,7 +119,7 @@ class FactoryResetStatus(Enum):
             if status == FactoryResetStatus.NOT_CONFIRMED:
                 error = "Operation was not confirmed with touch"
             elif status == FactoryResetStatus.APP_NOT_ALLOWED:
-                error = "The application does not support factory reset through nitropy"
+                error = "The application does not support factory reset"
             elif status == FactoryResetStatus.APP_FAILED_PARSE:
                 error = "The application name must be utf-8"
             raise Exception(f"{msg}: {error}")
@@ -228,7 +228,8 @@ class AdminApp:
 
     def is_locked(self) -> bool:
         response = self._call(AdminCommand.LOCKED, response_len=1)
-        assert response is not None
+        if not response:
+            raise ValueError("The device returned an empty locked status")
         return response[0] == 1
 
     def reboot(self, mode: BootMode = BootMode.FIRMWARE) -> bool:
@@ -254,7 +255,10 @@ class AdminApp:
 
     def rng(self) -> bytes:
         data = self._call(AdminCommand.RNG, response_len=RNG_LEN)
-        assert data is not None
+        if data is None:
+            raise ValueError("The device does not support the RNG command")
+        if len(data) != RNG_LEN:
+            raise ValueError(f"Expected {RNG_LEN} random bytes, got {len(data)}")
         return data
 
     def status(self) -> Status:
@@ -289,7 +293,8 @@ class AdminApp:
 
     def version(self) -> Version:
         reply = self._call(AdminCommand.VERSION, data=bytes([0x01]))
-        assert reply is not None
+        if not reply:
+            raise ValueError("The device returned an empty version")
         if len(reply) == VERSION_LEN:
             version = Version.from_int(int.from_bytes(reply, "big"))
         else:
@@ -316,7 +321,8 @@ class AdminApp:
     def set_config(self, key: str, value: str) -> None:
         request = cbor.encode({"key": key, "value": value})
         reply = self._call(AdminCommand.SET_CONFIG, data=request, response_len=1)
-        assert reply
+        if not reply:
+            raise ValueError("The device returned an empty response")
         ConfigStatus.check(reply[0], "Failed to set config value")
 
     def list_available_fields(self) -> list[ConfigField]:
@@ -330,7 +336,8 @@ class AdminApp:
                 ConfigField("opcard.use_se050_backend", True, True, True, ConfigFieldType.BOOL),
             ]
         parsed = cbor.decode(reply)
-        assert isinstance(parsed, list)
+        if not isinstance(parsed, list):
+            raise ValueError("The device returned a malformed config field list")
         ret = []
 
         for field in parsed:

@@ -270,29 +270,6 @@ class Iso7816Apdu:
         self.data = data or b""
         self.le = le
 
-    def _encode_lc(self) -> bytes:
-        """Encode Lc according to short / extended format."""
-        lc_len = len(self.data)
-        if lc_len == 0:
-            return b""
-        if lc_len <= 0xFF:
-            return bytes([lc_len])
-        if lc_len <= 0xFFFF:
-            return b"\x00" + lc_len.to_bytes(2, "big")
-        raise ValueError("Data too long (max 6535 bytes)")
-
-    def _encode_le(self) -> bytes:
-        """Encode Le according to short / extended format."""
-        if self.le is None:
-            return b""
-        if self.le == 0:
-            return b"\x00"
-        if self.le <= 0xFF:
-            return bytes([self.le])
-        if self.le <= 0xFFFF:
-            return b"\x00" + self.le.to_bytes(2, "big")
-        raise ValueError("Le out of range (max 65535)")
-
     def to_bytes(self) -> bytes:
         """Serialize the APDU to its binary representation."""
         header = bytes([self.cla, self.ins, self.p1, self.p2])
@@ -301,11 +278,31 @@ class Iso7816Apdu:
         if not self.data and self.le is None:
             return header
 
-        lc = self._encode_lc()
-        le = self._encode_le()
+        if len(self.data) > 0xFFFF:
+            raise ValueError("Data too long (max 65535 bytes)")
+        if self.le is not None and not 0 <= self.le <= 0xFFFF:
+            raise ValueError("Le out of range (max 65535)")
+
+        # A short Le of 0x00 already means 256 (only a larger value needs the extended form)
+        extended = len(self.data) > 0xFF or (self.le is not None and self.le > 0x100)
 
         # Cases:
         # 2: no data, Le present
         # 3: data present, no Le
         # 4: data present, Le present
+        if not extended:
+            lc = bytes([len(self.data)]) if self.data else b""
+            # 0 and 256 are both encoded as 0x00
+            le = b"" if self.le is None else bytes([self.le & 0xFF])
+        else:
+            lc = b"\x00" + len(self.data).to_bytes(2, "big") if self.data else b""
+            if self.le is None:
+                le = b""
+            elif self.data:
+                # Case 4E, where the leading 0x00 is already part of Lc
+                le = self.le.to_bytes(2, "big")
+            else:
+                # Case 2E, where Le carries its own leading 0x00
+                le = b"\x00" + self.le.to_bytes(2, "big")
+
         return header + lc + self.data + le

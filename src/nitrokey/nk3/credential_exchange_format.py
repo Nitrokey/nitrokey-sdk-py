@@ -103,7 +103,9 @@ class Header:
 
     @staticmethod
     def decrypt(d: dict[str, Any], key: CXFKey) -> Header:
-        assert d.get("version", 0) == 1, "Invalid version"
+        version = d.get("version", 0)
+        if version != 1:
+            raise ValueError(f"Unsupported CXF version: {version}")
         encrypted_b64 = d.get("EncryptedCXF", "")
         encrypted = urlsafe_b64decode(encrypted_b64)
         nonce = encrypted[-12:]

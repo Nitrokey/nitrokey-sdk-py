@@ -19,11 +19,10 @@ from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 from urllib.parse import parse_qs, unquote, urlparse
 
 import tlv8
-from semver.version import Version
 
 from nitrokey.nk3 import NK3
 from nitrokey.nk3.credential_exchange_format import CXFKey, CXFPayload, Item, PasswordRepresentation
-from nitrokey.trussed import App
+from nitrokey.trussed import App, Version
 
 LogFn = Callable[[str], Any]
 WriteCorpusFn = Callable[[typing.Union["Instruction", "CCIDInstruction"], bytes], Any]
@@ -147,7 +146,7 @@ class SelectResponse:
     serial_number: Optional[bytes]
 
     def version_str(self) -> str:
-        if self.version:
+        if self.version and len(self.version) >= 3:
             return f"{self.version[0]}.{self.version[1]}.{self.version[2]}"
         else:
             return "unknown"
@@ -183,10 +182,6 @@ class SecretsAppExceptionID(IntEnum):
     ClassNotSupported = 0x6E00
     UnspecifiedCheckingError = 0x6F00
     Success = 0x9000
-
-
-class SecretsAppHealthCheckException(Exception):
-    pass
 
 
 @dataclasses.dataclass
@@ -280,15 +275,6 @@ class Kind(IntEnum):
     HotpReverse = 0x30
     Hmac = 0x40
     NotSet = 0xF0
-
-    @classmethod
-    def from_attribute_byte(cls, attribute_byte: bytes) -> str:
-        a = int(attribute_byte)
-        k = cls.from_attribute_byte_type(a)
-        if k != Kind.NotSet:
-            return str(k).split(".")[-1].upper()
-        else:
-            return "PWS"
 
     @classmethod
     def from_attribute_byte_type(cls, a: int) -> "Kind":
@@ -400,7 +386,6 @@ class SecretsApp:
     dev: NK3
     write_corpus_fn: Optional[WriteCorpusFn]
     _cache_status: Optional[SelectResponse]
-    _metadata: dict[Any, Any]
 
     def __init__(self, dev: NK3, logfn: Optional[LogFn] = None) -> None:
         self._cache_status = None
@@ -411,7 +396,6 @@ class SecretsApp:
         else:
             self.logfn = self.log.info
         self.dev = dev
-        self._metadata = {}
 
     def _custom_encode(
         self, structure: Optional[Sequence[Union[tlv8.Entry, RawBytes, None]]] = None
@@ -486,14 +470,6 @@ class SecretsApp:
             self.logfn(
                 f"Received final data: [{status_bytes.hex()}] (data: {len(data_final)} bytes)"
             )
-
-        if data_final:
-            try:
-                tlv8.decode(data_final)
-                self.logfn("TLV-decoding of data successful")
-            except Exception:
-                self.logfn("TLV-decoding of data failed")
-                pass
 
         return data_final
 
@@ -1054,9 +1030,14 @@ class SecretsApp:
         return not (counter is None or counter == 0)
 
     def _semver_equal_or_newer(self, required_version: str) -> bool:
-        current = Version.parse(self.get_feature_status_cached().version_str())
-        semver_req_version = Version.parse(required_version)
-        return current >= semver_req_version
+        version_str = self.get_feature_status_cached().version_str()
+        try:
+            current = Version.from_str(version_str)
+        except ValueError:
+            # The device did not report a usable version, so assume the feature is missing
+            return False
+        required = Version.from_str(required_version)
+        return current >= required
 
 
 def _iso7816_compose(ins: int, p1: int, p2: int, data: bytes = b"") -> bytes:

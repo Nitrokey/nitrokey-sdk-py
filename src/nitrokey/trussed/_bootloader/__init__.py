@@ -14,8 +14,7 @@ import typing
 from abc import abstractmethod
 from dataclasses import dataclass
 from io import BytesIO
-from re import Pattern
-from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Dict, Optional, Union
 from zipfile import ZipFile
 
 from .._base import Model, TrussedBase
@@ -124,28 +123,6 @@ class TrussedBootloader(TrussedBase):
     @property
     @abstractmethod
     def variant(self) -> Variant: ...
-
-
-def get_firmware_filename_pattern(variant: Variant) -> Pattern[str]:
-    from .lpc55 import FILENAME_PATTERN as FILENAME_PATTERN_LPC55
-    from .nrf52 import FILENAME_PATTERN as FILENAME_PATTERN_NRF52
-
-    if variant == Variant.LPC55:
-        return FILENAME_PATTERN_LPC55
-    elif variant == Variant.NRF52:
-        return FILENAME_PATTERN_NRF52
-    else:
-        typing.assert_never(variant)
-
-
-def parse_filename(filename: str) -> Optional[Tuple[Variant, Version]]:
-    for variant in Variant:
-        pattern = get_firmware_filename_pattern(variant)
-        match = pattern.search(filename)
-        if match:
-            version = Version.from_v_str(match.group("version"))
-            return (variant, version)
-    return None
 
 
 def validate_firmware_image(
