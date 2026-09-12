@@ -16,6 +16,9 @@ from nitrokey.checksum import FirmwareChecksum
 
 API_BASE_URL = "https://api.github.com"
 
+# Timeout in seconds for all HTTP requests so a stalled server cannot block the caller
+DEFAULT_TIMEOUT = 30
+
 
 ProgressCallback = Callable[[int, int], None]
 
@@ -47,8 +50,9 @@ class Asset:
             raise DownloadError(f"Directory {d} does not exist")
         if not os.path.isdir(d):
             raise DownloadError(f"{d} is not a directory")
-        url = urllib.parse.urlparse(self.url)
-        filename = os.path.basename(url.path)
+        filename = self.filename()
+        if not filename or filename in (os.curdir, os.pardir) or os.path.dirname(filename):
+            raise DownloadError(f"Cannot determine a file name from URL {self.url}")
         path = os.path.join(d, filename)
         if os.path.exists(path) and not overwrite:
             raise OverwriteError(path)
@@ -62,9 +66,13 @@ class Asset:
             result += chunk
         return result
 
+    def filename(self) -> str:
+        """The asset file name, without any query string or fragment."""
+        return os.path.basename(urllib.parse.urlparse(self.url).path)
+
     def checksum(self, callback: Optional[ProgressCallback] = None) -> bytes:
         content = self.read(callback)
-        return FirmwareChecksum(self.url, content).calculate_checksum()
+        return FirmwareChecksum(self.filename(), content).calculate_checksum()
 
     def _get_chunks(
         self, chunk_size: int = 1024, callback: Optional[ProgressCallback] = None
@@ -80,7 +88,7 @@ class Asset:
             yield chunk
 
     def _get(self, stream: bool = False) -> requests.Response:
-        response = requests.get(self.url, stream=stream)
+        response = requests.get(self.url, stream=stream, timeout=DEFAULT_TIMEOUT)
         response.raise_for_status()
         return response
 
@@ -135,7 +143,7 @@ class Repository:
 
     def get_release(self, tag: str) -> Release:
         release = self._call(
-            f"/repos/{self.owner}/{self.name}/releases/tags/{tag}",
+            f"/repos/{self.owner}/{self.name}/releases/tags/{urllib.parse.quote(tag, safe='')}",
             {404: f"Failed to find firmware release {tag}"},
         )
         return Release._from_api_response(release)
@@ -150,13 +158,14 @@ class Repository:
             errors = {}
 
         url = self._get_url(path)
-        response = requests.get(url)
+        response = requests.get(url, timeout=DEFAULT_TIMEOUT)
         for code in errors:
             if response.status_code == code:
                 raise ValueError(errors[code])
         response.raise_for_status()
         data = response.json()
-        assert isinstance(data, dict)
+        if not isinstance(data, dict):
+            raise ValueError(f"Unexpected response from {url}")
         return data
 
     def _get_url(self, path: str) -> str:
