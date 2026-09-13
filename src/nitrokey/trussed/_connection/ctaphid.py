@@ -6,7 +6,7 @@ import platform
 from typing import Optional
 
 from fido2.ctap import CtapError
-from fido2.hid import CtapHidDevice, list_descriptors, open_device
+from fido2.hid import CtapHidDevice, get_descriptor, list_descriptors, open_connection, open_device
 
 from .._exceptions import ConnectionError, CtapErrorCode, DeviceError
 from . import App, Connection, Transport, VidPid
@@ -81,13 +81,36 @@ def _device_path_to_str(path: bytes | str) -> str:
         return path
 
 
-def open_ctaphid(path: str) -> CtapHidConnection:
-    logger.debug(f"Opening CTAPHID device at path {path}")
+def _str_to_device_path(path: str) -> bytes | str:
+    """
+    Converts a device path string to the representation used by the fido2 library.
+
+    This is the inverse of _device_path_to_str so that a path returned by a list
+    function can be used to open the same device again.
+    """
     if platform.system() == "Windows":
-        device = open_device(bytes(path, "utf-8"))
+        return path.encode("iso-8859-1")
     else:
-        device = open_device(path)
-    return CtapHidConnection(device)
+        return path
+
+
+def open_ctaphid(path: str, vid: int, pid: int) -> Optional[CtapHidConnection]:
+    """
+    Opens the CTAPHID device at the given path if it has the given VID and PID.
+
+    The descriptor is read before opening the device so that devices from other
+    vendors are never opened.  Returns None if the VID or PID does not match.
+    """
+    logger.debug(f"Opening CTAPHID device at path {path}")
+    descriptor = get_descriptor(_str_to_device_path(path))  # type: ignore
+    if (descriptor.vid, descriptor.pid) != (vid, pid):
+        logger.debug(
+            f"Ignoring CTAPHID device at path {path} with VID:PID "
+            f"{descriptor.vid:04x}:{descriptor.pid:04x} (expected: {vid:04x}:{pid:04x})"
+        )
+        return None
+    hid_connection = open_connection(descriptor)  # type: ignore
+    return CtapHidConnection(CtapHidDevice(descriptor, hid_connection))
 
 
 def list_ctaphid(vid: int, pid: int) -> list[CtapHidConnection]:
