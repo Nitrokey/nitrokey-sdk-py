@@ -88,7 +88,7 @@ class Variant(Enum):
     NRF52 = 2
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Status:
     init_status: Optional[InitStatus] = None
     ifs_blocks: Optional[int] = None
@@ -190,7 +190,7 @@ class ConfigFieldType(Enum):
             typing.assert_never(self)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ConfigField:
     name: str
     requires_touch_confirmation: bool
@@ -219,7 +219,10 @@ class AdminApp:
                     data=command.value.to_bytes(1, "big") + data,
                 )
         except DeviceError as e:
-            if e.is_code(CcidErrorCode(0x6D, 0x00), CtapErrorCode(CtapError.ERR.INVALID_COMMAND)):
+            if e.is_code(
+                CcidErrorCode(sw1=0x6D, sw2=0x00),
+                CtapErrorCode(error=CtapError.ERR.INVALID_COMMAND),
+            ):
                 self.device._logger.debug(
                     f"Admin command {command.name} is not supported by the device"
                 )
@@ -243,7 +246,8 @@ class AdminApp:
                     # ConditionsOfUseNotSatisfied error (CCID) if the user confirmation
                     # request times out
                     if e.is_code(
-                        CcidErrorCode(0x69, 0x85), CtapErrorCode(CtapError.ERR.INVALID_LENGTH)
+                        CcidErrorCode(sw1=0x69, sw2=0x85),
+                        CtapErrorCode(error=CtapError.ERR.INVALID_LENGTH),
                     ):
                         raise TimeoutException() from e
                     raise e
@@ -283,7 +287,7 @@ class AdminApp:
             return None
         if len(uuid) != UUID_LEN:
             raise ValueError(f"UUID response has invalid length {len(uuid)}")
-        parsed_uuid = Uuid(int.from_bytes(uuid, byteorder="big"))
+        parsed_uuid = Uuid(value=int.from_bytes(uuid, byteorder="big"))
         self.device._logger.debug(f"Device UUID: {parsed_uuid}")
         return parsed_uuid
 
@@ -325,9 +329,19 @@ class AdminApp:
         if not reply:
             return [
                 ConfigField(
-                    "fido.disable_skip_up_timeout", False, False, False, ConfigFieldType.BOOL
+                    name="fido.disable_skip_up_timeout",
+                    requires_touch_confirmation=False,
+                    requires_reboot=False,
+                    destructive=False,
+                    ty=ConfigFieldType.BOOL,
                 ),
-                ConfigField("opcard.use_se050_backend", True, True, True, ConfigFieldType.BOOL),
+                ConfigField(
+                    name="opcard.use_se050_backend",
+                    requires_touch_confirmation=True,
+                    requires_reboot=True,
+                    destructive=True,
+                    ty=ConfigFieldType.BOOL,
+                ),
             ]
         parsed = cbor.decode(reply)
         assert isinstance(parsed, list)
@@ -338,7 +352,15 @@ class AdminApp:
             if ty is None:
                 ty = ConfigFieldType.BOOL
 
-            ret.append(ConfigField(field["n"], field["c"], field["r"], field["d"], ty))
+            ret.append(
+                ConfigField(
+                    name=field["n"],
+                    requires_touch_confirmation=field["c"],
+                    requires_reboot=field["r"],
+                    destructive=field["d"],
+                    ty=ty,
+                )
+            )
         return ret
 
     def factory_reset(self) -> bool:

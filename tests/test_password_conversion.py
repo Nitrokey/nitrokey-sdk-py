@@ -75,7 +75,7 @@ def generate_test_cases(n: int = 3) -> List[PasswordRepresentation]:
             login=username.encode(), password=password.encode(), metadata=metadata.encode()
         )
 
-        pr = PasswordRepresentation(list_item, pse)
+        pr = PasswordRepresentation(item=list_item, pse=pse)
 
         pr_list.append(pr)
 

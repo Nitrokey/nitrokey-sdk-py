@@ -29,7 +29,7 @@ LogFn = Callable[[str], Any]
 WriteCorpusFn = Callable[[typing.Union["Instruction", "CCIDInstruction"], bytes], Any]
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class ListItemProperties:
     touch_required: bool
     secret_encryption: bool
@@ -56,7 +56,7 @@ class ListItemProperties:
         return ",".join([d for d in data if d])
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class ListItem:
     kind: "Kind"
     algorithm: "Algorithm"
@@ -75,7 +75,7 @@ class ListItem:
         )
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class ListItemSerializable:
     kind: "Kind"
     algorithm: "Algorithm"
@@ -100,7 +100,7 @@ class ListItemSerializable:
         )
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class PasswordSafeEntry:
     login: Optional[bytes]
     password: Optional[bytes]
@@ -126,12 +126,12 @@ class PasswordSafeEntry:
         return [r for r in entries if r is not None]
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class RawBytes:
     data: list[int]
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class SelectResponse:
     # Application version
     version: Optional[bytes]
@@ -189,7 +189,7 @@ class SecretsAppHealthCheckException(Exception):
     pass
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class SecretsAppException(Exception):
     code: str
     context: str
@@ -316,14 +316,14 @@ class Algorithm(IntEnum):
 ALGORITHM_TO_KIND = {"SHA1": Algorithm.Sha1, "SHA256": Algorithm.Sha256}
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class CXFRestoreCombined:
     successful_credentials: list[bytes]
     failed_credentials: list[bytes]
     skipped_credentials: list[bytes]
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class CXFBackupCombined:
     payload: dict[
         str, Any
@@ -332,7 +332,7 @@ class CXFBackupCombined:
     passphrase: Optional[str] = ""
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class _OTPUri:
     label: str
     secret: bytes
@@ -480,7 +480,7 @@ class SecretsApp:
                 data_final += result
 
         if status_bytes != b"\x90\x00" and status_bytes[0] != MORE_DATA_STATUS_BYTE:
-            raise SecretsAppException(status_bytes.hex(), "Received error")
+            raise SecretsAppException(code=status_bytes.hex(), context="Received error")
 
         if log_multipacket:
             self.logfn(
@@ -541,7 +541,7 @@ class SecretsApp:
         Return a list of the registered credentials with properties
         :return: List of ListItems
         """
-        data = [RawBytes([version])]
+        data = [RawBytes(data=[version])]
         raw_res = self._send_receive(Instruction.List, data)
         resd: tlv8.EntryList = tlv8.decode(raw_res)
         res = []
@@ -607,7 +607,7 @@ class SecretsApp:
             else:
                 export_list.append(
                     Item.from_password_representation(
-                        PasswordRepresentation(item, self.get_credential(item.label))
+                        PasswordRepresentation(item=item, pse=self.get_credential(item.label))
                     )
                 )
                 callback_status.successful_credentials.append(item.label)
@@ -849,7 +849,7 @@ class SecretsApp:
             (0x02 if touch_button_required else 0x00) | (0x04 if pin_based_encryption else 0x00),
         ]
         structure = list(filter(lambda x: x is not None, structure))
-        return RawBytes(structure)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+        return RawBytes(data=structure)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     def calculate(self, cred_id: bytes, challenge: Optional[int] = None) -> bytes:
         """
@@ -979,7 +979,7 @@ class SecretsApp:
         :return SelectResponse Status structure. Challenge and Algorithm fields are None, if the passphrase is not set.
         """
         AID = [0xA0, 0x00, 0x00, 0x05, 0x27, 0x21, 0x01]
-        structure = [RawBytes(AID)]
+        structure = [RawBytes(data=AID)]
         raw_res = self._send_receive(CCIDInstruction.Select, structure=structure)
         resd: tlv8.EntryList = tlv8.decode(raw_res)
         rd = {}
