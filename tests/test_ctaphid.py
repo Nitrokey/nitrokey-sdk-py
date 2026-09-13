@@ -51,10 +51,37 @@ class TestOpenCtaphid(unittest.TestCase):
             get_descriptor.assert_called_once()
             open_connection.assert_not_called()
 
+    def test_device_is_closed_if_init_fails(self) -> None:
+        with fake_device(_VID_NITROKEY, _PID_NK3_DEVICE) as (_, open_connection):
+            with mock.patch.object(ctaphid, "CtapHidDevice", side_effect=OSError):
+                with self.assertRaises(OSError):
+                    ctaphid.open_ctaphid(PATH, vid=_VID_NITROKEY, pid=_PID_NK3_DEVICE)
+
+            open_connection.return_value.close.assert_called_once()
+
     def test_path_roundtrip(self) -> None:
         with mock.patch("platform.system", return_value="Windows"):
             for raw in [rb"\\?\hid#vid_20a0&pid_42b2#7&1234&0&0000", b"\\\\?\\hid#caf\xe9"]:
                 self.assertEqual(ctaphid._str_to_device_path(ctaphid._device_path_to_str(raw)), raw)
+
+
+class TestListCtaphid(unittest.TestCase):
+    def test_connections_are_closed_if_one_device_fails(self) -> None:
+        descriptors = [
+            FakeDescriptor(path=f"/dev/hidraw{i}", vid=_VID_NITROKEY, pid=_PID_NK3_DEVICE)
+            for i in range(3)
+        ]
+        devices = [mock.Mock(descriptor=d) for d in descriptors]
+        with (
+            mock.patch.object(ctaphid, "list_descriptors", return_value=descriptors),
+            mock.patch.object(ctaphid, "open_connection"),
+            mock.patch.object(ctaphid, "CtapHidDevice", side_effect=[*devices[:2], OSError]),
+        ):
+            with self.assertRaises(OSError):
+                ctaphid.list_ctaphid(_VID_NITROKEY, _PID_NK3_DEVICE)
+
+        for device in devices[:2]:
+            device.close.assert_called_once()
 
 
 class TestTrussedDeviceOpen(unittest.TestCase):
@@ -68,7 +95,36 @@ class TestTrussedDeviceOpen(unittest.TestCase):
             self.assertIsNone(NKPK.open(PATH))
             open_connection.assert_not_called()
 
+    def test_connection_is_closed_if_device_is_rejected(self) -> None:
+        connection = mock.Mock()
+        with (
+            mock.patch("nitrokey.trussed._device.open_ctaphid", return_value=connection),
+            mock.patch.object(NK3, "from_connection", side_effect=ValueError),
+            self.assertLogs("nitrokey.trussed._device", level="WARNING"),
+        ):
+            self.assertIsNone(NK3.open(PATH))
+            connection.close.assert_called_once()
+
+    def test_connection_is_closed_if_device_fails(self) -> None:
+        connection = mock.Mock()
+        with (
+            mock.patch("nitrokey.trussed._device.open_ctaphid", return_value=connection),
+            mock.patch.object(NK3, "from_connection", side_effect=OSError),
+        ):
+            with self.assertRaises(OSError):
+                NK3.open(PATH)
+            connection.close.assert_called_once()
+
     def test_missing_model_is_not_swallowed(self) -> None:
         with mock.patch.object(NK3, "model", None):
             with self.assertRaises(AttributeError):
                 NK3.open(PATH)
+
+    def test_connections_are_closed_if_one_device_fails(self) -> None:
+        connections = [mock.Mock() for _ in range(3)]
+        with mock.patch.object(NK3, "from_connection", side_effect=[mock.Mock(), OSError]):
+            with self.assertRaises(OSError):
+                NK3._from_connections(connections)
+
+        for connection in connections:
+            connection.close.assert_called_once()

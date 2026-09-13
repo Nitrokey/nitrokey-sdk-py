@@ -6,10 +6,11 @@ import platform
 from typing import Optional
 
 from fido2.ctap import CtapError
-from fido2.hid import CtapHidDevice, get_descriptor, list_descriptors, open_connection, open_device
+from fido2.hid import CtapHidDevice, get_descriptor, list_descriptors, open_connection
+from fido2.hid.base import HidDescriptor
 
 from .._exceptions import ConnectionError, CtapErrorCode, DeviceError
-from . import App, Connection, Transport, VidPid
+from . import App, Connection, Transport, VidPid, close_all
 
 logger = logging.getLogger(__name__)
 
@@ -109,8 +110,22 @@ def open_ctaphid(path: str, vid: int, pid: int) -> Optional[CtapHidConnection]:
             f"{descriptor.vid:04x}:{descriptor.pid:04x} (expected: {vid:04x}:{pid:04x})"
         )
         return None
+    return CtapHidConnection(_open_descriptor(descriptor))
+
+
+def _open_descriptor(descriptor: HidDescriptor) -> CtapHidDevice:
+    """
+    Opens the device with the given descriptor.
+
+    If the CTAPHID initialization fails, the device is closed again so that we don't
+    leave a stale channel behind.
+    """
     hid_connection = open_connection(descriptor)  # type: ignore
-    return CtapHidConnection(CtapHidDevice(descriptor, hid_connection))
+    try:
+        return CtapHidDevice(descriptor, hid_connection)
+    except BaseException:
+        hid_connection.close()
+        raise
 
 
 def list_ctaphid(vid: int, pid: int) -> list[CtapHidConnection]:
@@ -120,4 +135,11 @@ def list_ctaphid(vid: int, pid: int) -> list[CtapHidConnection]:
         if desc.vid == vid and desc.pid == pid
     ]
     logger.debug(f"Found {len(descriptors)} CTAPHID device(s) with VID:PID {vid:04x}:{pid:04x}")
-    return [CtapHidConnection(open_device(desc.path)) for desc in descriptors]
+    connections = []
+    try:
+        for desc in descriptors:
+            connections.append(CtapHidConnection(_open_descriptor(desc)))
+    except BaseException:
+        close_all(connections)
+        raise
+    return connections
