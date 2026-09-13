@@ -2,7 +2,15 @@
 
 ## Unreleased
 
--
+### Breaking Changes
+
+- `nitrokey.trussed.TrussedBase`: Change `model` from an abstract property to a class attribute.
+
+### Bugfixes
+
+- `nitrokey.trussed.TrussedDevice`:
+  - Check USB vendor and product ID in `open` before opening a device
+  - Close connections in `open` and `list` if opening a device fails
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.2...HEAD)
 

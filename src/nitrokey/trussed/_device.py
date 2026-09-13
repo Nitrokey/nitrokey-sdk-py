@@ -13,7 +13,7 @@ from typing import List, Optional, Sequence, TypeVar
 from fido2.hid import CtapHidDevice
 
 from ._base import TrussedBase
-from ._connection import App, Connection, Transport
+from ._connection import App, Connection, Transport, close_all
 from ._connection.ccid import list_ccid
 from ._connection.ctaphid import list_ctaphid, open_ctaphid
 from ._utils import Fido2Certs, Uuid
@@ -111,7 +111,11 @@ class TrussedDevice(TrussedBase):
             return cls.from_connection(connection)
         except ValueError:
             logger.warning(f"No Nitrokey device at path {path}", exc_info=sys.exc_info())
+            connection.close()
             return None
+        except BaseException:
+            connection.close()
+            raise
 
     @classmethod
     def list(cls: type[T], transport: Transport | None = None, exclusive: bool = True) -> List[T]:
@@ -136,10 +140,19 @@ class TrussedDevice(TrussedBase):
 
     @classmethod
     def _list_vid_pid(cls: type[T], vid: int, pid: int) -> List[T]:
-        connections = list_ctaphid(vid, pid)
-        return [cls.from_connection(connection) for connection in connections]
+        return cls._from_connections(list_ctaphid(vid, pid))
 
     @classmethod
     def _list_pcsc_atr(cls: type[T], atr: List[int], exclusive: bool) -> List[T]:
-        connections = list_ccid(atr, exclusive)
-        return [cls.from_connection(connection) for connection in connections]
+        return cls._from_connections(list_ccid(atr, exclusive))
+
+    @classmethod
+    def _from_connections(cls: type[T], connections: Sequence[Connection]) -> List[T]:
+        devices = []
+        try:
+            for connection in connections:
+                devices.append(cls.from_connection(connection))
+        except BaseException:
+            close_all(connections)
+            raise
+        return devices
