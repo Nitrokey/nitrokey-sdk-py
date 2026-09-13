@@ -97,10 +97,15 @@ class TrussedDevice(TrussedBase):
 
     @classmethod
     def open(cls: type[T], path: str) -> Optional[T]:
+        vid = cls.model.vid
+        pid = cls.model.pid
         try:
-            connection = open_ctaphid(path)
+            connection = open_ctaphid(path, vid=vid, pid=pid)
         except Exception:
             logger.warning(f"No CTAPHID device at path {path}", exc_info=sys.exc_info())
+            return None
+        if connection is None:
+            logger.debug(f"No {cls.model} device at path {path}")
             return None
         try:
             return cls.from_connection(connection)
