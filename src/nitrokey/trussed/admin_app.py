@@ -8,6 +8,7 @@ from fido2 import cbor
 from fido2.ctap import CtapError
 
 from . import App, TimeoutException, TrussedDevice, Uuid, Version
+from ._base import Model
 from ._exceptions import CcidErrorCode, ConnectionError, CtapErrorCode, DeviceError
 
 RNG_LEN = 57
@@ -94,6 +95,8 @@ class Status:
     ifs_blocks: Optional[int] = None
     efs_blocks: Optional[int] = None
     variant: Optional[Variant] = None
+    model: Optional[Model] = None
+    revision: Optional[int] = None
 
 
 @enum.unique
@@ -272,6 +275,15 @@ class AdminApp:
                     status.variant = Variant(reply[4])
                 except ValueError:
                     pass
+            if len(reply) >= 7:
+                model = reply[5]
+                if model == 0:
+                    status.model = Model.NK3
+                elif model == 1:
+                    status.model = Model.NKPK
+                else:
+                    self.device._logger.warning(f"Ignoring unknown device model: {model}")
+                status.revision = reply[6]
         self.device._logger.debug(f"Device status: {status}")
         return status
 

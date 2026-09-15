@@ -2,7 +2,7 @@
 
 ## Unreleased
 
--
+- `nitrokey.trussed.admin_app`: Add `model` and `revision` to `AdminStatus`
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.3...HEAD)
 
