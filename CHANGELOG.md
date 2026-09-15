@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+-
+
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.4...HEAD)
+
+## [v0.5.0-rc.4](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.0-rc.4) (2026-09-15)
+
 - `nitrokey.trussed.admin_app`: Add `model` and `revision` to `AdminStatus`
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.3...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.3...v0.5.0-rc.4)
 
 ## [v0.5.0-rc.3](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.0-rc.3) (2026-08-27)
 
