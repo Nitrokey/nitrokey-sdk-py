@@ -34,6 +34,7 @@ class App(Enum):
     SECRETS = 0x70
     PROVISIONER = 0x71
     ADMIN = 0x72
+    STORAGE = 0x73
 
     def aid(self) -> bytes:
         if self == App.SECRETS:
@@ -42,6 +43,8 @@ class App(Enum):
             return bytes.fromhex("A00000084700000001")
         elif self == App.PROVISIONER:
             return bytes.fromhex("A00000084700000001")
+        elif self == App.STORAGE:
+            raise NotImplementedError()
         else:
             typing.assert_never(self)
 

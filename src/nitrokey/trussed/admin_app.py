@@ -74,9 +74,11 @@ class InitStatus(IntFlag):
     def __str__(self) -> str:
         if self == 0:
             return "ok"
-        errors = [error for error in InitStatus if error in self if error.name]
+        # mypy thinks that error.name can be None so we need to include the if, but ty knows that
+        # it is always set so we have to ignore its lint
+        errors = [error for error in InitStatus if error in self if error.name]  # ty: ignore[redundant-condition]
         value = sum(errors)
-        messages = [error.name for error in errors if error.name]
+        messages = [error.name for error in errors if error.name]  # ty: ignore[redundant-condition]
         if self.value != value:
             messages.append("UNKNOWN")
         return ", ".join(messages) + " (" + hex(self.value) + ")"
