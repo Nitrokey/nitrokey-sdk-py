@@ -11,6 +11,7 @@ nitrokey.trussed
    nitrokey.trussed.admin_app
    nitrokey.trussed.nrfutils
    nitrokey.trussed.provisioner_app
+   nitrokey.trussed.storage_app
    nitrokey.trussed.updates
 
 
