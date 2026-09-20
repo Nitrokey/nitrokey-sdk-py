@@ -77,8 +77,9 @@ class ManifestGenerator:
         for key in self.firmwares_data:
             firmware_dict = self.firmwares_data[key]
 
+            _firmware: Firmware
             if key == HexType.SD_BL:
-                _firmware: Any = SoftdeviceBootloaderFirmware()
+                _firmware = SoftdeviceBootloaderFirmware()
                 _firmware.info_read_only_metadata = FWMetaData()
                 _firmware.info_read_only_metadata.bl_size = firmware_dict[FirmwareKeys.BL_SIZE]
                 _firmware.info_read_only_metadata.sd_size = firmware_dict[FirmwareKeys.SD_SIZE]
@@ -96,6 +97,7 @@ class ManifestGenerator:
             elif key == HexType.SOFTDEVICE:
                 self.manifest.softdevice = _firmware
             elif key == HexType.SD_BL:
+                assert isinstance(_firmware, SoftdeviceBootloaderFirmware)
                 self.manifest.softdevice_bootloader = _firmware
             else:
                 raise NotImplementedError(
