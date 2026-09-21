@@ -4,52 +4,47 @@
 
 -
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.4...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0...HEAD)
 
-## [v0.5.0-rc.4](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.0-rc.4) (2026-09-15)
+## [v0.5.0](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.0) (2026-09-21)
 
-- `nitrokey.trussed.admin_app`: Add `model` and `revision` to `AdminStatus`
+### Breaking Changes
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.3...v0.5.0-rc.4)
-
-## [v0.5.0-rc.3](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.0-rc.3) (2026-08-27)
-
-- `nitrokey.nk3.secrets_app`: Fix discarded authentication when using `SecretsApp` over CCID
 - Bump minimum Python version to 3.11.
+- Refactor connection handling:
+  - Wrap `OSError` in `ConnectionError` and `CtapError` in `DeviceError` for transport-agnostic error types.
+  - Move connection handling into separate classes.
+  - Rename `TrussedDevice.from_device` to `TrussedDevice.from_connection`.
+  - Add `TrussedDevice.list` classmethod.
+  - Add `Transport` enum.
+  - Add `TrussedDevice.ctaphid_device` function.
+  - Change type of `TrussedDevice.path` to `Optional[str]`
+- Remove support for `fido2` v1.
+
+### Features
+
+- Add support for credentials import and export in FIDO CXF format.
+- `nitrokey.trussed.admin_app`: Add `model` and `revision` to `AdminStatus`
 - `nitrokey.trussed`: Add the `inner_checksum` field to `FirmwareMetadata` with the checksum of the unsigned firmware image.
 - `nitrokey.checksum`: Add unified checksum calculation for both NRF52 and LPC55 firmware files.
 - `nitrokey.trussed.nrfutils`: Add support for NRF52 package signing and upload
-- Wrap `OSError` in `ConnectionError` and `CtapError` in `DeviceError` for transport-agnostic error types.
-- Move connection handling into separate classes.
-- Rename `TrussedDevice.from_device` to `TrussedDevice.from_connection`.
-- Add `TrussedDevice.list` classmethod.
-- Add `Transport` enum and update list functions to use it instead of the `use_ccid` argument.
-- Replace `should_default_ccid` function with `recommended_transport` function.
-- Add `TrussedDevice.ctaphid_device` function.
-- Add support for credentials import and export in FIDO CXF format.
-- Rename `pcsc` extra to `ccid`.
 - Add `vid` and `pid` properties to `Model` enum.
 - `nitrokey.nk3.secrets_app`: Add `register_uri` function
-
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.2...v0.5.0-rc.3)
-
-## [v0.5.0-rc.2](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.0-rc.2) (2026-05-06)
-
-- Fix SDK version check during firmware update to correctly handle release candidates
-- Remove RPM specification file, associated Makefile target, and CI jobs.
-
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0-rc.1...v0.5.0-rc.2)
-
-## [v0.5.0-rc.1](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.0-rc.1) (2026-03-03)
-
 - Enable communication with Nitrokey 3 and Nitrokey Passkeys over CCID instead of CTAPHID
-  - `nitrokey.trussed.list`: add optional `use_ccid` argument
-  - `nitrokey.list`: add `should_default_ccid` function, that indicates when CCID should be prefered. CCID is more limited than CTAPHID, so this functions only returns `True` on Windows when not an administrator, as CTAPHID is not available in this case.
-  - `nitrokey.trussed.TrussedDevice.path`: change type to `Optional[str]`
-- Remove support for `fido2` v1.
+  - Add `recommended_transport` function that indicates when CCID should be prefered. CCID is more limited than CTAPHID, so this functions only recommends CCID on Windows when not an administrator, as CTAPHID is not available in this case.
+  - There is a known issue with the model identification over CCID, see [issue #147](https://github.com/Nitrokey/nitrokey-sdk-py/issues/147)
+
+### Bugfixes
+
+- `nitrokey.nk3.secrets_app`: Fix discarded authentication when using `SecretsApp` over CCID
+- Fix SDK version check during firmware update to correctly handle release candidates
+
+### Other Changes
+
+- Remove RPM specification file, associated Makefile target, and CI jobs.
 - `nitrokey.trussed.TrussedBase`: Fix type annotations for `__exit__` arguments so that all derived classes implement the `contextlib.AbstractContextManager` protocol.
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.4.2...v0.5.0-rc.1)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.4.2...v0.5.0)
 
 ## [v0.4.2](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.4.2) (2025-11-26)
 
