@@ -31,7 +31,7 @@ class OverwriteError(Exception):
         self.path = path
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Asset:
     tag: str
     url: str
@@ -88,7 +88,7 @@ class Asset:
         return self.url
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Release:
     tag: str
     assets: list[str]
@@ -124,7 +124,7 @@ class Release:
         return cls(tag=tag, assets=assets)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Repository:
     owner: str
     name: str
