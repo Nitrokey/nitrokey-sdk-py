@@ -8,7 +8,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from types import TracebackType
-from typing import Optional, TypeVar, assert_never
+from typing import ClassVar, Optional, TypeVar, assert_never
 
 from nitrokey import _VID_NITROKEY
 
@@ -55,6 +55,8 @@ class TrussedBase(ABC):
     the firmware or the bootloader.
     """
 
+    model: ClassVar[Model]
+
     def __enter__(self: T) -> T:
         return self
 
@@ -72,10 +74,6 @@ class TrussedBase(ABC):
                 f"Not a {self.name} device: expected VID:PID "
                 f"{self.vid:x}:{self.pid:x}, got {vid:x}:{pid:x}"
             )
-
-    @property
-    @abstractmethod
-    def model(self) -> Model: ...
 
     @property
     def vid(self) -> int:
