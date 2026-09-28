@@ -29,7 +29,13 @@ class IhexParser:
                     raise ValueError(f"Line {lineno}: missing ':' start code")
 
                 raw = bytes.fromhex(line[1:])
+                if len(raw) < 5:
+                    raise ValueError(f"Line {lineno}: record too short")
                 byte_count = raw[0]
+                if len(raw) != byte_count + 5:
+                    raise ValueError(
+                        f"Line {lineno}: expected {byte_count + 5} bytes, got {len(raw)}"
+                    )
                 addr = int.from_bytes(raw[1:3], "big")
                 rec_type = raw[3]
                 data = raw[4 : 4 + byte_count]
