@@ -22,7 +22,7 @@ from nitrokey.nk3.secrets_app import (
 )
 
 
-def test_equality(item: Item, pr: PasswordRepresentation) -> None:
+def assert_equality(item: Item, pr: PasswordRepresentation) -> None:
     list_item = pr.item
     pse = pr.pse
     assert item.title.encode() == list_item.label
@@ -45,10 +45,10 @@ def test_equality(item: Item, pr: PasswordRepresentation) -> None:
     assert prop.pws_data_exist == list_item.properties.pws_data_exist
 
 
-def test_list_equality(item_list: List[Item], pr_list: List[PasswordRepresentation]) -> None:
+def assert_list_equality(item_list: List[Item], pr_list: List[PasswordRepresentation]) -> None:
     assert len(item_list) == len(pr_list)
     for i in range(len(item_list)):
-        test_equality(item_list[i], pr_list[i])
+        assert_equality(item_list[i], pr_list[i])
         # print("Success")
 
 
@@ -124,10 +124,10 @@ class TestPasswordExport(unittest.TestCase):
         item_list_2 = cxf_payload_2.items()
         pr_list_2 = list_convert_item_to_pr(item_list_2)
 
-        test_list_equality(item_list_1, pr_list_1)
-        test_list_equality(item_list_2, pr_list_1)
-        test_list_equality(item_list_1, pr_list_2)
-        test_list_equality(item_list_2, pr_list_2)
+        assert_list_equality(item_list_1, pr_list_1)
+        assert_list_equality(item_list_2, pr_list_1)
+        assert_list_equality(item_list_1, pr_list_2)
+        assert_list_equality(item_list_2, pr_list_2)
 
 
 knownVector = """
