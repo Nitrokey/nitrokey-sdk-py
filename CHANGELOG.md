@@ -4,7 +4,11 @@
 
 -
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.1...HEAD)
+
+## [v0.5.1](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.1) (2026-10-07)
+
+- Add support for `hidapi` v0.15.
 
 ## [v0.5.0](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.0) (2026-09-21)
 
