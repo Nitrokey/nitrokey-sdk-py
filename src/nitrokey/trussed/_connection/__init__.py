@@ -3,13 +3,16 @@
 
 import enum
 import importlib.util
+import logging
 import typing
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Iterable, Optional
 
 from fido2.hid import CtapHidDevice
+
+logger = logging.getLogger(__name__)
 
 HAS_CCID_SUPPORT = importlib.util.find_spec("smartcard") is not None
 
@@ -84,3 +87,17 @@ class Connection(ABC):
 
     def set_secrets_pin_cache(self) -> None:
         return
+
+
+def close_all(connections: Iterable[Connection]) -> None:
+    """
+    Closes all given connections, ignoring errors.
+
+    This is used to clean up after a partial failure so that we don't leave stale
+    connections behind.
+    """
+    for connection in connections:
+        try:
+            connection.close()
+        except Exception:
+            logger.warning("Failed to close connection", exc_info=True)

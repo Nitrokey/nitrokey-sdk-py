@@ -44,12 +44,10 @@ _NKPK_DATA = ModelData(
 
 
 class NKPK(TrussedDevice):
+    model = Model.NKPK
+
     def __init__(self, connection: Connection) -> None:
         super().__init__(connection, _FIDO2_CERTS)
-
-    @property
-    def model(self) -> Model:
-        return Model.NKPK
 
     @property
     def pid(self) -> int:
@@ -75,9 +73,7 @@ class NKPK(TrussedDevice):
 
 
 class NKPKBootloader(TrussedBootloaderNrf52):
-    @property
-    def model(self) -> Model:
-        return Model.NKPK
+    model = Model.NKPK
 
     @property
     def name(self) -> str:
