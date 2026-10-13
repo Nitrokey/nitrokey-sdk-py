@@ -114,6 +114,8 @@ if HAS_CCID_SUPPORT:
                 command = Iso7816Apdu(0x00, data[0], 0, 0, data[1:], le=response_len)
             elif app == App.SECRETS:
                 command = data
+            elif app == App.STORAGE:
+                raise NotImplementedError()
             else:
                 typing.assert_never(app)
             return self._call(app, command)

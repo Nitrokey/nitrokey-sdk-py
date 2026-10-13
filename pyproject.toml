@@ -53,7 +53,7 @@ mypy = "^1.20"
 rstcheck = { version = "^6", extras = ["sphinx"] }
 ruff = "^0.14"
 sphinx = "^7"
-ty = "^0.0.29"
+ty = "^0.0.80"
 types-protobuf = ">=5.26, <7"
 types-requests = "^2.16"
 # fake-winreg does not work with wrapt v2 so we need to add an additional upper bound
@@ -64,7 +64,7 @@ dev-dependencies = [
     # These dependencies are required for running the type checks.
     "fake-winreg >=1.9, <2",
     "mypy >=1.20, <2",
-    "ty >=0.0.29, <0.0.30",
+    "ty >=0.0.80, <0.0.81",
     "types-protobuf >=5.26, <7",
     "types-requests >=2.16, <3",
 
