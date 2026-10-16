@@ -279,7 +279,7 @@ class Iso7816Apdu:
             return bytes([lc_len])
         if lc_len <= 0xFFFF:
             return b"\x00" + lc_len.to_bytes(2, "big")
-        raise ValueError("Data too long (max 6535 bytes)")
+        raise ValueError("Data too long (max 65535 bytes)")
 
     def _encode_le(self) -> bytes:
         """Encode Le according to short / extended format."""
