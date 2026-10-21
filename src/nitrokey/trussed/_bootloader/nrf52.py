@@ -36,7 +36,7 @@ FILENAME_PATTERN = re.compile("(firmware|alpha)-(nk3..|nkpk)-nrf52-(?P<version>.
 T = TypeVar("T", bound="TrussedBootloaderNrf52")
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SignatureKey:
     name: str
     is_official: bool
@@ -65,7 +65,7 @@ class SignatureKey:
             return False
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Image:
     init_packet: InitPacketPB
     firmware_dat: bytes
@@ -139,7 +139,7 @@ class TrussedBootloaderNrf52(TrussedBootloader):
         return False
 
     def uuid(self) -> Optional[Uuid]:
-        return Uuid(self._uuid)
+        return Uuid(value=self._uuid)
 
     def update(self, image: bytes, callback: Optional[ProgressCallback] = None) -> None:
         # based on https://github.com/NordicSemiconductor/pc-nrfutil/blob/1caa347b1cca3896f4695823f48abba15fbef76b/nordicsemi/dfu/dfu.py
@@ -155,7 +155,9 @@ class TrussedBootloaderNrf52(TrussedBootloader):
         if callback:
             total = len(parsed_image.firmware_bin)
             callback(0, total)
-            dfu.register_events_callback(DfuEvent.PROGRESS_EVENT, CallbackWrapper(callback, total))
+            dfu.register_events_callback(
+                DfuEvent.PROGRESS_EVENT, CallbackWrapper(callback=callback, total=total)
+            )
 
         dfu.open()
         dfu.send_init_packet(parsed_image.firmware_dat)
@@ -174,7 +176,7 @@ class TrussedBootloaderNrf52(TrussedBootloader):
         return None
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CallbackWrapper:
     callback: ProgressCallback
     total: int
