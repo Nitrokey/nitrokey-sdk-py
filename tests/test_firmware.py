@@ -55,3 +55,15 @@ class TestFirmwareContainer(unittest.TestCase):
         checksum = FirmwareChecksum(ihex_file.name, ihex_file.read_bytes()).calculate_checksum()
 
         self.assertEqual(metadata.inner_checksum, checksum)
+
+    def test_ihex_record_too_short(self) -> None:
+        with self.assertRaises(ValueError):
+            FirmwareChecksum("firmware.ihex", b":").calculate_checksum()
+
+    def test_ihex_record_shorter_than_its_length(self) -> None:
+        with self.assertRaises(ValueError):
+            FirmwareChecksum("firmware.ihex", b":04000000AABBFF").calculate_checksum()
+
+    def test_ihex_record_longer_than_its_length(self) -> None:
+        with self.assertRaises(ValueError):
+            FirmwareChecksum("firmware.ihex", b":04000000AABBCCDDEE00").calculate_checksum()
