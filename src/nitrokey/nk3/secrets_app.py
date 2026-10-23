@@ -598,19 +598,24 @@ class SecretsApp:
             if password:
                 self.verify_pin_raw(password)
 
-            if item.kind != Kind.NotSet:
-                callback_status.failed_credentials.append(item.label)  # Not Basic Auth
-            elif item.properties.secret_encryption and not password:
+            current_basic_auth = item.kind == Kind.NotSet
+
+            if item.properties.secret_encryption and not password:
                 callback_status.skipped_credentials.append(
                     item.label
                 )  # Skipping pin protected credentials when pin is not used
             else:
-                export_list.append(
-                    Item.from_password_representation(
-                        PasswordRepresentation(item, self.get_credential(item.label))
+                current_pse = self.get_credential(item.label)
+                if not current_pse.password:
+                    callback_status.failed_credentials.append(item.label)  # No password
+                else:
+                    export_list.append(
+                        Item.from_password_representation(PasswordRepresentation(item, current_pse))
                     )
-                )
-                callback_status.successful_credentials.append(item.label)
+                    callaback_label = " (OTP skipped)" if not current_basic_auth else ""
+                    callback_status.successful_credentials.append(
+                        item.label + callaback_label.encode()
+                    )
 
         if callback:
             callback(len(total_list), callback_status)  # Fincal call
