@@ -30,12 +30,10 @@ FIDO2_CERTS = [
 class NK3(TrussedDevice):
     """A Nitrokey 3 device running the firmware."""
 
+    model = Model.NK3
+
     def __init__(self, connection: Connection) -> None:
         super().__init__(connection, FIDO2_CERTS)
-
-    @property
-    def model(self) -> Model:
-        return Model.NK3
 
     @property
     def pid(self) -> int:

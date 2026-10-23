@@ -15,9 +15,7 @@ from nitrokey.trussed._bootloader.nrf52 import SignatureKey, TrussedBootloaderNr
 
 
 class NK3Bootloader(TrussedBootloader):
-    @property
-    def model(self) -> Model:
-        return Model.NK3
+    model = Model.NK3
 
     @staticmethod
     def list() -> List["NK3Bootloader"]:

@@ -52,6 +52,16 @@ class TestLogging(unittest.TestCase):
             self.assertEqual(module.logger.name, module_name)
 
 
+class TestModel(unittest.TestCase):
+    def test_model_is_a_class_attribute(self) -> None:
+        from nitrokey.nk3 import NK3
+        from nitrokey.nkpk import NKPK
+        from nitrokey.trussed import Model
+
+        self.assertEqual(NK3.model, Model.NK3)
+        self.assertEqual(NKPK.model, Model.NKPK)
+
+
 class TestNk3Updates(unittest.TestCase):
     def test_update_path_default(self) -> None:
         from nitrokey.trussed import Model, Variant, Version
