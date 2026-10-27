@@ -10,7 +10,7 @@ import dataclasses
 import hmac
 import logging
 import typing
-from dataclasses import asdict
+from dataclasses import asdict, field
 from enum import Enum, IntEnum
 from hashlib import pbkdf2_hmac
 from secrets import token_bytes
@@ -321,6 +321,7 @@ class CXFRestoreCombined:
     successful_credentials: list[bytes]
     failed_credentials: list[bytes]
     skipped_credentials: list[bytes]
+    partial_credentials: list[bytes] = field(default_factory=list)
 
 
 @dataclasses.dataclass
@@ -598,19 +599,25 @@ class SecretsApp:
             if password:
                 self.verify_pin_raw(password)
 
-            if item.kind != Kind.NotSet:
-                callback_status.failed_credentials.append(item.label)  # Not Basic Auth
-            elif item.properties.secret_encryption and not password:
+            current_basic_auth = item.kind == Kind.NotSet
+
+            if item.properties.secret_encryption and not password:
                 callback_status.skipped_credentials.append(
                     item.label
                 )  # Skipping pin protected credentials when pin is not used
             else:
-                export_list.append(
-                    Item.from_password_representation(
-                        PasswordRepresentation(item, self.get_credential(item.label))
+                current_pse = self.get_credential(item.label)
+                if not current_pse.password:
+                    callback_status.failed_credentials.append(item.label)  # No password
+                else:
+                    export_list.append(
+                        Item.from_password_representation(PasswordRepresentation(item, current_pse))
                     )
-                )
-                callback_status.successful_credentials.append(item.label)
+                    callaback_label = " (OTP skipped)" if not current_basic_auth else ""
+                    callback_status.successful_credentials.append(
+                        item.label + callaback_label.encode()
+                    )
+                    callback_status.partial_credentials.append(item.label)
 
         if callback:
             callback(len(total_list), callback_status)  # Fincal call
