@@ -18,7 +18,7 @@ requires-python = ">=3.11, <4"
 dynamic = ["classifiers"]
 
 dependencies = [
-    "cryptography >=41",
+    "cryptography >=43",
     "fido2 >=2, <3",
     "requests >=2.16, <3",
     "semver >=3, <4",

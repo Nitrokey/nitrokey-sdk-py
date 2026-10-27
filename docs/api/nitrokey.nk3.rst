@@ -8,6 +8,7 @@ nitrokey.nk3
 .. toctree::
    :maxdepth: 1
 
+   nitrokey.nk3.piv_app
    nitrokey.nk3.secrets_app
 
 Accessing Nitrokey 3 Devices
