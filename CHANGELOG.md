@@ -2,7 +2,9 @@
 
 ## Unreleased
 
--
+### Features
+
+- `nitrokey.trussed.admin_app`: Add support for string config fields
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0...HEAD)
 

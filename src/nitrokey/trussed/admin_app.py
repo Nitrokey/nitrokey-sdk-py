@@ -161,6 +161,7 @@ class ConfigStatus(Enum):
 class ConfigFieldType(Enum):
     BOOL = 0
     U8 = 1
+    STRING = 2
 
     @classmethod
     def from_int(cls, i: int) -> Optional["ConfigFieldType"]:
@@ -181,6 +182,13 @@ class ConfigFieldType(Enum):
                     return False
             except ValueError:
                 return False
+        elif self == ConfigFieldType.STRING:
+            # The maximum length depends on the field and is checked by the device
+            try:
+                value.encode()
+                return True
+            except UnicodeEncodeError:
+                return False
         else:
             typing.assert_never(self)
 
@@ -189,6 +197,8 @@ class ConfigFieldType(Enum):
             return "Bool"
         elif self == ConfigFieldType.U8:
             return "u8"
+        elif self == ConfigFieldType.STRING:
+            return "String"
         else:
             typing.assert_never(self)
 
