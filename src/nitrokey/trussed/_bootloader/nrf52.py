@@ -7,7 +7,6 @@
 
 import hashlib
 import logging
-import re
 import time
 from abc import abstractmethod
 from dataclasses import dataclass
@@ -31,7 +30,6 @@ from .nrf52_upload.lister.device_lister import DeviceLister
 logger = logging.getLogger(__name__)
 
 MANIFEST_FILENAME = "manifest.json"
-FILENAME_PATTERN = re.compile("(firmware|alpha)-(nk3..|nkpk)-nrf52-(?P<version>.*)\\.zip$")
 
 T = TypeVar("T", bound="TrussedBootloaderNrf52")
 

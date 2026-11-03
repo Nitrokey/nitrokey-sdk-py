@@ -1762,21 +1762,6 @@ files = [
 ]
 
 [[package]]
-name = "semver"
-version = "3.1.0"
-description = "Python helper for Semantic Versioning (https://semver.org)"
-optional = false
-python-versions = ">=3.10"
-groups = ["main"]
-files = [
-    {file = "semver-3.1.0-py3-none-any.whl", hash = "sha256:6e4998f8b4762acdfea85f9bfd5b4032e0bb50038dc04bf82011b42d5d1145c5"},
-    {file = "semver-3.1.0.tar.gz", hash = "sha256:14bc073439513d7773662a338f4db9829cf16c12b74b9568e2d2689975fbd7fc"},
-]
-
-[package.extras]
-native = ["fast-semver-rs-backend (>=0.1.1) ; platform_python_implementation == \"CPython\""]
-
-[[package]]
 name = "setuptools"
 version = "84.2.1"
 description = "Most extensible Python build backend with support for C/C++ extension modules"
@@ -2181,4 +2166,4 @@ ccid = ["pyscard"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <4"
-content-hash = "590d110d6b4de64e721104b312b9ead1fa73a5c2994d5e4998aa693bb8df002d"
+content-hash = "3aec8691c56ee88c23ee623806293c34cbd28291be1d7b736a98761b0ca923f5"
