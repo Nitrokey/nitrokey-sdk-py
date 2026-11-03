@@ -81,7 +81,7 @@ class TrussedBootloaderLpc55(TrussedBootloader):
         # https://github.com/lpc55/lpc55-host/blob/main/src/bootloader/property.rs#L222
         wrong_endian = (uuid[3] << 96) + (uuid[2] << 64) + (uuid[1] << 32) + uuid[0]
         right_endian = wrong_endian.to_bytes(16, byteorder="little")
-        return Uuid(int.from_bytes(right_endian, byteorder="big"))
+        return Uuid(value=int.from_bytes(right_endian, byteorder="big"))
 
     def update(
         self, image: bytes, callback: Optional[ProgressCallback] = None, check_errors: bool = False

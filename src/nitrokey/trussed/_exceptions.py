@@ -22,7 +22,7 @@ class ConnectionError(TrussedException):
         super().__init__("Lost the connection to the device while executing a command")
 
 
-@dataclass(frozen=True)
+@dataclass(kw_only=True, frozen=True)
 class CcidErrorCode:
     sw1: int
     sw2: int
@@ -31,7 +31,7 @@ class CcidErrorCode:
         return f"CCID error code 0x{bytes([self.sw1, self.sw2]).hex()}"
 
 
-@dataclass(frozen=True)
+@dataclass(kw_only=True, frozen=True)
 class CtapErrorCode:
     error: int
 
