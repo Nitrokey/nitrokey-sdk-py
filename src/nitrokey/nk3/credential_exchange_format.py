@@ -193,10 +193,12 @@ class Item:
 
     @staticmethod
     def from_password_representation(pr: PasswordRepresentation) -> Item:
-        from .secrets_app import ListItemSerializable
+        from .secrets_app import Kind, ListItemSerializable
 
         item = pr.item
         pse = pr.pse
+        list_item_serializable = ListItemSerializable.from_list_item(item)
+        list_item_serializable.kind = Kind.NotSet
         return Item(
             id=_get_random_id(),
             title=item.label.decode("utf-8", errors="ignore"),
@@ -218,7 +220,7 @@ class Item:
             extensions=[
                 SecretsAppMetadata(
                     metadata=pse.metadata.decode("utf-8", errors="ignore") if pse.metadata else "",
-                    item=ListItemSerializable.from_list_item(item),
+                    item=list_item_serializable,
                 )
             ],
         )

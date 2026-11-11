@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Allow export of only passwords when credential is combined with OTPs.
 ### Features
 
 - `nitrokey.trussed.admin_app`: Add support for string config fields
