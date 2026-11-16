@@ -14,13 +14,25 @@ env:
   POETRY_SOLVER_MIN_RELEASE_AGE: 0
 
 jobs:
+  verify-lockfile:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: gh extension install github/gh-actions-lock --pin v0.4.1
+      - run: gh actions-lock --verify
   format-code:
     name: Check code format
     runs-on: ubuntu-latest
     container: python:3.11-slim
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
@@ -35,7 +47,7 @@ jobs:
     container: python:3.11-slim
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
@@ -53,7 +65,7 @@ jobs:
         all-extras: [true, false]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install required packages for all extras
@@ -73,7 +85,7 @@ jobs:
     container: python:3.11-slim
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
@@ -88,7 +100,7 @@ jobs:
     container: python:3.11-slim
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
@@ -103,7 +115,7 @@ jobs:
     container: python:3.11-slim
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install Poetry
@@ -121,7 +133,7 @@ jobs:
         all-extras: [true, false]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES}
       - name: Install required packages for all extras
@@ -141,7 +153,7 @@ jobs:
     container: python:3.11-slim
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES} ${REQUIRED_PACKAGES_ALL_EXTRAS}
       - name: Install Poetry
@@ -160,9 +172,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: Install SDK
@@ -175,7 +187,7 @@ jobs:
     container: python:3.11-slim
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES} cargo
       - name: Install tangler
@@ -202,7 +214,7 @@ jobs:
       UV_RESOLUTION: ${{ matrix.resolution }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install required packages
         run: apt update && apt install -y ${REQUIRED_PACKAGES} gcc libffi-dev
       - name: Install uv
