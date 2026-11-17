@@ -38,9 +38,7 @@ class App(Enum):
     def aid(self) -> bytes:
         if self == App.SECRETS:
             return bytes.fromhex("A000000527 2101")
-        elif self == App.ADMIN:
-            return bytes.fromhex("A00000084700000001")
-        elif self == App.PROVISIONER:
+        elif self == App.ADMIN or self == App.PROVISIONER:
             return bytes.fromhex("A00000084700000001")
         else:
             typing.assert_never(self)
