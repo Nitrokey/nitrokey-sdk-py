@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+-
+
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.2...HEAD)
+
+## [v0.5.2](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.2) (2026-11-19)
+
 - Fix import issue when using `nitrokey-sdk-py` from `pynitrokey`
 
-[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.1...HEAD)
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.1...v0.5.2)
 
 ## [v0.5.1](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.1) (2026-11-03)
 
@@ -12,6 +18,8 @@
 
 - `nitrokey.trussed.admin_app`: Add support for string config fields
 - Add support for `hidapi` v0.15.
+
+[All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.0...v0.5.1)
 
 ## [v0.5.0](https://github.com/Nitrokey/nitrokey-sdk-py/releases/tag/v0.5.0) (2026-09-21)
 
