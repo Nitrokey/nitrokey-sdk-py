@@ -2,7 +2,7 @@
 
 ## Unreleased
 
--
+- Fix import issue when using `nitrokey-sdk-py` from `pynitrokey`
 
 [All Changes](https://github.com/Nitrokey/nitrokey-sdk-py/compare/v0.5.1...HEAD)
 

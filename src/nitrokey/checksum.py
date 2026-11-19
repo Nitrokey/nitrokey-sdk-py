@@ -1,8 +1,6 @@
 import hashlib
 from enum import Enum
 
-from nitrokey.trussed._bootloader.nrf52_upload.dfu.ihex_parser import IhexParser
-
 
 class _FileEndings(str, Enum):
     IHEX = ".ihex"
@@ -15,6 +13,11 @@ class FirmwareChecksum:
         self.content = content
 
     def _hash_ihex(self, ihex_content: bytes) -> bytes:
+        # this import is not at the module level to avoid an issue with the import order when
+        # using this module from pynitrokey (fido2 is resolved to pynitrokey.fido2 instead of
+        # the actual fido2 package)
+        from nitrokey.trussed._bootloader.nrf52_upload.dfu.ihex_parser import IhexParser
+
         return self._hash_bin(IhexParser()._convert_ihex(ihex_content))
 
     def _hash_bin(self, bin_content: bytes | bytearray) -> bytes:
