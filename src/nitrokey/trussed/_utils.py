@@ -11,7 +11,7 @@ from functools import total_ordering
 from typing import Optional, Sequence
 
 
-@dataclass(order=True, frozen=True)
+@dataclass(kw_only=True, order=True, frozen=True)
 class Uuid:
     """UUID of a Nitrokey Trussed device."""
 
@@ -24,7 +24,7 @@ class Uuid:
         return self.value
 
 
-@dataclass(eq=False, frozen=True)
+@dataclass(kw_only=True, eq=False, frozen=True)
 @total_ordering
 class Version:
     """
@@ -37,13 +37,13 @@ class Version:
     affects comparison:  The pre-release version is only taken into account if
     both version instances are complete.
 
-    >>> Version(1, 0, 0)
+    >>> Version(major=1, minor=0, patch=0)
     Version(major=1, minor=0, patch=0, pre=None, build=None)
     >>> Version.from_str("1.0.0")
     Version(major=1, minor=0, patch=0, pre=None, build=None)
     >>> Version.from_v_str("v1.0.0")
     Version(major=1, minor=0, patch=0, pre=None, build=None)
-    >>> Version(1, 0, 0, "rc.1")
+    >>> Version(major=1, minor=0, patch=0, pre="rc.1")
     Version(major=1, minor=0, patch=0, pre='rc.1', build=None)
     >>> Version.from_str("1.0.0-rc.1")
     Version(major=1, minor=0, patch=0, pre='rc.1', build=None)
@@ -79,9 +79,9 @@ class Version:
 
     def __eq__(self, other: object) -> bool:
         """
-        >>> Version(1, 0, 0) == Version(1, 0, 0)
+        >>> Version(major=1, minor=0, patch=0) == Version(major=1, minor=0, patch=0)
         True
-        >>> Version(1, 0, 0) == Version(1, 0, 1)
+        >>> Version(major=1, minor=0, patch=0) == Version(major=1, minor=0, patch=1)
         False
         >>> Version.from_str("1.0.0-rc.1") == Version.from_str("1.0.0-rc.1")
         True
@@ -89,9 +89,9 @@ class Version:
         False
         >>> Version.from_str("1.0.0") == Version.from_str("1.0.0+git")
         True
-        >>> Version(1, 0, 0, complete=False) == Version.from_str("1.0.0-rc.1")
+        >>> Version(major=1, minor=0, patch=0, complete=False) == Version.from_str("1.0.0-rc.1")
         True
-        >>> Version(1, 0, 0, complete=False) == Version.from_str("1.0.1")
+        >>> Version(major=1, minor=0, patch=0, complete=False) == Version.from_str("1.0.1")
         False
         """
         if not isinstance(other, Version):
@@ -135,7 +135,7 @@ class Version:
         True
         >>> cmp("1.0.0-rc.2", "1.0.0-rc.10")
         True
-        >>> Version(1, 0, 0, "rc.1") < Version(1, 0, 0)
+        >>> Version(major=1, minor=0, patch=0, pre="rc.1") < Version(major=1, minor=0, patch=0)
         False
         """
 
@@ -177,11 +177,11 @@ class Version:
         Returns the core part of this version, i. e. the version without the
         pre-release and build components.
 
-        >>> Version(1, 0, 0).core()
+        >>> Version(major=1, minor=0, patch=0).core()
         Version(major=1, minor=0, patch=0, pre=None, build=None)
-        >>> Version(1, 0, 0, "rc.1").core()
+        >>> Version(major=1, minor=0, patch=0, pre="rc.1").core()
         Version(major=1, minor=0, patch=0, pre=None, build=None)
-        >>> Version(1, 0, 0, "rc.1", "git").core()
+        >>> Version(major=1, minor=0, patch=0, pre="rc.1", build="git").core()
         Version(major=1, minor=0, patch=0, pre=None, build=None)
         """
         return dataclasses.replace(self, pre=None, build=None)
@@ -239,7 +239,7 @@ class Version:
         return Version.from_str(s)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Fido2Certs:
     start: Version
     hashes: list[str]

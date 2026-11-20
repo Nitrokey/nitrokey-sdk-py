@@ -118,10 +118,14 @@ class _Migration(enum.Enum):
         migrations = set()
 
         if variant == Variant.NRF52:
-            if current is None or current <= Version(1, 2, 2) and new >= Version(1, 3, 0):
+            if (
+                current is None
+                or current <= Version(major=1, minor=2, patch=2)
+                and new >= Version(major=1, minor=3, patch=0)
+            ):
                 migrations.add(cls.NRF_IFS_MIGRATION)
 
-        ifs_migration_v2 = Version(1, 8, 2)
+        ifs_migration_v2 = Version(major=1, minor=8, patch=2)
         if current is not None and current < ifs_migration_v2 and new >= ifs_migration_v2:
             migrations.add(cls.IFS_MIGRATION_V2)
 
