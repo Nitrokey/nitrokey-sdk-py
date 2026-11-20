@@ -2181,4 +2181,4 @@ ccid = ["pyscard"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <4"
-content-hash = "c777c9341b261f9ad2eae929dae0a08d4ab8fafd1d04dc0186d782ca842069c7"
+content-hash = "ac8cdad02737538365822b13d6fabcb7feed48ba0f84ca8aff30f52207ecf2ea"
